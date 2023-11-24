@@ -1,4 +1,4 @@
-package com.plugins
+package siberia.plugins
 
 import io.ktor.http.*
 import io.ktor.server.application.*
