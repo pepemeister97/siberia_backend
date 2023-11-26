@@ -5,25 +5,32 @@ import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
+import siberia.conf.AppConf.jwt
 
 fun Application.configureSecurity() {
-    // Please read the jwt property from the config file if you are using EngineMain
-    val jwtAudience = "jwt-audience"
-    val jwtDomain = "https://jwt-provider-domain/"
-    val jwtRealm = "ktor sample app"
-    val jwtSecret = "secret"
+
+    val jwtVerifier = JWT
+        .require(Algorithm.HMAC256(jwt.secret))
+        .withIssuer(jwt.domain)
+        .build()
+
     authentication {
-        jwt {
-            realm = jwtRealm
-            verifier(
-                JWT
-                    .require(Algorithm.HMAC256(jwtSecret))
-                    .withAudience(jwtAudience)
-                    .withIssuer(jwtDomain)
-                    .build()
-            )
-            validate { credential ->
-                if (credential.payload.audience.contains(jwtAudience)) JWTPrincipal(credential.payload) else null
+        jwt("default") {
+            verifier(jwtVerifier)
+            validate {
+                JWTPrincipal(it.payload)
+            }
+        }
+
+        jwt("refresh") {
+            verifier(jwtVerifier)
+            validate {
+                val refresh = it.payload.claims["lastLogin"]
+
+                if (refresh == null)
+                    null
+                else
+                    JWTPrincipal(it.payload)
             }
         }
     }
