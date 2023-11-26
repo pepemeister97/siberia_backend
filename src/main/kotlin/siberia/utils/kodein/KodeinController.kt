@@ -4,8 +4,12 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.json.Json
 import org.kodein.di.DIAware
 import org.kodein.di.instance
+import siberia.modules.auth.data.dto.authorization.RefreshTokenDto
+import siberia.modules.auth.data.dto.LinkedRuleOutputDto
+import siberia.modules.user.data.dto.AuthorizedUser
 
 /**
  * A [KodeinAware] base class for Controllers handling routes.
@@ -23,11 +27,20 @@ abstract class KodeinController : DIAware {
      */
     abstract fun Routing.registerRoutes()
 
-    fun getAuthorized(call: ApplicationCall) {
-//        AuthorizedUser(
-//            call.principal<JWTPrincipal>()?.getClaim("id", Int::class)!!,
-//            call.principal<JWTPrincipal>()?.getClaim("login", String::class)!!,
-//            call.principal<JWTPrincipal>()?.issuedAt?.time!!
-//        )
+    fun getAuthorized(call: ApplicationCall): AuthorizedUser {
+        val principal = call.principal<JWTPrincipal>()!!
+        Json.decodeFromString<List<LinkedRuleOutputDto>>(principal.getClaim("rules", String::class) ?: "[]")
+        return AuthorizedUser(
+            id = principal.getClaim("id", Int::class)!!,
+            rules = Json.decodeFromString<List<LinkedRuleOutputDto>>(principal.getClaim("rules", String::class) ?: "[]")
+        )
+    }
+
+    fun getRefresh(call: ApplicationCall): RefreshTokenDto {
+        val principal = call.principal<JWTPrincipal>()!!
+        return RefreshTokenDto(
+            id = principal.getClaim("id", Int::class)!!,
+            lastLogin = principal.getClaim("lastLogin", Long::class)!!
+        )
     }
 }

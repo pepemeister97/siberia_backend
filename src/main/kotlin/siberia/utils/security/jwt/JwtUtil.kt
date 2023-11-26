@@ -3,11 +3,15 @@ package siberia.utils.security.jwt
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.util.date.*
+import kotlinx.serialization.json.Json
 import siberia.conf.AppConf
+import siberia.modules.auth.data.dto.LinkedRuleOutputDto
+import siberia.modules.user.data.dao.UserDao
+import siberia.utils.database.idValue
 import java.util.*
 
 object JwtUtil {
-    fun createToken(claims: MutableMap<String, String>, refreshToken: Boolean = false): String {
+    fun createToken(userDao: UserDao, refreshToken: Boolean = false): String {
         return JWT.create()
             .withIssuer(AppConf.jwt.domain)
             .withIssuedAt(Date(System.currentTimeMillis()))
@@ -18,11 +22,14 @@ object JwtUtil {
             )
             )
             .apply {
-                claims.forEach {
-                    withClaim(it.key, it.value)
+                withClaim("id", userDao.idValue)
+                println(userDao.rules.map { Json.encodeToString(LinkedRuleOutputDto.serializer(), it) }.toString())
+                if (refreshToken) {
+                    withClaim("lastLogin", userDao.lastLogin)
+                } else {
+                    withClaim("rules", userDao.rules.map { Json.encodeToString(LinkedRuleOutputDto.serializer(), it) }.toString())
                 }
-                if (refreshToken)
-                    withClaim("refreshToken", "use")
+
             }.sign(Algorithm.HMAC256(AppConf.jwt.secret))
     }
 
