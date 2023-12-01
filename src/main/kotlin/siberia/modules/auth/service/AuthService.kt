@@ -3,6 +3,10 @@ package siberia.modules.auth.service
 import io.ktor.util.date.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
+import siberia.exceptions.BadRequestException
+import siberia.exceptions.ForbiddenException
+import siberia.exceptions.UnauthorizedException
+import siberia.exceptions.ValidateException
 import siberia.modules.auth.data.dao.RoleDao
 import siberia.modules.auth.data.dao.RuleDao
 import siberia.modules.auth.data.dao.UserToRuleDao
@@ -31,63 +35,53 @@ class AuthService(override val di: DI) : KodeinService(di) {
             val userDao = UserDao[refreshTokenDto.id]
 
             if (userDao.lastLogin != refreshTokenDto.lastLogin)
-                throw Exception("forbidden")
+                throw ForbiddenException()
             userDao.lastLogin = getTimeMillis()
             userDao.flush()
 
             generateTokenPair(userDao)
         } catch (e: Exception) {
-            throw e
+            throw ForbiddenException()
         }
     }
 
     fun auth(authInputDto: AuthInputDto): TokenOutputDto = transaction {
-        try {
-            val search = UserDao.find {
-                UserModel.login eq authInputDto.login
-            }
-            val userDao = if (search.empty())
-                throw Exception("unauthorized")
-            else
-                search.first()
-
-            if (!CryptoUtil.compare(authInputDto.password, userDao.hash))
-                throw Exception("forbidden")
-
-            userDao.lastLogin = getTimeMillis()
-            userDao.flush()
-            generateTokenPair(userDao)
-        } catch (e: Exception) {
-            throw e
+        val search = UserDao.find {
+            UserModel.login eq authInputDto.login
         }
+        val userDao = if (search.empty())
+            throw UnauthorizedException()
+        else
+            search.first()
+
+        if (!CryptoUtil.compare(authInputDto.password, userDao.hash))
+            throw ForbiddenException()
+
+        userDao.lastLogin = getTimeMillis()
+        userDao.flush()
+        generateTokenPair(userDao)
     }
 
     private fun addRuleToUser(userDao: UserDao, ruleId: Int, stockId: Int? = null) {
-        try {
-            val ruleDao = RuleDao[ruleId]
-            UserToRuleDao.new {
-                user = userDao
-                rule = ruleDao
-                if (rule.needStock) {
-                    if (stockId != null)
-                        stock = StockDao[stockId]
-                    else
-                        throw Exception("must provide stock id")
-                }
+        val ruleDao = RuleDao[ruleId]
+        UserToRuleDao.new {
+            user = userDao
+            rule = ruleDao
+            if (rule.needStock) {
+                if (stockId != null)
+                    stock = StockDao[stockId]
+                else
+                    throw ValidateException.build {
+                        addError(ValidateException.ValidateError("stock_id", "must be provided"))
+                    }
             }
-        } catch (e: Exception) {
-            throw Exception("Bad rule: ${e.message}")
         }
     }
 
     private fun addRoleToUser(userDao: UserDao, roleId: Int) {
-        try {
-            val role = RoleDao[roleId]
-            role.outputWithChildren.rules.forEach {
-                addRuleToUser(userDao, it.ruleId, it.stockId)
-            }
-        } catch (e: Exception) {
-            throw Exception("Bad role")
+        val role = RoleDao[roleId]
+        role.outputWithChildren.rules.forEach {
+            addRuleToUser(userDao, it.ruleId, it.stockId)
         }
     }
 
@@ -95,9 +89,8 @@ class AuthService(override val di: DI) : KodeinService(di) {
         val search = UserDao.find {
             UserModel.login eq createUserInputDto.login
         }
-        if (!search.empty()) {
-            throw Exception("bad login")
-        }
+        if (!search.empty())
+            throw UnauthorizedException()
 
         val userDao = UserDao.new {
             login = createUserInputDto.login
@@ -105,22 +98,19 @@ class AuthService(override val di: DI) : KodeinService(di) {
             lastLogin = getTimeMillis()
         }
 
-        createUserInputDto.rules.forEach {
-            try {
-                addRuleToUser(userDao, it.ruleId, it.stockId)
-            } catch (e: Exception) {
-                rollback()
-                throw e
-            }
-        }
+        try {
 
-        createUserInputDto.roles.forEach {
-            try {
-                addRoleToUser(userDao, it)
-            } catch (e: Exception) {
-                rollback()
-                throw e
+            createUserInputDto.rules.forEach {
+                addRuleToUser(userDao, it.ruleId, it.stockId)
             }
+
+            createUserInputDto.roles.forEach {
+                addRoleToUser(userDao, it)
+            }
+
+        } catch (e: Exception) {
+            rollback()
+            throw BadRequestException("Bad rules or roles provided")
         }
 
         commit()

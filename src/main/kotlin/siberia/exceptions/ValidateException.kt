@@ -22,10 +22,12 @@ class ValidateException internal constructor(): BaseException(400, "Bad request"
         ignoreUnknownKeys = true
     }
 
-    fun build(builder: ValidateException.() -> Unit): ValidateException =
-        ValidateException().apply(builder).apply {
-            data = json.encodeToString(ErrorList.serializer(), errorList)
-        }
+    companion object {
+        fun build(builder: ValidateException.() -> Unit): ValidateException =
+            ValidateException().apply(builder).apply {
+                data = json.encodeToString(ErrorList.serializer(), errorList)
+            }
+    }
 
     fun addError(validateError: ValidateError) {
         errorList.validateErrors.add(validateError)
