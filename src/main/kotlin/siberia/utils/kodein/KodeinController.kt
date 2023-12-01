@@ -10,6 +10,7 @@ import org.kodein.di.instance
 import siberia.modules.auth.data.dto.authorization.RefreshTokenDto
 import siberia.modules.auth.data.dto.LinkedRuleOutputDto
 import siberia.modules.user.data.dto.AuthorizedUser
+import siberia.plugins.getFromPrincipal
 
 /**
  * A [KodeinAware] base class for Controllers handling routes.
@@ -30,10 +31,7 @@ abstract class KodeinController : DIAware {
     fun getAuthorized(call: ApplicationCall): AuthorizedUser {
         val principal = call.principal<JWTPrincipal>()!!
         Json.decodeFromString<List<LinkedRuleOutputDto>>(principal.getClaim("rules", String::class) ?: "[]")
-        return AuthorizedUser(
-            id = principal.getClaim("id", Int::class)!!,
-            rules = Json.decodeFromString<List<LinkedRuleOutputDto>>(principal.getClaim("rules", String::class) ?: "[]")
-        )
+        return getFromPrincipal(principal)
     }
 
     fun getRefresh(call: ApplicationCall): RefreshTokenDto {

@@ -17,7 +17,9 @@ import siberia.modules.product.data.models.ProductCollectionModel
 import siberia.modules.product.data.models.ProductModel
 import siberia.modules.stock.data.models.StockModel
 import siberia.modules.stock.data.models.StockProductsModel
+import siberia.modules.user.controller.UserController
 import siberia.modules.user.data.models.UserModel
+import siberia.modules.user.service.UserService
 import siberia.plugins.*
 import siberia.utils.database.DatabaseConnector
 import siberia.utils.kodein.bindSingleton
@@ -38,8 +40,10 @@ fun Application.module() {
 
     kodeinApplication {
         bindSingleton { AuthService(it) }
+        bindSingleton { UserService(it) }
 
         bindSingleton { AuthController(it) }
+        bindSingleton { UserController(it) }
     }
 
     DatabaseConnector(

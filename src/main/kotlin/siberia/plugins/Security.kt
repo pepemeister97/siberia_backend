@@ -5,7 +5,11 @@ import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
+import kotlinx.serialization.json.Json
 import siberia.conf.AppConf.jwt
+import siberia.conf.AppConf.rules
+import siberia.modules.auth.data.dto.LinkedRuleOutputDto
+import siberia.modules.user.data.dto.AuthorizedUser
 
 fun Application.configureSecurity() {
 
@@ -33,5 +37,24 @@ fun Application.configureSecurity() {
                     JWTPrincipal(it.payload)
             }
         }
+
+        jwt("user-rules-editing") {
+            verifier(jwtVerifier)
+            validate { jwtCredential ->
+                val principal = JWTPrincipal(jwtCredential.payload)
+
+                val authorizedUser = getFromPrincipal(principal)
+
+                if (authorizedUser.rules.any { it.ruleId == rules.userRulesEditing })
+                    principal
+                else
+                    null
+            }
+        }
     }
 }
+
+fun getFromPrincipal(principal: JWTPrincipal): AuthorizedUser = AuthorizedUser(
+    id = principal.getClaim("id", Int::class)!!,
+    rules = Json.decodeFromString<List<LinkedRuleOutputDto>>(principal.getClaim("rules", String::class) ?: "[]")
+)
