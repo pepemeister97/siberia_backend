@@ -12,6 +12,8 @@ object AppConf {
     private fun ApplicationConfig.getString(name: String): String = this.property(name).getString()
     private fun ApplicationConfig.getInt(name: String): Int = this.getString(name).toInt()
 
+    val isDebug: Boolean = mainConfig.getString("debug") == "true"
+
     val jwt = JwtConf(
         domain = jwtConfig.getString("domain"),
         secret = jwtConfig.getString("secret"),
