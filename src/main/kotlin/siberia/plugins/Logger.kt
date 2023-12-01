@@ -17,6 +17,8 @@ object Logger {
     }
 
     fun debug(message: Any?, prefix: String) {
-        (logger[prefix].apply { if (this == null) logger["main"]!!.debug("Logger $prefix not found") } ?: logger["main"])!!.debug(message.toString())
+        (logger[prefix].apply {
+            if (this == null) logger["main"]!!.debug("Logger $prefix not found")
+        } ?: logger["main"])!!.debug(message.toString())
     }
 }
