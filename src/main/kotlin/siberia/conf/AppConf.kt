@@ -8,6 +8,7 @@ object AppConf {
     private val jwtConfig: ApplicationConfig = mainConfig.config("jwt")
     private val databaseConfig: ApplicationConfig = mainConfig.config("database")
     private val serverConfig: ApplicationConfig = mainConfig.config("server")
+    private val rulesConf: ApplicationConfig = mainConfig.config("rules")
 
     private fun ApplicationConfig.getString(name: String): String = this.property(name).getString()
     private fun ApplicationConfig.getInt(name: String): Int = this.getString(name).toInt()
@@ -31,5 +32,9 @@ object AppConf {
     val server = ServerConf(
         host = serverConfig.getString("host"),
         port = serverConfig.getInt("port")
+    )
+
+    val rules = RulesConf(
+        userRulesEditing = rulesConf.getInt("user-rules-editing")
     )
 }
