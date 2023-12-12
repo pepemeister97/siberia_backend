@@ -2,11 +2,15 @@ package siberia.utils.security.jwt
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import io.ktor.server.auth.jwt.*
 import io.ktor.util.date.*
 import kotlinx.serialization.json.Json
 import siberia.conf.AppConf
 import siberia.modules.auth.data.dto.LinkedRuleOutputDto
+import siberia.modules.auth.data.dto.authorization.RefreshTokenDto
+import siberia.modules.auth.data.models.role.RbacModel
 import siberia.modules.user.data.dao.UserDao
+import siberia.modules.user.data.dto.AuthorizedUser
 import siberia.utils.database.idValue
 import java.util.*
 
@@ -19,19 +23,31 @@ object JwtUtil {
                 Date(
                 System.currentTimeMillis() +
                         if (refreshToken) AppConf.jwt.refreshExpirationTime else AppConf.jwt.expirationTime
-            )
+                )
             )
             .apply {
                 withClaim("id", userDao.idValue)
-                println(userDao.rules.map { Json.encodeToString(LinkedRuleOutputDto.serializer(), it) }.toString())
+                val rules = RbacModel.userToRuleLinks(
+                    userDao.idValue, expanded = true
+                )
                 if (refreshToken) {
                     withClaim("lastLogin", userDao.lastLogin)
                 } else {
-                    withClaim("rules", userDao.rules.map { Json.encodeToString(LinkedRuleOutputDto.serializer(), it) }.toString())
+                    withClaim("rules", rules.map { Json.encodeToString(LinkedRuleOutputDto.serializer(), it) }.toString())
                 }
 
             }.sign(Algorithm.HMAC256(AppConf.jwt.secret))
     }
+
+    fun decodeAccessToken(principal: JWTPrincipal): AuthorizedUser = AuthorizedUser(
+        id = principal.getClaim("id", Int::class)!!,
+        rules = Json.decodeFromString<List<LinkedRuleOutputDto>>(principal.getClaim("rules", String::class) ?: "[]")
+    )
+
+    fun decodeRefreshToken(principal: JWTPrincipal): RefreshTokenDto = RefreshTokenDto(
+        id = principal.getClaim("id", Int::class)!!,
+        lastLogin = principal.getClaim("lastLogin", Long::class)!!
+    )
 
     fun verifyNative(token: String) {
         val jwtVerifier = JWT

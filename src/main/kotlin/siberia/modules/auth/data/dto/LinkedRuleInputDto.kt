@@ -6,4 +6,5 @@ import kotlinx.serialization.Serializable
 data class LinkedRuleInputDto (
     val ruleId: Int,
     val stockId: Int? = null,
+    val forAll: Boolean = false
 )

@@ -6,10 +6,8 @@ import io.ktor.server.netty.*
 import siberia.conf.AppConf
 import siberia.modules.auth.controller.AuthController
 import siberia.modules.auth.data.models.role.RoleModel
-import siberia.modules.auth.data.models.role.RoleToRuleModel
 import siberia.modules.auth.data.models.rule.RuleCategoryModel
 import siberia.modules.auth.data.models.rule.RuleModel
-import siberia.modules.auth.data.models.rule.UserToRuleModel
 import siberia.modules.auth.service.AuthService
 import siberia.modules.product.data.models.ProductCategoryModel
 import siberia.modules.product.data.models.ProductCategoryToProductCategoryModel
@@ -17,9 +15,11 @@ import siberia.modules.product.data.models.ProductCollectionModel
 import siberia.modules.product.data.models.ProductModel
 import siberia.modules.stock.data.models.StockModel
 import siberia.modules.stock.data.models.StockProductsModel
+import siberia.modules.user.controller.RbacController
 import siberia.modules.user.controller.UserController
 import siberia.modules.user.data.models.UserModel
-import siberia.modules.user.service.UserService
+import siberia.modules.user.service.RbacService
+import siberia.modules.user.service.UserAccessControlService
 import siberia.plugins.*
 import siberia.utils.database.DatabaseConnector
 import siberia.utils.kodein.bindSingleton
@@ -40,15 +40,17 @@ fun Application.module() {
 
     kodeinApplication {
         bindSingleton { AuthService(it) }
-        bindSingleton { UserService(it) }
+        bindSingleton { UserAccessControlService(it) }
+        bindSingleton { RbacService(it) }
 
         bindSingleton { AuthController(it) }
         bindSingleton { UserController(it) }
+        bindSingleton { RbacController(it) }
     }
 
     DatabaseConnector(
         UserModel,
-        RoleModel, RuleModel, RoleToRuleModel, RuleCategoryModel, UserToRuleModel,
+        RoleModel, RuleModel, RuleCategoryModel,
         StockModel, StockProductsModel,
         ProductModel, ProductCategoryModel, ProductCollectionModel, ProductCategoryToProductCategoryModel
     ) {

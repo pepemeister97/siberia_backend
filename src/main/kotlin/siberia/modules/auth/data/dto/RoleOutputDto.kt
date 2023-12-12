@@ -6,5 +6,5 @@ import kotlinx.serialization.Serializable
 data class RoleOutputDto (
     val id: Int,
     val name: String,
-    val rules: List<LinkedRuleOutputDto> = listOf(),
+    var rules: List<LinkedRuleOutputDto> = listOf(),
 ) {}

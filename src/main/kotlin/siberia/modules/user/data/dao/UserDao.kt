@@ -1,10 +1,9 @@
 package siberia.modules.user.data.dao
 
 import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.transactions.transaction
 import siberia.modules.auth.data.dto.LinkedRuleOutputDto
-import siberia.modules.auth.data.models.rule.UserToRuleModel
+import siberia.modules.auth.data.dto.RoleOutputDto
+import siberia.modules.auth.data.models.role.RbacModel
 import siberia.modules.user.data.dto.UserOutputDto
 import siberia.modules.user.data.models.UserModel
 import siberia.utils.database.BaseIntEntity
@@ -18,21 +17,11 @@ class UserDao(id: EntityID<Int>): BaseIntEntity<UserOutputDto>(id, UserModel) {
     var hash by UserModel.hash
     var lastLogin by UserModel.lastLogin
 
-    val rules: List<LinkedRuleOutputDto>
-        get() = transaction {
-            println("UserDao id = $idValue")
-            UserToRuleModel
-                .slice(UserToRuleModel.rule, UserToRuleModel.stock)
-                .select {
-                    UserToRuleModel.user eq idValue
-                }.map {
-                    println("Link ${it}")
-                    LinkedRuleOutputDto(
-                        ruleId = it[UserToRuleModel.rule].value,
-                        stockId = it[UserToRuleModel.stock]?.value
-                    )
-                }
-        }
+    val rolesWithRules: List<RoleOutputDto>
+        get() = RbacModel.userToRoleLinks(idValue, withRules = true, withStock = true)
+
+    val rulesWithStocks: List<LinkedRuleOutputDto>
+        get() = RbacModel.userToRuleLinks(userId = idValue, withStock = true)
 
     override fun toOutputDto(): UserOutputDto =
         UserOutputDto(idValue, login, hash, lastLogin)

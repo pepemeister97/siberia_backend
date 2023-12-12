@@ -13,13 +13,13 @@ import siberia.modules.auth.data.dto.authorization.RefreshTokenDto
 import siberia.modules.auth.data.dto.authorization.TokenOutputDto
 import siberia.modules.user.data.dao.UserDao
 import siberia.modules.user.data.models.UserModel
-import siberia.modules.user.service.UserService
+import siberia.modules.user.service.UserAccessControlService
 import siberia.utils.kodein.KodeinService
 import siberia.utils.security.bcrypt.CryptoUtil
 import siberia.utils.security.jwt.JwtUtil
 
 class AuthService(override val di: DI) : KodeinService(di) {
-    private val userService: UserService by instance()
+    private val userAccessControlService: UserAccessControlService by instance()
 
     private fun generateTokenPair(userDao: UserDao): TokenOutputDto {
         val accessToken = JwtUtil.createToken(userDao)
@@ -75,13 +75,9 @@ class AuthService(override val di: DI) : KodeinService(di) {
 
         try {
 
-            createUserInputDto.rules.forEach {
-                userService.addRuleToUser(userDao, it.ruleId, it.stockId)
-            }
+            userAccessControlService.addRules(userDao, createUserInputDto.rules)
 
-            createUserInputDto.roles.forEach {
-                userService.addRoleToUser(userDao, it)
-            }
+            userAccessControlService.addRoles(userDao, createUserInputDto.roles)
 
         } catch (e: Exception) {
             rollback()

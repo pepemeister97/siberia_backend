@@ -39,7 +39,7 @@ class AuthController(override val di: DI) : KodeinController() {
         authenticate("default") {
             route("authorized") {
                 get {
-                    call.respond(getAuthorized(call))
+                    call.respond(call.getAuthorized())
                 }
             }
         }
