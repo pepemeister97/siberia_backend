@@ -8,7 +8,6 @@ import io.ktor.server.routing.*
 import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.modules.auth.data.dto.authorization.AuthInputDto
-import siberia.modules.auth.data.dto.authorization.CreateUserInputDto
 import siberia.modules.auth.service.AuthService
 import siberia.utils.kodein.KodeinController
 
@@ -27,13 +26,6 @@ class AuthController(override val di: DI) : KodeinController() {
                 val authInput = call.receive<AuthInputDto>()
 
                 call.respond(authService.auth(authInput))
-            }
-        }
-        route("signup") {
-            post {
-                val createUserInputDto = call.receive<CreateUserInputDto>()
-
-                call.respond(authService.signUp(createUserInputDto))
             }
         }
         authenticate("default") {

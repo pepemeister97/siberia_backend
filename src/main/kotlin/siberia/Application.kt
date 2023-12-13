@@ -9,6 +9,8 @@ import siberia.modules.auth.data.models.role.RoleModel
 import siberia.modules.auth.data.models.rule.RuleCategoryModel
 import siberia.modules.auth.data.models.rule.RuleModel
 import siberia.modules.auth.service.AuthService
+import siberia.modules.logger.controller.SystemEventController
+import siberia.modules.logger.service.SystemEventService
 import siberia.modules.product.data.models.ProductCategoryModel
 import siberia.modules.product.data.models.ProductCategoryToProductCategoryModel
 import siberia.modules.product.data.models.ProductCollectionModel
@@ -42,10 +44,12 @@ fun Application.module() {
         bindSingleton { AuthService(it) }
         bindSingleton { UserAccessControlService(it) }
         bindSingleton { RbacService(it) }
+        bindSingleton { SystemEventService(it) }
 
         bindSingleton { AuthController(it) }
         bindSingleton { UserController(it) }
         bindSingleton { RbacController(it) }
+        bindSingleton { SystemEventController(it) }
     }
 
     DatabaseConnector(
