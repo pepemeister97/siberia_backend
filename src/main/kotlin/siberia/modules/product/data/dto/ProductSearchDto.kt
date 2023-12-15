@@ -1,8 +1,8 @@
 package siberia.modules.product.data.dto
 
-import siberia.utils.database.PaginationOutputDto
+import siberia.utils.database.PaginationDto
 
 data class ProductSearchDto (
-    val pagination: PaginationOutputDto,
+    val pagination: PaginationDto,
     val filters: ProductSearchFilterDto
 )

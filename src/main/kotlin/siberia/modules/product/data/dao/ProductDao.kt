@@ -74,7 +74,11 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
         photo = productUpdateDto.photo ?: photo
         vendorCode = productUpdateDto.vendorCode ?: vendorCode
         barcode = productUpdateDto.barcode ?: barcode
-        brand = if (productUpdateDto.brand != null) BrandDao[productUpdateDto.brand] else brand
+
+        brand = if (productUpdateDto.brand != 0 && productUpdateDto.brand != null) BrandDao[productUpdateDto.brand]
+                else if (productUpdateDto.brand == 0) null
+                else brand
+
         name = productUpdateDto.name ?: name
         description = productUpdateDto.description ?: description
         purchasePrice = productUpdateDto.purchasePrice ?: purchasePrice
@@ -82,7 +86,11 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
         professionalPrice = productUpdateDto.professionalPrice ?: professionalPrice
         commonPrice = productUpdateDto.commonPrice ?: commonPrice
         category = if (productUpdateDto.category != null) CategoryDao[productUpdateDto.category] else category
-        collection = if (productUpdateDto.collection != null) CollectionDao[productUpdateDto.collection] else collection
+
+        collection = if (productUpdateDto.collection != 0 && productUpdateDto.collection != null) CollectionDao[productUpdateDto.collection]
+                    else if (productUpdateDto.collection == 0) null
+                    else collection
+
         color = productUpdateDto.color ?: color
         amountInBox = productUpdateDto.amountInBox ?: amountInBox
         expirationDate = productUpdateDto.expirationDate ?: expirationDate
