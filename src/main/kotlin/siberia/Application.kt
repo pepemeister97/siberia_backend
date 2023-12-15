@@ -9,11 +9,19 @@ import siberia.modules.rbac.data.models.role.RoleModel
 import siberia.modules.rbac.data.models.rule.RuleCategoryModel
 import siberia.modules.rbac.data.models.rule.RuleModel
 import siberia.modules.auth.service.AuthService
+import siberia.modules.brand.controller.BrandController
+import siberia.modules.brand.data.models.BrandModel
+import siberia.modules.brand.service.BrandService
+import siberia.modules.category.controller.CategoryController
+import siberia.modules.category.data.models.CategoryModel
+import siberia.modules.category.data.models.CategoryToCategoryModel
+import siberia.modules.category.service.CategoryService
+import siberia.modules.collection.controller.CollectionController
+import siberia.modules.collection.data.models.CollectionModel
+import siberia.modules.collection.service.CollectionService
 import siberia.modules.logger.controller.SystemEventController
 import siberia.modules.logger.service.SystemEventService
 import siberia.modules.product.data.models.ProductCategoryModel
-import siberia.modules.product.data.models.ProductCategoryToProductCategoryModel
-import siberia.modules.product.data.models.ProductCollectionModel
 import siberia.modules.product.data.models.ProductModel
 import siberia.modules.stock.data.models.StockModel
 import siberia.modules.stock.data.models.StockProductsModel
@@ -45,10 +53,16 @@ fun Application.module() {
         bindSingleton { UserAccessControlService(it) }
         bindSingleton { RbacService(it) }
         bindSingleton { SystemEventService(it) }
+        bindSingleton { BrandService(it) }
+        bindSingleton { CollectionService(it) }
+        bindSingleton { CategoryService(it) }
 
         bindSingleton { AuthController(it) }
         bindSingleton { UserController(it) }
         bindSingleton { RbacController(it) }
+        bindSingleton { CollectionController(it) }
+        bindSingleton { BrandController(it) }
+        bindSingleton { CategoryController(it) }
         bindSingleton { SystemEventController(it) }
     }
 
@@ -56,7 +70,9 @@ fun Application.module() {
         UserModel,
         RoleModel, RuleModel, RuleCategoryModel,
         StockModel, StockProductsModel,
-        ProductModel, ProductCategoryModel, ProductCollectionModel, ProductCategoryToProductCategoryModel
+        BrandModel, CollectionModel,
+        CategoryModel, CategoryToCategoryModel,
+        ProductModel, ProductCategoryModel
     ) {
 
     }

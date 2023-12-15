@@ -39,7 +39,10 @@ object AppConf {
     val rules = RulesConf(
         userManaging = rulesConf.getInt("user-managing"),
         rbacManaging = rulesConf.getInt("rbac-managing"),
-        checkLogs = rulesConf.getInt("check-logs")
+        checkLogs = rulesConf.getInt("check-logs"),
+        brandManaging = rulesConf.getInt("brand-managing"),
+        collectionManaging = rulesConf.getInt("collection-managing"),
+        categoryManaging = rulesConf.getInt("category-manging")
     )
 
     val eventTypes = EventTypesConf(
@@ -52,6 +55,9 @@ object AppConf {
         userEvent = objectTypesConf.getInt("user"),
         stockEvent = objectTypesConf.getInt("stock"),
         roleEvent = objectTypesConf.getInt("role"),
-        productEvent = objectTypesConf.getInt("product")
+        productEvent = objectTypesConf.getInt("product"),
+        brandEvent = objectTypesConf.getInt("brand"),
+        collectionEvent = objectTypesConf.getInt("collection"),
+        categoryEvent = objectTypesConf.getInt("category")
     )
 }

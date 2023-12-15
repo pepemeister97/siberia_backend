@@ -55,5 +55,8 @@ fun Application.configureSecurity() {
         loadRule("user-managing", rules.userManaging)
         loadRule("rbac-managing", rules.rbacManaging)
         loadRule("check-logs", rules.checkLogs)
+        loadRule("brand-managing", rules.brandManaging)
+        loadRule("collection-managing", rules.collectionManaging)
+        loadRule("category-managing", rules.categoryManaging)
     }
 }
