@@ -61,6 +61,13 @@ class RbacController(override val di: DI) : KodeinController() {
 
                             call.respond(rbacService.updateRole(authorizedUser, roleId, roleInputDto))
                         }
+                        delete {
+                            val roleId =
+                                call.parameters["roleId"]?.toInt() ?: throw BadRequestException("Role id must be INT")
+                            val authorizedUser = call.getAuthorized()
+
+                            call.respond(rbacService.removeRole(authorizedUser, roleId))
+                        }
                     }
                 }
             }

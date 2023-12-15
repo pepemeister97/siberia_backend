@@ -15,6 +15,7 @@ import siberia.modules.rbac.data.dao.RuleDao
 import siberia.modules.rbac.data.models.RbacModel
 import siberia.modules.rbac.data.dto.*
 import siberia.modules.rbac.data.dto.systemevents.RoleCreateEvent
+import siberia.modules.rbac.data.dto.systemevents.RoleRemoveEvent
 import siberia.modules.rbac.data.dto.systemevents.RoleUpdateEvent
 import siberia.modules.stock.data.dao.StockDao
 import siberia.modules.user.data.dao.UserDao
@@ -115,4 +116,14 @@ class RbacService(di: DI) : KodeinService(di) {
     }
 
     fun getAllCategories(): List<RuleCategoryOutputDto> = RuleCategoryDao.find { Op.nullOp() }.map { it.toOutputDto() }
+
+    fun removeRole(authorizedUser: AuthorizedUser, roleId: Int): RoleRemoveResultDto = transaction {
+        val userDao = UserDao[authorizedUser.id]
+        val roleDao = RoleDao[roleId]
+        val roleName = roleDao.name
+        val event = RoleRemoveEvent(userDao.login, roleName)
+        roleDao.delete()
+        SystemEventModel.logEvent(event)
+        RoleRemoveResultDto(true, "Role $roleName successfully removed")
+    }
 }
