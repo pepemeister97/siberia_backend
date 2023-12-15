@@ -21,8 +21,9 @@ import siberia.modules.collection.data.models.CollectionModel
 import siberia.modules.collection.service.CollectionService
 import siberia.modules.logger.controller.SystemEventController
 import siberia.modules.logger.service.SystemEventService
-import siberia.modules.product.data.models.ProductCategoryModel
+import siberia.modules.product.controller.ProductController
 import siberia.modules.product.data.models.ProductModel
+import siberia.modules.product.service.ProductService
 import siberia.modules.stock.data.models.StockModel
 import siberia.modules.stock.data.models.StockProductsModel
 import siberia.modules.rbac.controller.RbacController
@@ -56,6 +57,7 @@ fun Application.module() {
         bindSingleton { BrandService(it) }
         bindSingleton { CollectionService(it) }
         bindSingleton { CategoryService(it) }
+        bindSingleton { ProductService(it) }
 
         bindSingleton { AuthController(it) }
         bindSingleton { UserController(it) }
@@ -64,6 +66,7 @@ fun Application.module() {
         bindSingleton { BrandController(it) }
         bindSingleton { CategoryController(it) }
         bindSingleton { SystemEventController(it) }
+        bindSingleton { ProductController(it) }
     }
 
     DatabaseConnector(
@@ -72,7 +75,7 @@ fun Application.module() {
         StockModel, StockProductsModel,
         BrandModel, CollectionModel,
         CategoryModel, CategoryToCategoryModel,
-        ProductModel, ProductCategoryModel
+        ProductModel
     ) {
 
     }

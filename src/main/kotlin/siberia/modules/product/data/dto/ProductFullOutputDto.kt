@@ -1,14 +1,17 @@
 package siberia.modules.product.data.dto
 
 import kotlinx.serialization.Serializable
+import siberia.modules.brand.data.dto.BrandOutputDto
+import siberia.modules.category.data.dto.CategoryOutputDto
+import siberia.modules.collection.data.dto.CollectionOutputDto
 
 @Serializable
-data class ProductOutputDto(
+data class ProductFullOutputDto (
     val id: Int,
     val photo: String,
     val vendorCode: String,
     val barcode: String?,
-    val brand: Int?,
+    val brand: BrandOutputDto?,
     val name: String,
     val description: String,
     val purchasePrice: Double,
@@ -17,8 +20,8 @@ data class ProductOutputDto(
     val distributorPrice: Double,
     val professionalPrice: Double,
     val commonPrice: Double,
-    val category: Int?,
-    val collection: Int?,
+    val category: CategoryOutputDto?,
+    val collection: CollectionOutputDto?,
     val color: String,
     val amountInBox: Int,
     val expirationDate: Int,

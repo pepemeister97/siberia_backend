@@ -58,5 +58,6 @@ fun Application.configureSecurity() {
         loadRule("brand-managing", rules.brandManaging)
         loadRule("collection-managing", rules.collectionManaging)
         loadRule("category-managing", rules.categoryManaging)
+        loadRule("products-managing", rules.productsManaging)
     }
 }

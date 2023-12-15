@@ -33,7 +33,8 @@ object AppConf {
 
     val server = ServerConf(
         host = serverConfig.getString("host"),
-        port = serverConfig.getInt("port")
+        port = serverConfig.getInt("port"),
+        fileLocation = serverConfig.getString("file-location")
     )
 
     val rules = RulesConf(
@@ -42,7 +43,8 @@ object AppConf {
         checkLogs = rulesConf.getInt("check-logs"),
         brandManaging = rulesConf.getInt("brand-managing"),
         collectionManaging = rulesConf.getInt("collection-managing"),
-        categoryManaging = rulesConf.getInt("category-manging")
+        categoryManaging = rulesConf.getInt("category-manging"),
+        productsManaging = rulesConf.getInt("products-managing")
     )
 
     val eventTypes = EventTypesConf(

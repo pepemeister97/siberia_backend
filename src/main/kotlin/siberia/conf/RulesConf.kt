@@ -7,4 +7,5 @@ data class RulesConf (
     val brandManaging: Int,
     val collectionManaging: Int,
     val categoryManaging: Int,
+    val productsManaging: Int,
 )
