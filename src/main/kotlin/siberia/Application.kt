@@ -5,9 +5,9 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import siberia.conf.AppConf
 import siberia.modules.auth.controller.AuthController
-import siberia.modules.auth.data.models.role.RoleModel
-import siberia.modules.auth.data.models.rule.RuleCategoryModel
-import siberia.modules.auth.data.models.rule.RuleModel
+import siberia.modules.rbac.data.models.role.RoleModel
+import siberia.modules.rbac.data.models.rule.RuleCategoryModel
+import siberia.modules.rbac.data.models.rule.RuleModel
 import siberia.modules.auth.service.AuthService
 import siberia.modules.logger.controller.SystemEventController
 import siberia.modules.logger.service.SystemEventService
@@ -17,10 +17,10 @@ import siberia.modules.product.data.models.ProductCollectionModel
 import siberia.modules.product.data.models.ProductModel
 import siberia.modules.stock.data.models.StockModel
 import siberia.modules.stock.data.models.StockProductsModel
-import siberia.modules.user.controller.RbacController
+import siberia.modules.rbac.controller.RbacController
 import siberia.modules.user.controller.UserController
 import siberia.modules.user.data.models.UserModel
-import siberia.modules.user.service.RbacService
+import siberia.modules.rbac.service.RbacService
 import siberia.modules.user.service.UserAccessControlService
 import siberia.plugins.*
 import siberia.utils.database.DatabaseConnector

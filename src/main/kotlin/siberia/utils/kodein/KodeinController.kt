@@ -6,8 +6,8 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.routing.*
 import org.kodein.di.DIAware
 import org.kodein.di.instance
-import siberia.modules.auth.data.dto.authorization.RefreshTokenDto
-import siberia.modules.user.data.dto.AuthorizedUser
+import siberia.modules.auth.data.dto.RefreshTokenDto
+import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.utils.security.jwt.JwtUtil
 
 /**

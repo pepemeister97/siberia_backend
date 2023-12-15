@@ -9,6 +9,8 @@ object AppConf {
     private val databaseConfig: ApplicationConfig = mainConfig.config("database")
     private val serverConfig: ApplicationConfig = mainConfig.config("server")
     private val rulesConf: ApplicationConfig = mainConfig.config("rules")
+    private val eventTypesConf: ApplicationConfig = mainConfig.config("eventTypes")
+    private val objectTypesConf: ApplicationConfig = mainConfig.config("objectTypes")
 
     private fun ApplicationConfig.getString(name: String): String = this.property(name).getString()
     private fun ApplicationConfig.getInt(name: String): Int = this.getString(name).toInt()
@@ -35,6 +37,21 @@ object AppConf {
     )
 
     val rules = RulesConf(
-        userRulesEditing = rulesConf.getInt("user-rules-editing")
+        userManaging = rulesConf.getInt("user-managing"),
+        rbacManaging = rulesConf.getInt("rbac-managing"),
+        checkLogs = rulesConf.getInt("check-logs")
+    )
+
+    val eventTypes = EventTypesConf(
+        createEvent = eventTypesConf.getInt("create"),
+        updateEvent = eventTypesConf.getInt("update"),
+        removeEvent = eventTypesConf.getInt("remove")
+    )
+
+    val objectTypes = ObjectTypesConf(
+        userEvent = objectTypesConf.getInt("user"),
+        stockEvent = objectTypesConf.getInt("stock"),
+        roleEvent = objectTypesConf.getInt("role"),
+        productEvent = objectTypesConf.getInt("product")
     )
 }

@@ -7,7 +7,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.kodein.di.DI
 import org.kodein.di.instance
-import siberia.modules.auth.data.dto.authorization.AuthInputDto
+import siberia.modules.auth.data.dto.AuthInputDto
 import siberia.modules.auth.service.AuthService
 import siberia.utils.kodein.KodeinController
 

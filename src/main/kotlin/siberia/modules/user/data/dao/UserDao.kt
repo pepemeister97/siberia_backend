@@ -1,13 +1,18 @@
 package siberia.modules.user.data.dao
 
+import org.jetbrains.exposed.dao.EntityBatchUpdate
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.transactions.transaction
 import siberia.exceptions.UnauthorizedException
-import siberia.modules.auth.data.dto.LinkedRuleOutputDto
-import siberia.modules.auth.data.dto.RoleOutputDto
-import siberia.modules.auth.data.models.role.RbacModel
+import siberia.modules.rbac.data.dto.LinkedRuleOutputDto
+import siberia.modules.rbac.data.dto.RoleOutputDto
+import siberia.modules.rbac.data.models.RbacModel
+import siberia.modules.logger.data.models.SystemEventModel
 import siberia.modules.user.data.dto.UserOutputDto
 import siberia.modules.user.data.dto.UserPatchDto
+import siberia.modules.user.data.dto.systemevents.user.UserCreateEvent
+import siberia.modules.user.data.dto.systemevents.user.UserRemoveEvent
+import siberia.modules.user.data.dto.systemevents.user.UserUpdateEvent
 import siberia.modules.user.data.models.UserModel
 import siberia.utils.database.BaseIntEntity
 import siberia.utils.database.BaseIntEntityClass
@@ -22,6 +27,13 @@ class UserDao(id: EntityID<Int>): BaseIntEntity<UserOutputDto>(id, UserModel) {
             }
             if (!search.empty())
                 throw UnauthorizedException()
+        }
+
+        fun new(authorName: String, init: UserDao.() -> Unit): UserDao {
+            val userDao = super.new(init)
+            val userCreateEvent = UserCreateEvent(authorName, userDao.login)
+            SystemEventModel.logEvent(userCreateEvent)
+            return userDao
         }
     }
 
@@ -48,5 +60,17 @@ class UserDao(id: EntityID<Int>): BaseIntEntity<UserOutputDto>(id, UserModel) {
             name = userPatchDto.name
         if (userPatchDto.password != null)
             hash = CryptoUtil.hash(userPatchDto.password)
+    }
+
+    fun flush(authorName: String, batch: EntityBatchUpdate? = null): Boolean {
+        val userUpdateEvent = UserUpdateEvent(authorName, login)
+        SystemEventModel.logEvent(userUpdateEvent)
+        return super.flush(batch)
+    }
+
+    fun delete(authorName: String) {
+        val userRemoveEvent = UserRemoveEvent(authorName, login)
+        SystemEventModel.logEvent(userRemoveEvent)
+        super.delete()
     }
 }

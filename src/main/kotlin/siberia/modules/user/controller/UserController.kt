@@ -8,9 +8,9 @@ import io.ktor.server.routing.*
 import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.exceptions.BadRequestException
-import siberia.modules.auth.data.dto.LinkedRuleInputDto
-import siberia.modules.auth.data.dto.LinkedRuleOutputDto
-import siberia.modules.auth.data.dto.RoleOutputDto
+import siberia.modules.rbac.data.dto.LinkedRuleInputDto
+import siberia.modules.rbac.data.dto.LinkedRuleOutputDto
+import siberia.modules.rbac.data.dto.RoleOutputDto
 import siberia.modules.user.data.dto.CreateUserDto
 import siberia.modules.user.data.dto.UserOutputDto
 import siberia.modules.user.data.dto.UserPatchDto
@@ -42,41 +42,51 @@ class UserController(override val di: DI) : KodeinController() {
 
                     call.respond(userService.createUser(authorizedUser, createUserDto))
                 }
-                delete("{userId}") {
-                    val authorizedUser = call.getAuthorized()
-                    val userId = call.parameters["userId"]?.toInt() ?: throw BadRequestException("User id must be INT")
-
-                    call.respond(userService.removeUser(authorizedUser, userId))
-                }
-                patch("{userId}") {
-                    val authorizedUser = call.getAuthorized()
-                    val userId = call.parameters["userId"]?.toInt() ?: throw BadRequestException("User id must be INT")
-                    val userPatchDto = call.receive<UserPatchDto>()
-
-                    call.respond<UserOutputDto>(userService.updateUser(authorizedUser, userId, userPatchDto))
-                }
-                route("rules") {
-                    post {
-                        val onAppend = call.receive<List<LinkedRuleInputDto>>()
-                        val authorizedUser = call.getAuthorized()
-                        call.respond<List<LinkedRuleOutputDto>>(userAccessControlService.addRules(authorizedUser, onAppend))
-                    }
+                route("{userId}") {
                     delete {
-                        val onRemove = call.receive<List<LinkedRuleInputDto>>()
                         val authorizedUser = call.getAuthorized()
-                        call.respond(userAccessControlService.removeRules(authorizedUser, onRemove))
+                        val userId = call.parameters["userId"]?.toInt() ?: throw BadRequestException("User id must be INT")
+
+                        call.respond(userService.removeUser(authorizedUser, userId))
                     }
-                }
-                route("roles") {
-                    post("roles") {
-                        val newRules = call.receive<List<Int>>()
+                    patch {
+                        val userPatchDto = call.receive<UserPatchDto>()
                         val authorizedUser = call.getAuthorized()
-                        call.respond<List<RoleOutputDto>>(userAccessControlService.addRoles(authorizedUser, newRules))
+                        val userId = call.parameters["userId"]?.toInt() ?: throw BadRequestException("User id must be INT")
+
+                        call.respond<UserOutputDto>(userService.updateUser(authorizedUser, userId, userPatchDto))
                     }
-                    delete {
-                        val onRemove = call.receive<List<Int>>()
-                        val authorizedUser = call.getAuthorized()
-                        call.respond(userAccessControlService.removeRoles(authorizedUser, onRemove))
+                    route("rules") {
+                        post {
+                            val onAppend = call.receive<List<LinkedRuleInputDto>>()
+                            val authorizedUser = call.getAuthorized()
+                            val userId = call.parameters["userId"]?.toInt() ?: throw BadRequestException("User id must be INT")
+
+                            call.respond<List<LinkedRuleOutputDto>>(userAccessControlService.addRules(authorizedUser, userId, onAppend))
+                        }
+                        delete {
+                            val onRemove = call.receive<List<LinkedRuleInputDto>>()
+                            val authorizedUser = call.getAuthorized()
+                            val userId = call.parameters["userId"]?.toInt() ?: throw BadRequestException("User id must be INT")
+
+                            call.respond(userAccessControlService.removeRules(authorizedUser, userId, onRemove))
+                        }
+                    }
+                    route("roles") {
+                        post {
+                            val newRules = call.receive<List<Int>>()
+                            val authorizedUser = call.getAuthorized()
+                            val userId = call.parameters["userId"]?.toInt() ?: throw BadRequestException("User id must be INT")
+
+                            call.respond<List<RoleOutputDto>>(userAccessControlService.addRoles(authorizedUser, userId, newRules))
+                        }
+                        delete {
+                            val onRemove = call.receive<List<Int>>()
+                            val authorizedUser = call.getAuthorized()
+                            val userId = call.parameters["userId"]?.toInt() ?: throw BadRequestException("User id must be INT")
+
+                            call.respond(userAccessControlService.removeRoles(authorizedUser, userId, onRemove))
+                        }
                     }
                 }
             }

@@ -6,9 +6,9 @@ import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.exceptions.ForbiddenException
 import siberia.exceptions.UnauthorizedException
-import siberia.modules.auth.data.dto.authorization.AuthInputDto
-import siberia.modules.auth.data.dto.authorization.RefreshTokenDto
-import siberia.modules.auth.data.dto.authorization.TokenOutputDto
+import siberia.modules.auth.data.dto.AuthInputDto
+import siberia.modules.auth.data.dto.RefreshTokenDto
+import siberia.modules.auth.data.dto.TokenOutputDto
 import siberia.modules.user.data.dao.UserDao
 import siberia.modules.user.data.models.UserModel
 import siberia.modules.user.service.UserAccessControlService

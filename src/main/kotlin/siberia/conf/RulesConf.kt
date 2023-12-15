@@ -1,5 +1,7 @@
 package siberia.conf
 
 data class RulesConf (
-    val userRulesEditing: Int
+    val userManaging: Int,
+    val rbacManaging: Int,
+    val checkLogs: Int,
 )

@@ -5,17 +5,26 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import org.kodein.di.instance
-import siberia.modules.auth.data.dto.LinkedRuleInputDto
-import siberia.modules.auth.data.dto.LinkedRuleOutputDto
-import siberia.modules.auth.data.dto.RoleOutputDto
-import siberia.modules.auth.data.models.role.RbacModel
+import siberia.modules.rbac.data.dto.LinkedRuleInputDto
+import siberia.modules.rbac.data.dto.LinkedRuleOutputDto
+import siberia.modules.rbac.data.dto.RoleOutputDto
+import siberia.modules.rbac.data.models.RbacModel
+import siberia.modules.logger.data.models.SystemEventModel
+import siberia.modules.rbac.service.RbacService
 import siberia.modules.user.data.dao.UserDao
-import siberia.modules.user.data.dto.AuthorizedUser
+import siberia.modules.auth.data.dto.AuthorizedUser
+import siberia.modules.user.data.dto.systemevents.useraccess.UserRightsUpdated
 import siberia.utils.database.idValue
 import siberia.utils.kodein.KodeinService
 
 class UserAccessControlService(di: DI) : KodeinService(di) {
     private val rbacService: RbacService by instance()
+
+    private fun logUpdate(author: AuthorizedUser, target: String, description: String) = transaction {
+        val authorName: String = UserDao[author.id].login
+        val event = UserRightsUpdated(authorName, target, description)
+        SystemEventModel.logEvent(event)
+    }
 
     private fun List<LinkedRuleOutputDto>.appendToUser(userDao: UserDao, simplifiedBy: Int? = null): List<LinkedRuleOutputDto> =
         map { link ->
@@ -47,8 +56,9 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
         }.appendToUser(userDao)
     }
 
-    fun addRules(authorizedUser: AuthorizedUser, newRules: List<LinkedRuleInputDto>): List<LinkedRuleOutputDto> = transaction {
-        val userDao = UserDao[authorizedUser.id]
+    fun addRules(authorizedUser: AuthorizedUser, targetId: Int, newRules: List<LinkedRuleInputDto>): List<LinkedRuleOutputDto> = transaction {
+        val userDao = UserDao[targetId]
+        logUpdate(authorizedUser, userDao.login, "New rules added")
         addRules(userDao, newRules)
     }
 
@@ -58,8 +68,9 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
         }.appendToUser(userDao)
     }
 
-    fun addRoles(authorizedUser: AuthorizedUser, newRoles: List<Int>): List<RoleOutputDto> = transaction {
-        val userDao = UserDao[authorizedUser.id]
+    fun addRoles(authorizedUser: AuthorizedUser, targetId: Int, newRoles: List<Int>): List<RoleOutputDto> = transaction {
+        val userDao = UserDao[targetId]
+        logUpdate(authorizedUser, userDao.login, "New roles added")
         addRoles(userDao, newRoles)
     }
 
@@ -67,11 +78,15 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
 
     fun getUserRoles(authorizedUser: AuthorizedUser): List<RoleOutputDto> = transaction { UserDao[authorizedUser.id].rolesWithRules }
 
-    fun removeRules(authorizedUser: AuthorizedUser, linkedRules: List<LinkedRuleInputDto>) {
-        RbacModel.unlinkRules(RbacModel.user eq authorizedUser.id, linkedRules)
+    fun removeRules(authorizedUser: AuthorizedUser, targetId: Int, linkedRules: List<LinkedRuleInputDto>) {
+        val targetDao = UserDao[targetId]
+        RbacModel.unlinkRules(RbacModel.user eq targetDao.idValue, linkedRules)
+        logUpdate(authorizedUser, targetDao.login, "Some rules were removed")
     }
 
-    fun removeRoles(authorizedUser: AuthorizedUser, linkedRoles: List<Int>) {
-        RbacModel.unlinkRoles(authorizedUser.id, linkedRoles)
+    fun removeRoles(authorizedUser: AuthorizedUser, targetId: Int, linkedRoles: List<Int>) {
+        val targetDao = UserDao[targetId]
+        RbacModel.unlinkRoles(targetDao.idValue, linkedRoles)
+        logUpdate(authorizedUser, targetDao.login, "Some roles were removed")
     }
 }

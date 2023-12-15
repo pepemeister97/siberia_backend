@@ -5,6 +5,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.exceptions.BadRequestException
+import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.user.data.dao.UserDao
 import siberia.modules.user.data.dto.*
 import siberia.utils.database.idValue
@@ -17,7 +18,9 @@ class UserService(di: DI) : KodeinService(di) {
 
         UserDao.checkUnique(createUserDto.params.login)
 
-        val userDao = UserDao.new {
+        val authorName = UserDao[authorizedUser.id].login
+
+        val userDao = UserDao.new(authorName) {
             name = createUserDto.params.name
             login = createUserDto.params.login
             hash = CryptoUtil.hash(createUserDto.params.password)
@@ -46,16 +49,20 @@ class UserService(di: DI) : KodeinService(di) {
     }
 
     fun removeUser(authorizedUser: AuthorizedUser, userId: Int): UserRemoveOutputDto = transaction {
+        val authorName = UserDao[authorizedUser.id].login
         val userDao = UserDao[userId]
-        userDao.delete()
+
+        userDao.delete(authorName)
 
         UserRemoveOutputDto(userId, "success")
     }
 
     fun updateUser(authorizedUser: AuthorizedUser, userId: Int, userPatchDto: UserPatchDto): UserOutputDto = transaction {
+        val authorName = UserDao[authorizedUser.id].login
         val userDao = UserDao[userId]
+
         userDao.loadPatch(userPatchDto)
-        userDao.flush()
+        userDao.flush(authorName)
         userDao.toOutputDto()
     }
 }

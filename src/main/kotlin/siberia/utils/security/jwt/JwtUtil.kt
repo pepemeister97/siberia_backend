@@ -6,11 +6,11 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.util.date.*
 import kotlinx.serialization.json.Json
 import siberia.conf.AppConf
-import siberia.modules.auth.data.dto.LinkedRuleOutputDto
-import siberia.modules.auth.data.dto.authorization.RefreshTokenDto
-import siberia.modules.auth.data.models.role.RbacModel
+import siberia.modules.rbac.data.dto.LinkedRuleOutputDto
+import siberia.modules.auth.data.dto.RefreshTokenDto
+import siberia.modules.rbac.data.models.RbacModel
 import siberia.modules.user.data.dao.UserDao
-import siberia.modules.user.data.dto.AuthorizedUser
+import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.utils.database.idValue
 import java.util.*
 

@@ -30,20 +30,26 @@ class SystemEventService(di: DI) : KodeinService(di) {
             (SystemEventModel.createdAt greaterEq leftBound)
         }
 
-
     private fun typeCond(eventType: Int?) =
         if (eventType == null)
             SystemEventModel.id.isNotNull()
         else
             SystemEventModel.eventType eq eventType
 
-    fun getByFilter(systemEventSearchFilter: SystemEventSearchFilter?): List<SystemEventOutputDto> =
+    private fun objectTypeCond(objectType: Int?) =
+        if (objectType == null)
+            SystemEventModel.id.isNotNull()
+        else
+            SystemEventModel.eventObjectType eq objectType
+
+    fun getByFilter(systemEventSearchFilter: SystemEventSearchFilter?): List<SystemEventOutputDto<*>> =
         if (systemEventSearchFilter == null) {
             SystemEventModel.getList { SystemEventModel.id.isNotNull() }
         } else
             SystemEventModel.getList {
                 userCond(systemEventSearchFilter.userName) and
                 typeCond(systemEventSearchFilter.type) and
-                timeCond(systemEventSearchFilter.range)
+                timeCond(systemEventSearchFilter.range) and
+                objectTypeCond(systemEventSearchFilter.objectType)
             }
 }

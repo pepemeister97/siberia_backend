@@ -1,6 +1,6 @@
 package siberia.modules.user.data.dto
 
-import siberia.modules.auth.data.dto.LinkedRuleInputDto
+import siberia.modules.rbac.data.dto.LinkedRuleInputDto
 
 data class CreateUserDto (
     val params: UserInputDto,
