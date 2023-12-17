@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 data class RuleOutputDto (
     val id: Int,
     val name: String,
+    val description: String,
     val needStock: Boolean,
     val category: RuleCategoryOutputDto? = null,
 )

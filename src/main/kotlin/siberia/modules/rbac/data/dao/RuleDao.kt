@@ -12,6 +12,7 @@ class RuleDao(id: EntityID<Int>): BaseIntEntity<RuleOutputDto>(id, RuleModel) {
     companion object: BaseIntEntityClass<RuleOutputDto, RuleDao>(RuleModel)
 
     val name by RuleModel.name
+    val description by RuleModel.description
 
     private val _categoryId by RuleModel.category
     val category_id: Int?
@@ -20,5 +21,5 @@ class RuleDao(id: EntityID<Int>): BaseIntEntity<RuleOutputDto>(id, RuleModel) {
     val needStock by RuleModel.needStock
 
     override fun toOutputDto(): RuleOutputDto
-        = RuleOutputDto(idValue, name, needStock, category?.toOutputDto())
+        = RuleOutputDto(idValue, name, description, needStock, category?.toOutputDto())
 }

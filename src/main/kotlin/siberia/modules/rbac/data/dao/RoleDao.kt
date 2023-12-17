@@ -12,12 +12,13 @@ class RoleDao(id: EntityID<Int>): BaseIntEntity<RoleOutputDto>(id, RoleModel) {
     companion object: BaseIntEntityClass<RoleOutputDto, RoleDao>(RoleModel)
 
     var name by RoleModel.name
+    var description by RoleModel.description
 
     val outputWithChildren
         get() = RoleOutputDto(
-            idValue, name, RbacModel.roleToRuleLinks(idValue)
+            idValue, name, description, RbacModel.roleToRuleLinks(idValue)
         )
 
     override fun toOutputDto(): RoleOutputDto
-        = RoleOutputDto(idValue, name)
+        = RoleOutputDto(idValue, name, description)
 }

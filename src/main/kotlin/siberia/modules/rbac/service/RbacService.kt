@@ -64,7 +64,7 @@ class RbacService(di: DI) : KodeinService(di) {
     fun validateRole(roleId: Int): RoleOutputDto {
         val roleDao = RoleDao[roleId]
         return RoleOutputDto(
-            roleDao.idValue, roleDao.name,
+            roleDao.idValue, roleDao.name, roleDao.description,
             roleDao.outputWithChildren.rules.map {
                 validateRule(it.ruleId, it.stockId)
             }
@@ -83,7 +83,7 @@ class RbacService(di: DI) : KodeinService(di) {
         val author = UserDao[authorizedUser.id]
         logEvent(RoleCreateEvent(author.login, roleDao.name))
 
-        RoleOutputDto(roleDao.idValue, roleDao.name, linkedRules)
+        RoleOutputDto(roleDao.idValue, roleDao.name, roleDao.description, linkedRules)
     }
 
     fun appendRulesToRole(authorizedUser: AuthorizedUser, roleId: Int, linkedRules: List<LinkedRuleInputDto>, needLog: Boolean = true): List<LinkedRuleOutputDto> {
