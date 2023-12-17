@@ -5,6 +5,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.logger.data.models.SystemEventModel
+import siberia.modules.stock.data.StockFullOutputDto
 import siberia.modules.stock.data.dao.StockDao
 import siberia.modules.stock.data.dao.StockDao.Companion.createLikeCond
 import siberia.modules.stock.data.dto.*
@@ -62,6 +63,6 @@ class StockService(di: DI) : KodeinService(di) {
         }.limit(stockSearchDto.pagination.n, stockSearchDto.pagination.offset).map { it.toOutputDto() }
     }
 
-    fun getOne(stockId: Int): StockOutputDto =
-        StockDao[stockId].toOutputDto()
+    fun getOne(stockId: Int): StockFullOutputDto =
+        StockDao[stockId].fullOutput()
 }
