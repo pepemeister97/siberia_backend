@@ -105,4 +105,10 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
             (RbacModel.user eq userId) and (RbacModel.rule eq ruleId) and (RbacModel.stock eq stockId)
         }.count() > 0
     }
+
+    fun getAvailableStocksByRule(userId: Int, ruleId: Int): List<Int> = transaction {
+        RbacModel.select {
+            (RbacModel.user eq userId) and (RbacModel.rule eq ruleId)
+        }.map { it[RbacModel.stock]?.value ?: 0 }
+    }
 }

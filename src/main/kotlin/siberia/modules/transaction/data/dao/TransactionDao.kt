@@ -18,7 +18,7 @@ class TransactionDao(id: EntityID<Int>) : BaseIntEntity<TransactionOutputDto>(id
 
     private val _fromId by TransactionModel.from
     val fromId = _fromId?.value
-    val from by StockDao optionalReferencedOn TransactionModel.from
+    var from by StockDao optionalReferencedOn TransactionModel.from
 
     private val _toId by TransactionModel.to
     val toId = _toId?.value

@@ -24,7 +24,7 @@ object TransactionModel : BaseIntIdTable() {
     fun create(transactionInputDto: TransactionInputDto): TransactionDao = transaction {
         val createdTransaction = TransactionDao.wrapRow(TransactionModel.insert {
             it[to] = transactionInputDto.to
-            it[from] = transactionInputDto.to
+            it[from] = transactionInputDto.from
             it[status] = AppConf.requestStatus.created
             it[type] = transactionInputDto.type
         }.resultedValues!!.first())

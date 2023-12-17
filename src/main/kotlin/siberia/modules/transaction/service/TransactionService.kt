@@ -80,6 +80,12 @@ class TransactionService(di: DI) : KodeinService(di) {
                     AppConf.requestStatus.notDelivered -> {
                         AppConf.rules.approveTransferDelivery
                     }
+                    AppConf.requestStatus.failed -> {
+                        AppConf.rules.solveNotDeliveredProblem
+                    }
+                    AppConf.requestStatus.deliveryCancelled -> {
+                        AppConf.rules.solveNotDeliveredProblem
+                    }
                     else -> {
                         throw Exception("Bad request status")
                     }
@@ -114,16 +120,22 @@ class TransactionService(di: DI) : KodeinService(di) {
         transactionDao
     }
 
-    private fun changeTransactionStatus(userDao: UserDao, transactionId: Int, statusId: Int): TransactionDao = transaction {
+    private fun changeTransactionStatus(userDao: UserDao, transactionId: Int, statusId: Int, targetStock: StockDao, checkRule: Boolean = true): TransactionDao = transaction {
         val transactionDao = TransactionDao[transactionId]
-        val targetStock = StockDao[getTargetStock(transactionDao.toInputDto())]
 
         val ruleToApprove = mapTypeToRule(transactionDao.typeId, statusId)
 
-        if (!userAccessControlService.checkAccessToStock(userDao.idValue, ruleToApprove, targetStock.idValue))
+        //If transaction is already have grater status or if user who wants to cancel it don`t have corresponding rule
+        //throw Forbidden
+        if (
+            checkRule && (
+            transactionDao.statusId >= statusId ||
+            !userAccessControlService.checkAccessToStock(userDao.idValue, ruleToApprove, targetStock.idValue))
+        )
             throw ForbiddenException()
 
         transactionDao.status = TransactionStatusDao[statusId]
+        transactionDao.flush()
 
         transactionDao
     }
@@ -133,9 +145,10 @@ class TransactionService(di: DI) : KodeinService(di) {
     //Income / Outcome transactions
     private fun approveIncomeOutcomeTransaction(authorizedUser: AuthorizedUser, transactionId: Int): TransactionDao = transaction {
         val userDao = UserDao[authorizedUser.id]
-        val statusDao = TransactionStatusDao[AppConf.requestStatus.processed]
-        val transactionDao = changeTransactionStatus(userDao, transactionId, statusDao.idValue)
+        var transactionDao = TransactionDao[transactionId]
         val targetStock = StockDao[getTargetStock(transactionDao.toInputDto())]
+        val statusDao = TransactionStatusDao[AppConf.requestStatus.processed]
+        transactionDao = changeTransactionStatus(userDao, transactionId, statusDao.idValue, targetStock)
 
         val products = TransactionModel.getFullProductList(transactionId)
         StockModel.appendProducts(targetStock.idValue, products)
@@ -148,8 +161,9 @@ class TransactionService(di: DI) : KodeinService(di) {
     private fun cancelIncomeOutcomeTransaction(authorizedUser: AuthorizedUser, transactionId: Int): TransactionDao = transaction {
         val userDao = UserDao[authorizedUser.id]
         val statusDao = TransactionStatusDao[AppConf.requestStatus.creationCancelled]
-        val transactionDao = changeTransactionStatus(userDao, transactionId, statusDao.idValue)
+        var transactionDao = TransactionDao[transactionId]
         val targetStock = StockDao[getTargetStock(transactionDao.toInputDto())]
+        transactionDao = changeTransactionStatus(userDao, transactionId, statusDao.idValue, targetStock)
 
         val event = TransactionUpdateStatusEvent(userDao.login, targetStock.name, transactionId, statusDao.name)
         SystemEventModel.logEvent(event)
@@ -217,9 +231,107 @@ class TransactionService(di: DI) : KodeinService(di) {
 
 
 
-//    //Transfer transactions
-//    fun createTransferTransaction(authorizedUser: AuthorizedUser, transactionInputDto: TransactionInputDto) = transaction {
-//        val userDao = UserDao[authorizedUser.id]
-//        val ruleToCreate = mapTypeToRule(transactionInputDto.type, AppConf.requestStatus.created)
+    //Transfer transactions
+    fun createTransferTransaction(authorizedUser: AuthorizedUser, transactionInputDto: TransactionInputDto): TransactionOutputDto = transaction {
+        val createdTransaction = createTransaction(authorizedUser, transactionInputDto, StockDao[getTargetStock(transactionInputDto)])
+        try {
+            approveTransferTransactionCreation(authorizedUser, createdTransaction.idValue)
+        } catch (e: ForbiddenException) {
+            createdTransaction.toOutputDto()
+        }
+    }
+
+    fun approveTransferTransactionCreation(authorizedUser: AuthorizedUser, transactionId: Int): TransactionOutputDto = transaction {
+        val transactionDao = TransactionDao[transactionId]
+        val targetStock = StockDao[getTargetStock(transactionDao.toInputDto())]
+        changeTransactionStatus(UserDao[authorizedUser.id], transactionId, AppConf.requestStatus.open, targetStock).toOutputDto()
+    }
+
+    fun cancelTransferTransactionCreation(authorizedUser: AuthorizedUser, transactionId: Int): TransactionOutputDto = transaction {
+        val transactionDao = TransactionDao[transactionId]
+        val targetStock = StockDao[getTargetStock(transactionDao.toInputDto())]
+        changeTransactionStatus(UserDao[authorizedUser.id], transactionId, AppConf.requestStatus.creationCancelled, targetStock).toOutputDto()
+    }
+
+    fun startProcessTransferTransaction(authorizedUser: AuthorizedUser, transactionId: Int, stockId: Int): TransactionOutputDto = transaction {
+        val stockDao = StockDao[stockId]
+
+        val transactionDao = changeTransactionStatus(UserDao[authorizedUser.id], transactionId, AppConf.requestStatus.inProgress, stockDao)
+        StockModel.removeProducts(stockDao.idValue, transactionDao.fullOutput().products)
+        transactionDao.from = stockDao
+        transactionDao.flush()
+        commit()
+
+        transactionDao.toOutputDto()
+    }
+
+    fun cancelProcessingTransferTransaction(authorizedUser: AuthorizedUser, transactionId: Int): TransactionOutputDto = transaction {
+        val userDao = UserDao[authorizedUser.id]
+        var transactionDao = TransactionDao[transactionId]
+
+        transactionDao = changeTransactionStatus(userDao, transactionId, AppConf.requestStatus.processingCancelled, transactionDao.from!!)
+        StockModel.appendProducts(transactionDao.fromId!!, transactionDao.fullOutput().products)
+        commit()
+
+        transactionDao.toOutputDto()
+    }
+
+    fun approveTransferDelivery(authorizedUser: AuthorizedUser, transactionId: Int): TransactionOutputDto = transaction {
+        val userDao = UserDao[authorizedUser.id]
+        var transactionDao = TransactionDao[transactionId]
+
+        transactionDao = changeTransactionStatus(userDao, transactionId, AppConf.requestStatus.delivered, transactionDao.to!!)
+        StockModel.appendProducts(transactionDao.toId!!, transactionDao.fullOutput().products)
+        commit()
+
+        transactionDao.toOutputDto()
+    }
+
+    fun markAsNotDelivered(authorizedUser: AuthorizedUser, transactionId: Int): TransactionOutputDto = transaction {
+        val userDao = UserDao[authorizedUser.id]
+        val transactionDao = TransactionDao[transactionId]
+
+        changeTransactionStatus(userDao, transactionId, AppConf.requestStatus.notDelivered, transactionDao.to!!).toOutputDto()
+    }
+
+    fun solveNotDelivered(authorizedUser: AuthorizedUser, transactionId: Int, solveTo: Int): TransactionOutputDto = transaction {
+        val userDao = UserDao[authorizedUser.id]
+        var transactionDao = TransactionDao[transactionId]
+        val fromStock = transactionDao.from!!
+        val toStock = transactionDao.to!!
+
+        transactionDao = when (solveTo) {
+            AppConf.requestStatus.delivered -> {
+                StockModel.appendProducts(toStock.idValue, transactionDao.fullOutput().products)
+                changeTransactionStatus(userDao, transactionId, AppConf.requestStatus.delivered, toStock, false)
+            }
+            AppConf.requestStatus.failed -> {
+                changeTransactionStatus(userDao, transactionId, AppConf.requestStatus.failed, toStock, false)
+            }
+            AppConf.requestStatus.deliveryCancelled -> {
+                StockModel.appendProducts(fromStock.idValue, transactionDao.fullOutput().products)
+                changeTransactionStatus(userDao, transactionId, AppConf.requestStatus.deliveryCancelled, toStock, false)
+            }
+            else -> throw ForbiddenException()
+        }
+        commit()
+
+        transactionDao.toOutputDto()
+    }
+
+//    private fun checkAccessToTransaction(authorizedUser: AuthorizedUser, transactionId: Int) {
+//
+//    }
+//
+//    fun getOne(authorizedUser: AuthorizedUser, transactionId: Int) {
+//
+//    }
+//
+//    fun getAvailableStatuses(authorizedUser: AuthorizedUser, transactionId: Int) {
+//
+//    }
+//
+//    fun getAvailableTransactions(authorizedUser: AuthorizedUser) {
+//
 //    }
 }

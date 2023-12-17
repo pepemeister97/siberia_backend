@@ -32,6 +32,8 @@ import siberia.modules.user.data.models.UserModel
 import siberia.modules.rbac.service.RbacService
 import siberia.modules.stock.controller.StockController
 import siberia.modules.stock.service.StockService
+import siberia.modules.transaction.controller.TransactionController
+import siberia.modules.transaction.service.TransactionService
 import siberia.modules.user.service.UserAccessControlService
 import siberia.plugins.*
 import siberia.utils.database.DatabaseConnector
@@ -61,6 +63,7 @@ fun Application.module() {
         bindSingleton { CategoryService(it) }
         bindSingleton { ProductService(it) }
         bindSingleton { StockService(it) }
+        bindSingleton { TransactionService(it) }
 
         bindSingleton { AuthController(it) }
         bindSingleton { UserController(it) }
@@ -71,6 +74,7 @@ fun Application.module() {
         bindSingleton { SystemEventController(it) }
         bindSingleton { ProductController(it) }
         bindSingleton { StockController(it) }
+        bindSingleton { TransactionController(it) }
     }
 
     DatabaseConnector(
