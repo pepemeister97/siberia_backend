@@ -3,7 +3,7 @@ package siberia.modules.rbac.service
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.transactions.transaction
+import siberia.utils.database.transaction
 import org.kodein.di.DI
 import siberia.exceptions.ValidateException
 import siberia.modules.auth.data.dto.AuthorizedUser
@@ -38,7 +38,7 @@ class RbacService(di: DI) : KodeinService(di) {
     fun getAllRules(): List<RuleOutputDto> =
         RuleDao.find { Op.nullOp() }.map { it.toOutputDto() }
 
-    private fun List<LinkedRuleOutputDto>.appendToRole(roleDao: RoleDao): List<LinkedRuleOutputDto> =
+    private fun List<LinkedRuleOutputDto>.appendToRole(roleDao: RoleDao): List<LinkedRuleOutputDto> = transaction {
         map { link ->
             RbacModel.insert {
                 it[role] = roleDao.idValue
@@ -47,8 +47,9 @@ class RbacService(di: DI) : KodeinService(di) {
             }
             link
         }
+    }
 
-    fun validateRule(ruleId: Int, stockId: Int? = null): LinkedRuleOutputDto {
+    fun validateRule(ruleId: Int, stockId: Int? = null): LinkedRuleOutputDto = transaction {
         val ruleDao = RuleDao[ruleId]
         if (ruleDao.needStock) {
             if (stockId != null)
@@ -58,12 +59,12 @@ class RbacService(di: DI) : KodeinService(di) {
                     addError(ValidateException.ValidateError("stock_id", "must be provided"))
                 }
         }
-        return LinkedRuleOutputDto(ruleId, stockId)
+        LinkedRuleOutputDto(ruleId, stockId)
     }
 
-    fun validateRole(roleId: Int): RoleOutputDto {
+    fun validateRole(roleId: Int): RoleOutputDto = transaction {
         val roleDao = RoleDao[roleId]
-        return RoleOutputDto(
+        RoleOutputDto(
             roleDao.idValue, roleDao.name, roleDao.description,
             roleDao.outputWithChildren.rules.map {
                 validateRule(it.ruleId, it.stockId)
@@ -82,19 +83,23 @@ class RbacService(di: DI) : KodeinService(di) {
 
         val author = UserDao[authorizedUser.id]
         logEvent(RoleCreateEvent(author.login, roleDao.name))
+        commit()
 
         RoleOutputDto(roleDao.idValue, roleDao.name, roleDao.description, linkedRules)
     }
 
-    fun appendRulesToRole(authorizedUser: AuthorizedUser, roleId: Int, linkedRules: List<LinkedRuleInputDto>, needLog: Boolean = true): List<LinkedRuleOutputDto> {
+    fun appendRulesToRole(authorizedUser: AuthorizedUser, roleId: Int, linkedRules: List<LinkedRuleInputDto>, needLog: Boolean = true): List<LinkedRuleOutputDto> = transaction {
         val roleDao = RoleDao[roleId]
-        return linkedRules.map {
+        val appendedRules = linkedRules.map {
             validateRule(it.ruleId, it.stockId)
         }.appendToRole(roleDao).run {
             if (needLog)
                 logUpdateEvent(authorizedUser, roleDao.name)
             this
         }
+        commit()
+
+        appendedRules
     }
 
     fun removeRulesFromRole(authorizedUser: AuthorizedUser, roleId: Int, linkedRules: List<LinkedRuleInputDto>) = transaction {
@@ -102,6 +107,7 @@ class RbacService(di: DI) : KodeinService(di) {
 
         RbacModel.unlinkRules(RbacModel.role eq roleDao.idValue, linkedRules)
         logUpdateEvent(authorizedUser, roleDao.name)
+        commit()
     }
 
     fun updateRole(authorizedUser: AuthorizedUser, roleId: Int, roleInputDto: RoleInputDto): RoleOutputDto = transaction {
@@ -111,6 +117,7 @@ class RbacService(di: DI) : KodeinService(di) {
         roleDao.flush()
 
         logUpdateEvent(authorizedUser, roleDao.name)
+        commit()
 
         roleDao.toOutputDto()
     }
@@ -124,6 +131,8 @@ class RbacService(di: DI) : KodeinService(di) {
         val event = RoleRemoveEvent(userDao.login, roleName)
         roleDao.delete()
         SystemEventModel.logEvent(event)
+        commit()
+
         RoleRemoveResultDto(true, "Role $roleName successfully removed")
     }
 }

@@ -4,7 +4,7 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
-import org.jetbrains.exposed.sql.transactions.transaction
+import siberia.utils.database.transaction
 import siberia.modules.rbac.data.dto.LinkedRuleInputDto
 import siberia.modules.rbac.data.dto.LinkedRuleOutputDto
 import siberia.modules.rbac.data.dto.RoleOutputDto
@@ -68,7 +68,7 @@ object RbacModel: BaseIntIdTable() {
                 query and role.isNotNull()
             }
             .map {
-                RoleOutputDto(it[role]!!.value, it[RoleModel.name])
+                RoleOutputDto(it[role]!!.value, it[RoleModel.name], it[RoleModel.description])
                     //Add rules if we need to
                     .apply { if (withRules) rules = roleToRuleLinks(id, withStock) }
             }

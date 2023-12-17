@@ -2,7 +2,7 @@ package siberia.modules.category.data.models
 
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
-import org.jetbrains.exposed.sql.transactions.transaction
+import siberia.utils.database.transaction
 import siberia.modules.category.data.dao.CategoryDao
 import siberia.modules.category.data.dto.CategoryInputDto
 import siberia.modules.category.data.dto.CategoryOnRemoveDto

@@ -11,6 +11,8 @@ object AppConf {
     private val rulesConf: ApplicationConfig = mainConfig.config("rules")
     private val eventTypesConf: ApplicationConfig = mainConfig.config("eventTypes")
     private val objectTypesConf: ApplicationConfig = mainConfig.config("objectTypes")
+    private val requestTypeConf: ApplicationConfig = mainConfig.config("requestTypes")
+    private val requestStatusConf: ApplicationConfig = mainConfig.config("requestStatuses")
 
     private fun ApplicationConfig.getString(name: String): String = this.property(name).getString()
     private fun ApplicationConfig.getInt(name: String): Int = this.getString(name).toInt()
@@ -44,7 +46,19 @@ object AppConf {
         brandManaging = rulesConf.getInt("brand-managing"),
         collectionManaging = rulesConf.getInt("collection-managing"),
         categoryManaging = rulesConf.getInt("category-manging"),
-        productsManaging = rulesConf.getInt("products-managing")
+        productsManaging = rulesConf.getInt("products-managing"),
+
+        createIncomeRequest = rulesConf.getInt("create-income-request"),
+        approveIncomeRequest = rulesConf.getInt("approve-income-request"),
+
+        createOutcomeRequest = rulesConf.getInt("create-outcome-request"),
+        approveOutcomeRequest = rulesConf.getInt("approve-outcome-request"),
+
+        createTransferRequest = rulesConf.getInt("create-transfer-request"),
+        approveTransferRequestCreation = rulesConf.getInt("approve-transfer-request-creation"),
+        manageTransferRequest = rulesConf.getInt("manage-transfer-request"),
+        approveTransferDelivery = rulesConf.getInt("approve-transfer-delivery"),
+        solveNotDeliveredProblem = rulesConf.getInt("solve-not-delivered-problem"),
     )
 
     val eventTypes = EventTypesConf(
@@ -60,6 +74,25 @@ object AppConf {
         productEvent = objectTypesConf.getInt("product"),
         brandEvent = objectTypesConf.getInt("brand"),
         collectionEvent = objectTypesConf.getInt("collection"),
-        categoryEvent = objectTypesConf.getInt("category")
+        categoryEvent = objectTypesConf.getInt("category"),
+        transactionEvent = objectTypesConf.getInt("transaction")
+    )
+
+    val requestTypes = RequestTypeConf(
+        income = requestTypeConf.getInt("income"),
+        outcome = requestTypeConf.getInt("outcome"),
+        transfer = requestTypeConf.getInt("transfer"),
+    )
+
+    val requestStatus = RequestStatusConf(
+        open = requestStatusConf.getInt("open"),
+        created = requestStatusConf.getInt("created"),
+        creationCancelled = requestStatusConf.getInt("creation-cancelled"),
+        inProgress = requestStatusConf.getInt("in-progress"),
+        processingCancelled = requestStatusConf.getInt("processing-cancelled"),
+        delivered = requestStatusConf.getInt("delivered"),
+        notDelivered = requestStatusConf.getInt("not-delivered"),
+        failed = requestStatusConf.getInt("failed"),
+        processed = requestStatusConf.getInt("processed"),
     )
 }

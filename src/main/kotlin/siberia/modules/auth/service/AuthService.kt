@@ -1,7 +1,7 @@
 package siberia.modules.auth.service
 
 import io.ktor.util.date.*
-import org.jetbrains.exposed.sql.transactions.transaction
+import siberia.utils.database.transaction
 import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.exceptions.ForbiddenException
@@ -17,8 +17,6 @@ import siberia.utils.security.bcrypt.CryptoUtil
 import siberia.utils.security.jwt.JwtUtil
 
 class AuthService(override val di: DI) : KodeinService(di) {
-    private val userAccessControlService: UserAccessControlService by instance()
-
     private fun generateTokenPair(userDao: UserDao): TokenOutputDto {
         val accessToken = JwtUtil.createToken(userDao)
         val refreshToken = JwtUtil.createToken(userDao, refreshToken = true)
@@ -34,6 +32,7 @@ class AuthService(override val di: DI) : KodeinService(di) {
                 throw ForbiddenException()
             userDao.lastLogin = getTimeMillis()
             userDao.flush()
+            commit()
 
             generateTokenPair(userDao)
         } catch (e: Exception) {
@@ -55,6 +54,8 @@ class AuthService(override val di: DI) : KodeinService(di) {
 
         userDao.lastLogin = getTimeMillis()
         userDao.flush()
+        commit()
+
         generateTokenPair(userDao)
     }
 }

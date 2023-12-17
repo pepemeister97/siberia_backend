@@ -1,8 +1,10 @@
 package siberia.modules.user.service
 
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.select
+import siberia.utils.database.transaction
 import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.modules.rbac.data.dto.LinkedRuleInputDto
@@ -50,10 +52,13 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
         }
 
     fun addRules(userDao: UserDao, newRules: List<LinkedRuleInputDto>): List<LinkedRuleOutputDto> = transaction {
-        newRules.map {
+        val appendedRules = newRules.map {
             val linkedRule = rbacService.validateRule(it.ruleId, it.stockId)
             linkedRule
         }.appendToUser(userDao)
+        commit()
+
+        appendedRules
     }
 
     fun addRules(authorizedUser: AuthorizedUser, targetId: Int, newRules: List<LinkedRuleInputDto>): List<LinkedRuleOutputDto> = transaction {
@@ -63,9 +68,12 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
     }
 
     fun addRoles(userDao: UserDao, newRoles: List<Int>): List<RoleOutputDto> = transaction {
-        newRoles.map {
+        val appendedRoles = newRoles.map {
             rbacService.validateRole(it)
         }.appendToUser(userDao)
+        commit()
+
+        appendedRoles
     }
 
     fun addRoles(authorizedUser: AuthorizedUser, targetId: Int, newRoles: List<Int>): List<RoleOutputDto> = transaction {
@@ -78,15 +86,23 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
 
     fun getUserRoles(authorizedUser: AuthorizedUser): List<RoleOutputDto> = transaction { UserDao[authorizedUser.id].rolesWithRules }
 
-    fun removeRules(authorizedUser: AuthorizedUser, targetId: Int, linkedRules: List<LinkedRuleInputDto>) {
+    fun removeRules(authorizedUser: AuthorizedUser, targetId: Int, linkedRules: List<LinkedRuleInputDto>) = transaction {
         val targetDao = UserDao[targetId]
         RbacModel.unlinkRules(RbacModel.user eq targetDao.idValue, linkedRules)
         logUpdate(authorizedUser, targetDao.login, "Some rules were removed")
+        commit()
     }
 
-    fun removeRoles(authorizedUser: AuthorizedUser, targetId: Int, linkedRoles: List<Int>) {
+    fun removeRoles(authorizedUser: AuthorizedUser, targetId: Int, linkedRoles: List<Int>) = transaction {
         val targetDao = UserDao[targetId]
         RbacModel.unlinkRoles(targetDao.idValue, linkedRoles)
         logUpdate(authorizedUser, targetDao.login, "Some roles were removed")
+        commit()
+    }
+
+    fun checkAccessToStock(userId: Int, ruleId: Int, stockId: Int): Boolean = transaction {
+        RbacModel.select {
+            (RbacModel.user eq userId) and (RbacModel.rule eq ruleId) and (RbacModel.stock eq stockId)
+        }.count() > 0
     }
 }

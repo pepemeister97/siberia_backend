@@ -1,7 +1,7 @@
 package siberia.modules.product.service
 
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.transactions.transaction
+import siberia.utils.database.transaction
 import org.kodein.di.DI
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.brand.data.dao.BrandDao
@@ -42,12 +42,14 @@ class ProductService(di: DI) : KodeinService(di) {
             amountInBox = productCreateDto.amountInBox
             expirationDate = productCreateDto.expirationDate
             link = productCreateDto.link
+
 //            Future iterations
 //            size = productCreateDto.size
 //            volume = productCreateDto.volume
         }
 
         SystemEventModel.logEvent(event)
+        commit()
 
         productDao.fullOutput()
     }
@@ -60,6 +62,7 @@ class ProductService(di: DI) : KodeinService(di) {
         productDao.flush()
         val event = ProductUpdateEvent(userDao.login, productDao.name, productDao.vendorCode)
         SystemEventModel.logEvent(event)
+        commit()
 
         productDao.fullOutput()
     }
@@ -71,6 +74,7 @@ class ProductService(di: DI) : KodeinService(di) {
         productDao.delete()
         val event = ProductRemoveEvent(userDao.login, productDao.name, productDao.vendorCode)
         SystemEventModel.logEvent(event)
+        commit()
 
         ProductRemoveResultDto(
             success = true,

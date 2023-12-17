@@ -2,7 +2,7 @@ package siberia.modules.user.data.dao
 
 import org.jetbrains.exposed.dao.EntityBatchUpdate
 import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.sql.transactions.transaction
+import siberia.utils.database.transaction
 import siberia.exceptions.UnauthorizedException
 import siberia.modules.rbac.data.dto.LinkedRuleOutputDto
 import siberia.modules.rbac.data.dto.RoleOutputDto

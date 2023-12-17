@@ -7,5 +7,6 @@ data class ObjectTypesConf (
     val productEvent: Int,
     val brandEvent: Int,
     val collectionEvent: Int,
-    val categoryEvent: Int
+    val categoryEvent: Int,
+    val transactionEvent: Int
 )

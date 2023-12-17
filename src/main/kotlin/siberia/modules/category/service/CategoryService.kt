@@ -1,7 +1,7 @@
 package siberia.modules.category.service
 
 import io.ktor.server.plugins.*
-import org.jetbrains.exposed.sql.transactions.transaction
+import siberia.utils.database.transaction
 import org.kodein.di.DI
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.category.data.dao.CategoryDao
@@ -27,6 +27,8 @@ class CategoryService(di: DI) : KodeinService(di) {
         val event = CategoryCreateEvent(userDao.login, createdCategory.name)
         SystemEventModel.logEvent(event)
 
+        commit()
+
         createdCategory
     }
 
@@ -44,6 +46,7 @@ class CategoryService(di: DI) : KodeinService(di) {
 
         val event = CategoryRemoveEvent(userDao.login, categoryDao.name)
         SystemEventModel.logEvent(event)
+        commit()
 
         CategoryRemoveResultDto(
             success = true,
@@ -60,6 +63,8 @@ class CategoryService(di: DI) : KodeinService(di) {
             CategoryModel.moveToNewParent(categoryDao, newParent)
         }
         categoryDao.flush(userDao.login)
+        commit()
+
         categoryDao.toOutputDto()
     }
 

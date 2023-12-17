@@ -1,7 +1,7 @@
 package siberia.modules.user.service
 
 import io.ktor.util.date.*
-import org.jetbrains.exposed.sql.transactions.transaction
+import siberia.utils.database.transaction
 import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.exceptions.BadRequestException
@@ -53,6 +53,7 @@ class UserService(di: DI) : KodeinService(di) {
         val userDao = UserDao[userId]
 
         userDao.delete(authorName)
+        commit()
 
         UserRemoveOutputDto(userId, "success")
     }
@@ -63,6 +64,8 @@ class UserService(di: DI) : KodeinService(di) {
 
         userDao.loadPatch(userPatchDto)
         userDao.flush(authorName)
+        commit()
+
         userDao.toOutputDto()
     }
 }

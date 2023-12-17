@@ -1,7 +1,7 @@
 package siberia.modules.logger.data.models
 
 import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.transactions.transaction
+import siberia.utils.database.transaction
 import siberia.modules.logger.data.dto.SystemEventCreateDto
 import siberia.modules.logger.data.dto.SystemEventOutputDto
 import siberia.utils.database.BaseIntIdTable

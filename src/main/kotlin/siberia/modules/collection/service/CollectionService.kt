@@ -1,6 +1,6 @@
 package siberia.modules.collection.service
 
-import org.jetbrains.exposed.sql.transactions.transaction
+import siberia.utils.database.transaction
 import org.kodein.di.DI
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.collection.data.dao.CollectionDao
@@ -13,9 +13,12 @@ import siberia.utils.kodein.KodeinService
 class CollectionService(di: DI) : KodeinService(di) {
     fun create(authorizedUser: AuthorizedUser, collectionInputDto: CollectionInputDto): CollectionOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
-        CollectionDao.new(userDao.login) {
+        val collectionDao = CollectionDao.new(userDao.login) {
             name = collectionInputDto.name
         }.toOutputDto()
+        commit()
+
+        collectionDao
     }
 
     fun update(authorizedUser: AuthorizedUser, collectionId: Int, collectionInputDto: CollectionInputDto): CollectionOutputDto = transaction {
@@ -23,6 +26,8 @@ class CollectionService(di: DI) : KodeinService(di) {
         val collectionDao = CollectionDao[collectionId]
         collectionDao.name = collectionInputDto.name
         collectionDao.flush(userDao.login)
+        commit()
+
         collectionDao.toOutputDto()
     }
 
@@ -30,6 +35,8 @@ class CollectionService(di: DI) : KodeinService(di) {
         val userDao = UserDao[authorizedUser.id]
         val collectionDao = CollectionDao[collectionId]
         collectionDao.delete(userDao.login)
+        commit()
+
         CollectionRemoveResultDto(
             success = true,
             message = "Brand successfully removed"

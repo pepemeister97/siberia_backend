@@ -1,7 +1,7 @@
 package siberia.modules.stock.service
 
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.transactions.transaction
+import siberia.utils.database.transaction
 import org.kodein.di.DI
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.logger.data.models.SystemEventModel
@@ -26,6 +26,7 @@ class StockService(di: DI) : KodeinService(di) {
         }
         val event = StockCreateEvent(userDao.login, stockCreateDto.name)
         SystemEventModel.logEvent(event)
+        commit()
 
         stockDao.toOutputDto()
     }
@@ -38,6 +39,7 @@ class StockService(di: DI) : KodeinService(di) {
         stockDao.flush()
         val event = StockUpdateEvent(userDao.login, stockDao.name)
         SystemEventModel.logEvent(event)
+        commit()
 
         stockDao.toOutputDto()
     }
@@ -49,6 +51,7 @@ class StockService(di: DI) : KodeinService(di) {
 
         val event = StockRemoveEvent(userDao.login, stockName)
         SystemEventModel.logEvent(event)
+        commit()
 
         StockRemoveResultDto(
             success = true,
