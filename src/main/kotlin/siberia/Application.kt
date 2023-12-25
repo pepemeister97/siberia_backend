@@ -21,6 +21,10 @@ import siberia.modules.collection.data.models.CollectionModel
 import siberia.modules.collection.service.CollectionService
 import siberia.modules.logger.controller.SystemEventController
 import siberia.modules.logger.service.SystemEventService
+import siberia.modules.notifications.controller.NotificationsWebSocketController
+import siberia.modules.notifications.data.models.NotificationModel
+import siberia.modules.notifications.data.models.NotificationTypeModel
+import siberia.modules.notifications.service.NotificationService
 import siberia.modules.product.controller.ProductController
 import siberia.modules.product.data.models.ProductModel
 import siberia.modules.product.service.ProductService
@@ -33,6 +37,7 @@ import siberia.modules.rbac.service.RbacService
 import siberia.modules.stock.controller.StockController
 import siberia.modules.stock.service.StockService
 import siberia.modules.transaction.controller.TransactionController
+import siberia.modules.transaction.data.models.*
 import siberia.modules.transaction.service.TransactionService
 import siberia.modules.user.service.UserAccessControlService
 import siberia.plugins.*
@@ -64,6 +69,7 @@ fun Application.module() {
         bindSingleton { ProductService(it) }
         bindSingleton { StockService(it) }
         bindSingleton { TransactionService(it) }
+        bindSingleton { NotificationService(it) }
 
         bindSingleton { AuthController(it) }
         bindSingleton { UserController(it) }
@@ -75,6 +81,7 @@ fun Application.module() {
         bindSingleton { ProductController(it) }
         bindSingleton { StockController(it) }
         bindSingleton { TransactionController(it) }
+        bindSingleton { NotificationsWebSocketController(it) }
     }
 
     DatabaseConnector(
@@ -83,7 +90,9 @@ fun Application.module() {
         StockModel, StockToProductModel,
         BrandModel, CollectionModel,
         CategoryModel, CategoryToCategoryModel,
-        ProductModel
+        ProductModel,
+        TransactionModel, TransactionToProductModel, TransactionRelatedUserModel, TransactionStatusModel, TransactionTypeModel,
+        NotificationModel, NotificationTypeModel, NotificationTypeModel
     ) {
 
     }

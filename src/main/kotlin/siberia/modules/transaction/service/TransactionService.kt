@@ -9,6 +9,7 @@ import siberia.exceptions.BadRequestException
 import siberia.exceptions.ForbiddenException
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.logger.data.models.SystemEventModel
+import siberia.modules.notifications.service.NotificationService
 import siberia.modules.stock.data.dao.StockDao
 import siberia.modules.stock.data.models.StockModel
 import siberia.modules.transaction.data.dao.TransactionDao
@@ -29,6 +30,7 @@ import siberia.utils.kodein.KodeinService
 
 class TransactionService(di: DI) : KodeinService(di) {
     private val userAccessControlService: UserAccessControlService by instance()
+    private val notificationService: NotificationService by instance()
 
     /*
         This method takes type of the request and status
@@ -221,12 +223,14 @@ class TransactionService(di: DI) : KodeinService(di) {
     fun approveIncomeTransaction(authorizedUser: AuthorizedUser, transactionId: Int): TransactionOutputDto = transaction {
         val approvedTransaction = approveIncomeOutcomeTransaction(authorizedUser, transactionId)
         commit()
+        notificationService.notifyTransactionStatusChange(transactionId, approvedTransaction.statusId)
         approvedTransaction.toOutputDto()
     }
 
     fun cancelIncomeTransaction(authorizedUser: AuthorizedUser, transactionId: Int): TransactionOutputDto = transaction {
         val cancelledTransaction = cancelIncomeOutcomeTransaction(authorizedUser, transactionId)
         commit()
+        notificationService.notifyTransactionStatusChange(transactionId, cancelledTransaction.statusId)
         cancelledTransaction.toOutputDto()
     }
 
@@ -254,6 +258,7 @@ class TransactionService(di: DI) : KodeinService(di) {
     fun approveOutcomeTransaction(authorizedUser: AuthorizedUser, transactionId: Int): TransactionOutputDto = transaction {
         val approvedTransaction = approveIncomeOutcomeTransaction(authorizedUser, transactionId)
         commit()
+        notificationService.notifyTransactionStatusChange(transactionId, approvedTransaction.statusId)
         approvedTransaction.toOutputDto()
     }
 
@@ -262,6 +267,7 @@ class TransactionService(di: DI) : KodeinService(di) {
         val targetStock = StockDao[getTargetStock(cancelledTransaction.toInputDto())]
         StockModel.removeProducts(targetStock.idValue, cancelledTransaction.fullOutput().products)
         commit()
+        notificationService.notifyTransactionStatusChange(transactionId, cancelledTransaction.statusId)
         cancelledTransaction.toOutputDto()
     }
 
@@ -278,11 +284,15 @@ class TransactionService(di: DI) : KodeinService(di) {
     }
 
     fun approveTransferTransactionCreation(authorizedUser: AuthorizedUser, transactionId: Int): TransactionOutputDto = transaction {
-        changeTransactionStatus(UserDao[authorizedUser.id], transactionId, AppConf.requestStatus.open).toOutputDto()
+        val transactionOutputDto = changeTransactionStatus(UserDao[authorizedUser.id], transactionId, AppConf.requestStatus.open).toOutputDto()
+        notificationService.notifyTransactionStatusChange(transactionId, transactionOutputDto.status)
+        transactionOutputDto
     }
 
     fun cancelTransferTransactionCreation(authorizedUser: AuthorizedUser, transactionId: Int): TransactionOutputDto = transaction {
-        changeTransactionStatus(UserDao[authorizedUser.id], transactionId, AppConf.requestStatus.creationCancelled).toOutputDto()
+        val transactionOutputDto = changeTransactionStatus(UserDao[authorizedUser.id], transactionId, AppConf.requestStatus.creationCancelled).toOutputDto()
+        notificationService.notifyTransactionStatusChange(transactionId, transactionOutputDto.status)
+        transactionOutputDto
     }
 
     fun startProcessTransferTransaction(authorizedUser: AuthorizedUser, transactionId: Int, stockId: Int): TransactionOutputDto = transaction {
@@ -293,6 +303,7 @@ class TransactionService(di: DI) : KodeinService(di) {
         transactionDao.from = stockDao
         transactionDao.flush()
         commit()
+        notificationService.notifyTransactionStatusChange(transactionId, transactionDao.statusId)
 
         transactionDao.toOutputDto()
     }
@@ -303,6 +314,7 @@ class TransactionService(di: DI) : KodeinService(di) {
         val transactionDao = changeTransactionStatus(userDao, transactionId, AppConf.requestStatus.processingCancelled)
         StockModel.appendProducts(transactionDao.fromId!!, transactionDao.fullOutput().products)
         commit()
+        notificationService.notifyTransactionStatusChange(transactionId, transactionDao.statusId)
 
         transactionDao.toOutputDto()
     }
@@ -313,6 +325,7 @@ class TransactionService(di: DI) : KodeinService(di) {
         val transactionDao = changeTransactionStatus(userDao, transactionId, AppConf.requestStatus.delivered)
         StockModel.appendProducts(transactionDao.toId!!, transactionDao.fullOutput().products)
         commit()
+        notificationService.notifyTransactionStatusChange(transactionId, transactionDao.statusId)
 
         transactionDao.toOutputDto()
     }
@@ -320,7 +333,9 @@ class TransactionService(di: DI) : KodeinService(di) {
     fun markAsNotDelivered(authorizedUser: AuthorizedUser, transactionId: Int): TransactionOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
 
-        changeTransactionStatus(userDao, transactionId, AppConf.requestStatus.notDelivered).toOutputDto()
+        val transactionOutputDto = changeTransactionStatus(userDao, transactionId, AppConf.requestStatus.notDelivered).toOutputDto()
+        notificationService.notifyTransactionStatusChange(transactionId, transactionOutputDto.status)
+        transactionOutputDto
     }
 
     fun solveNotDelivered(authorizedUser: AuthorizedUser, transactionId: Int, solveTo: Int): TransactionOutputDto = transaction {
@@ -344,6 +359,7 @@ class TransactionService(di: DI) : KodeinService(di) {
             else -> throw ForbiddenException()
         }
         commit()
+        notificationService.notifyTransactionStatusChange(transactionId, transactionDao.statusId)
 
         transactionDao.toOutputDto()
     }

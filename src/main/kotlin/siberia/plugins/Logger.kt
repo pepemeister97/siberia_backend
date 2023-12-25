@@ -8,7 +8,8 @@ object Logger {
     private val logger = mutableMapOf(
         "main" to KtorSimpleLogger("siberia.ExceptionFilter"),
         "database" to KtorSimpleLogger("siberia.ExceptionFilter.Database"),
-        "Transformation" to KtorSimpleLogger("siberia.ExceptionFilter.Transformation")
+        "Transformation" to KtorSimpleLogger("siberia.ExceptionFilter.Transformation"),
+        "websocket" to KtorSimpleLogger("siberia.ExceptionFilter.WebSocket")
     )
 
     fun callFailed(call: ApplicationCall, cause: Throwable, prefix: String = "main") {

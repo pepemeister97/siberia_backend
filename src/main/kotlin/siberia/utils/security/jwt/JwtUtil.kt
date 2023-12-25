@@ -6,6 +6,7 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.util.date.*
 import kotlinx.serialization.json.Json
 import siberia.conf.AppConf
+import siberia.exceptions.ForbiddenException
 import siberia.modules.rbac.data.dto.LinkedRuleOutputDto
 import siberia.modules.auth.data.dto.RefreshTokenDto
 import siberia.modules.rbac.data.models.RbacModel
@@ -49,28 +50,29 @@ object JwtUtil {
         lastLogin = principal.getClaim("lastLogin", Long::class)!!
     )
 
-    fun verifyNative(token: String) {
+    fun verifyNative(token: String): AuthorizedUser {
         val jwtVerifier = JWT
             .require(Algorithm.HMAC256(AppConf.jwt.secret))
             .withIssuer(AppConf.jwt.domain)
             .build()
 
         val verified = jwtVerifier.verify(token)
-        if (verified != null) {
+        return if (verified != null) {
             val claims = verified.claims
             val currentTime: Long = getTimeMillis() / 1000
             if (currentTime > (claims["exp"]?.asInt()
                     ?: 0) || claims["iss"]?.asString() != AppConf.jwt.domain
-            )
-                //Bad token
-                println("unauthorized")
-            else
-                //Nice
-                println("authorized")
-
+            ) {
+                throw ForbiddenException()
+            }
+            else {
+                AuthorizedUser(
+                    id = claims["id"]?.asString()?.toInt() ?: throw ForbiddenException(),
+                    rules = Json.decodeFromString<List<LinkedRuleOutputDto>>(claims["rules"]?.asString() ?: "[]")
+                )
+            }
         } else {
-            //Bad sign
-            println("unauthorized")
+            throw ForbiddenException()
         }
     }
 
