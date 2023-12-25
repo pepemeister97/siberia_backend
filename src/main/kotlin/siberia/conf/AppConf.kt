@@ -9,10 +9,16 @@ object AppConf {
     private val databaseConfig: ApplicationConfig = mainConfig.config("database")
     private val serverConfig: ApplicationConfig = mainConfig.config("server")
     private val rulesConf: ApplicationConfig = mainConfig.config("rules")
+    private val notificationTypesConf: ApplicationConfig = mainConfig.config("notificationTypes")
+    private val notificationDomainsConf: ApplicationConfig = mainConfig.config("notificationDomains")
     private val eventTypesConf: ApplicationConfig = mainConfig.config("eventTypes")
     private val objectTypesConf: ApplicationConfig = mainConfig.config("objectTypes")
     private val requestTypeConf: ApplicationConfig = mainConfig.config("requestTypes")
     private val requestStatusConf: ApplicationConfig = mainConfig.config("requestStatuses")
+
+    enum class StockPair {
+        FROM, TO,
+    }
 
     private fun ApplicationConfig.getString(name: String): String = this.property(name).getString()
     private fun ApplicationConfig.getInt(name: String): Int = this.getString(name).toInt()
@@ -37,6 +43,16 @@ object AppConf {
         host = serverConfig.getString("host"),
         port = serverConfig.getInt("port"),
         fileLocation = serverConfig.getString("file-location")
+    )
+
+    val notificationTypes = NotificationTypesConf(
+        info = notificationTypesConf.getInt("info"),
+        warn = notificationTypesConf.getInt("warn"),
+        critical = notificationTypesConf.getInt("critical"),
+    )
+
+    val notificationDomains = NotificationDomainsConf(
+        transactions = notificationDomainsConf.getInt("transactions"),
     )
 
     val rules = RulesConf(
@@ -94,5 +110,101 @@ object AppConf {
         notDelivered = requestStatusConf.getInt("not-delivered"),
         failed = requestStatusConf.getInt("failed"),
         processed = requestStatusConf.getInt("processed"),
+        deliveryCancelled = requestStatusConf.getInt("delivery-cancelled")
+    )
+
+
+    /*
+
+            Maps request type to Map of requestStatus -> available statuses list
+
+            Structure:
+            Income -> {
+                created -> [ processed, creationCancelled ],
+                ...
+            }
+            Outcome -> {
+                created -> [ processed, creationCancelled ],
+                ...
+            }
+            Transfer -> {
+                created -> [ creationCancelled, open ],
+                ...
+                inProgress -> [ notDelivered, delivered, processingCancelled ]
+                ...
+            }
+
+         */
+    val requestStatusMapper = mapOf(
+        requestTypes.income to mapOf(
+            requestStatus.created to listOf(
+                requestStatus.processed, requestStatus.creationCancelled
+            )
+        ),
+        requestTypes.outcome to mapOf(
+            requestStatus.created to listOf(
+                requestStatus.processed, requestStatus.creationCancelled
+            )
+        ),
+        requestTypes.transfer to mapOf(
+            requestStatus.created to listOf(
+                requestStatus.creationCancelled, requestStatus.open
+            ),
+            requestStatus.open to listOf(
+                requestStatus.inProgress, requestStatus.creationCancelled
+            ),
+            requestStatus.inProgress to listOf(
+                requestStatus.notDelivered, requestStatus.delivered, requestStatus.processingCancelled
+            ),
+            requestStatus.notDelivered to listOf(
+                requestStatus.failed, requestStatus.deliveryCancelled, requestStatus.delivered
+            )
+        ),
+    )
+
+
+    /*
+
+        Maps request type to Map of requestStatus -> Which stock is target
+
+        Structure:
+        Income -> {
+            created -> TO,
+            ...
+        }
+        Outcome -> {
+            created -> FROM,
+            ...
+        }
+        Transfer -> {
+            created -> TO,
+            ...
+            inProgress -> FROM
+            ...
+        }
+
+     */
+    val requestToStockMapper = mapOf<Int, Map<Int, StockPair>>(
+        requestTypes.income to mapOf(
+            requestStatus.created to StockPair.TO,
+            requestStatus.processed to StockPair.TO,
+            requestStatus.creationCancelled to StockPair.TO,
+        ),
+        requestTypes.outcome to mapOf(
+            requestStatus.created to StockPair.FROM,
+            requestStatus.processed to StockPair.FROM,
+            requestStatus.creationCancelled to StockPair.FROM,
+        ),
+        requestTypes.transfer to mapOf(
+            requestStatus.created to StockPair.TO,
+            requestStatus.creationCancelled to StockPair.TO,
+            requestStatus.open to StockPair.TO,
+            requestStatus.inProgress to StockPair.FROM,
+            requestStatus.processingCancelled to StockPair.FROM,
+            requestStatus.delivered to StockPair.TO,
+            requestStatus.notDelivered to StockPair.TO,
+            requestStatus.failed to StockPair.TO,
+            requestStatus.deliveryCancelled to StockPair.TO,
+        )
     )
 }

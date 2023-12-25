@@ -106,6 +106,27 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
         }.count() > 0
     }
 
+    fun getAvailableStocks(userId: Int): Map<Int, List<Int>> = transaction {
+        val result = mutableMapOf<Int, MutableList<Int>>()
+        RbacModel.select {
+            (RbacModel.user eq userId) and (RbacModel.stock.isNotNull()) and (RbacModel.rule.isNotNull())
+        }.forEach {
+            val ruleId = it[RbacModel.rule]!!.value
+            val stockId = it[RbacModel.stock]!!.value
+            if (result[stockId] != null)
+                result[stockId]!!.add(ruleId)
+            else
+                result[stockId] = mutableListOf(ruleId)
+        }
+        result
+    }
+
+    fun filterAvailable(userId: Int, stocks: List<Int>): List<Int> = transaction {
+        RbacModel.select {
+            (RbacModel.user eq userId) and (RbacModel.stock inList stocks)
+        }.mapNotNull { it[RbacModel.stock]?.value }
+    }
+
     fun getAvailableStocksByRule(userId: Int, ruleId: Int): List<Int> = transaction {
         RbacModel.select {
             (RbacModel.user eq userId) and (RbacModel.rule eq ruleId)

@@ -35,11 +35,15 @@ abstract class BaseIntEntityClass<Output, E : BaseIntEntity<Output>>(table: Base
             }
         }
 
-    fun SqlExpressionBuilder.createListCond(filter: List<Int>?, defaultCond: Op<Boolean>, field: Column<EntityID<Int>?>): Op<Boolean> =
+    fun SqlExpressionBuilder.createListCond(filter: List<Int>?, defaultCond: Op<Boolean>, field: Column<EntityID<Int>>): Op<Boolean> =
         if (filter == null)
             defaultCond
         else
             field inList filter
+
+
+    fun SqlExpressionBuilder.createListCond(filter: List<Int>?, defaultCond: Op<Boolean>, field: Column<EntityID<Int>?>): Op<Boolean> =
+        createListCond(filter, defaultCond, field)
 
 
     fun SqlExpressionBuilder.createLikeCond(filter: String?, defaultCond: Op<Boolean>, field: Column<String>): Op<Boolean> =
@@ -47,4 +51,13 @@ abstract class BaseIntEntityClass<Output, E : BaseIntEntity<Output>>(table: Base
             defaultCond
         else
             field like "%$filter%"
+
+    fun SqlExpressionBuilder.createBooleanCond(filter: Boolean?, defaultCond: Op<Boolean>, field: Column<Boolean>, reversed: Boolean = false): Op<Boolean> =
+        if (filter == null)
+            defaultCond
+        else
+            if (reversed)
+                field neq filter
+            else
+                field eq filter
 }

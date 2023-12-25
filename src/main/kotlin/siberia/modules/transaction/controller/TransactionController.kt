@@ -21,17 +21,21 @@ class TransactionController(override val di: DI) : KodeinController() {
     override fun Routing.registerRoutes() {
         route("transaction") {
             authenticate ("default") {
-//                get {
-//
-//                }
-//                route("{transactionId}") {
-//                    get {
-//
-//                    }
-//                    get("statuses") {
-//
-//                    }
-//                }
+                get {
+                    val authorizedUser = call.getAuthorized()
+                    call.respond(transactionService.getAvailableTransactions(authorizedUser))
+                }
+                route("{transactionId}") {
+                    get {
+                        val authorizedUser = call.getAuthorized()
+                        val transactionId = call.parameters["transactionId"]?.toInt() ?: throw BadRequestException("Transaction id must be INT")
+
+                        val transactionFullOutputDto = transactionService.getOne(authorizedUser, transactionId)
+                        transactionFullOutputDto.availableStatuses = transactionService.getAvailableStatuses(authorizedUser, transactionId)
+
+                        call.respond(transactionFullOutputDto)
+                    }
+                }
             }
             route("income") {
                 post {

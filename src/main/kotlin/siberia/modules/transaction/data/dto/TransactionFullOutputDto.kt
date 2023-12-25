@@ -13,7 +13,8 @@ data class TransactionFullOutputDto (
     val to: StockOutputDto?,
     val status: TransactionStatusOutputDto,
     val type: TransactionTypeOutputDto,
-    val products: List<TransactionProductDto>
+    val products: List<TransactionProductDto>,
+    var availableStatuses: List<TransactionStatusOutputDto> = listOf()
 ) {
     @Serializable
     data class TransactionProductDto(
