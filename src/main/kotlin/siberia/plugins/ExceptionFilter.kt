@@ -8,9 +8,11 @@ import io.ktor.server.response.*
 import org.jetbrains.exposed.dao.exceptions.EntityNotFoundException
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import siberia.conf.AppConf
+import siberia.exceptions.BadRequestException
 import siberia.exceptions.BaseException
 import siberia.exceptions.InternalServerException
 import siberia.exceptions.NotFoundException
+import io.ktor.server.plugins.BadRequestException as BadRequestExceptionKtor
 
 fun Application.configureExceptionFilter() {
 
@@ -50,6 +52,15 @@ fun Application.configureExceptionFilter() {
                 call.respond(
                     status = HttpStatusCode.InternalServerError,
                     message = InternalServerException(requestValidationException.getClientMessage())
+                )
+        }
+
+        exception<BadRequestExceptionKtor> {
+            call, requestValidationException ->
+                Logger.callFailed(call, requestValidationException)
+                call.respond(
+                    status = HttpStatusCode.UnsupportedMediaType,
+                    message = BadRequestException(requestValidationException.getClientMessage())
                 )
         }
 

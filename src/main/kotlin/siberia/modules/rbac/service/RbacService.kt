@@ -17,7 +17,9 @@ import siberia.modules.rbac.data.dto.*
 import siberia.modules.rbac.data.dto.systemevents.RoleCreateEvent
 import siberia.modules.rbac.data.dto.systemevents.RoleRemoveEvent
 import siberia.modules.rbac.data.dto.systemevents.RoleUpdateEvent
+import siberia.modules.rbac.data.models.role.RoleModel
 import siberia.modules.stock.data.dao.StockDao
+import siberia.modules.transaction.data.dao.TransactionStatusDao.Companion.createLikeCond
 import siberia.modules.user.data.dao.UserDao
 import siberia.utils.database.idValue
 import siberia.utils.kodein.KodeinService
@@ -26,12 +28,18 @@ class RbacService(di: DI) : KodeinService(di) {
     private fun logEvent(event: SystemEventCreateDto) {
         SystemEventModel.logEvent(event)
     }
-    private fun logUpdateEvent(author: AuthorizedUser, target: String) {
+    private fun logUpdateEvent(author: AuthorizedUser, oldTarget: String, target: String) {
         val authorDao = UserDao[author.id]
-        logEvent(RoleUpdateEvent(authorDao.login, target))
+        logEvent(RoleUpdateEvent(authorDao.login, oldTarget, target))
     }
 
-    fun getAllRoles(): List<RoleOutputDto> = transaction { RoleDao.find { Op.nullOp() }.map { it.toOutputDto() } }
+//    fun getAllRoles(): List<RoleOutputDto> = transaction { RoleDao.find { Op.nullOp() }.map { it.toOutputDto() } }
+
+    fun getFiltered(roleFilterDto: RoleFilterDto): List<RoleOutputDto> = transaction {
+        RoleDao.find {
+            createLikeCond(roleFilterDto.name, RoleModel.id neq 0, RoleModel.name)
+        } .map { it.toOutputDto() }
+    }
 
     fun getRole(roleId: Int): RoleOutputDto = transaction { RoleDao[roleId].outputWithChildren }
 
@@ -75,10 +83,11 @@ class RbacService(di: DI) : KodeinService(di) {
     fun createRole(authorizedUser: AuthorizedUser, roleInputDto: RoleInputDto): RoleOutputDto = transaction {
         val roleDao = RoleDao.new {
             name = roleInputDto.name
+            description = roleInputDto.description
         }
 
-        val linkedRules = if (roleInputDto.linkedRuleInputDto.isNotEmpty())
-            appendRulesToRole(authorizedUser, roleDao.idValue, roleInputDto.linkedRuleInputDto, false)
+        val linkedRules = if (roleInputDto.rules.isNotEmpty())
+            appendRulesToRole(authorizedUser, roleDao.idValue, roleInputDto.rules, false)
         else listOf()
 
         val author = UserDao[authorizedUser.id]
@@ -94,7 +103,7 @@ class RbacService(di: DI) : KodeinService(di) {
             validateRule(it.ruleId, it.stockId)
         }.appendToRole(roleDao).run {
             if (needLog)
-                logUpdateEvent(authorizedUser, roleDao.name)
+                logUpdateEvent(authorizedUser, roleDao.name, roleDao.name)
             this
         }
         commit()
@@ -106,17 +115,18 @@ class RbacService(di: DI) : KodeinService(di) {
         val roleDao = RoleDao[roleId]
 
         RbacModel.unlinkRules(RbacModel.role eq roleDao.idValue, linkedRules)
-        logUpdateEvent(authorizedUser, roleDao.name)
+        logUpdateEvent(authorizedUser, roleDao.name, roleDao.name)
         commit()
     }
 
-    fun updateRole(authorizedUser: AuthorizedUser, roleId: Int, roleInputDto: RoleInputDto): RoleOutputDto = transaction {
+    fun updateRole(authorizedUser: AuthorizedUser, roleId: Int, roleUpdateDto: RoleUpdateDto): RoleOutputDto = transaction {
         val roleDao = RoleDao[roleId]
+        val oldName = roleDao.name
+        roleDao.loadUpdateDto(roleUpdateDto)
 
-        roleDao.name = roleInputDto.name
         roleDao.flush()
 
-        logUpdateEvent(authorizedUser, roleDao.name)
+        logUpdateEvent(authorizedUser, oldName, roleDao.name)
         commit()
 
         roleDao.toOutputDto()

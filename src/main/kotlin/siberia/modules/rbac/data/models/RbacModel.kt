@@ -3,6 +3,7 @@ package siberia.modules.rbac.data.models
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNotNull
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import siberia.utils.database.transaction
 import siberia.modules.rbac.data.dto.LinkedRuleInputDto
@@ -35,7 +36,6 @@ object RbacModel: BaseIntIdTable() {
         val cols = mutableListOf<Expression<*>>(rule, stock, RuleModel.category, RuleModel.needStock)
         RbacModel.let {
             if (withStock) {
-                println("I WAS CALLED!!!!!!")
                 cols.add(StockModel.name)
                 it.leftJoin(StockModel)
             } else {
@@ -67,7 +67,7 @@ object RbacModel: BaseIntIdTable() {
     fun getRolesLinks(query: Op<Boolean>, withRules: Boolean, withStock: Boolean): List<RoleOutputDto> = transaction {
         RbacModel
             .leftJoin(RoleModel)
-            .slice(role, RoleModel.name)
+            .slice(role, RoleModel.name, RoleModel.description)
             .select {
                 query and role.isNotNull()
             }
@@ -79,12 +79,14 @@ object RbacModel: BaseIntIdTable() {
     }
 
 
-    //We select only rows which are not marked with simplified
+    //Expanded param:
+    //If it true it means we will select all rules included auto-generated and marked as simplifiedBy
+    //If it false we will select only rules which are related to user without auto-generated ones
     fun userToRuleLinks(userId: Int, withStock: Boolean = false, expanded: Boolean = false): List<LinkedRuleOutputDto> =
         getRuleLinks(
-            user eq userId and simplifiedBy.isNull() and role.isNull(),
+            user eq userId and if (expanded) rule.isNotNull() else simplifiedBy.isNull() and role.isNull(),
             withStock, expanded = expanded
-        )
+        ).distinctBy { it.ruleId }
 
     fun roleToRuleLinks(roleId: Int, withStock: Boolean = false): List<LinkedRuleOutputDto> =
         getRuleLinks(

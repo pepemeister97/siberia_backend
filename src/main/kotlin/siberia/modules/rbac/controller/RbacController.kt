@@ -7,9 +7,10 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.kodein.di.DI
 import org.kodein.di.instance
-import siberia.exceptions.BadRequestException
 import siberia.modules.rbac.data.dto.LinkedRuleInputDto
+import siberia.modules.rbac.data.dto.RoleFilterDto
 import siberia.modules.rbac.data.dto.RoleInputDto
+import siberia.modules.rbac.data.dto.RoleUpdateDto
 import siberia.modules.rbac.service.RbacService
 import siberia.utils.kodein.KodeinController
 
@@ -22,8 +23,10 @@ class RbacController(override val di: DI) : KodeinController() {
         authenticate("rbac-managing") {
             route("rbac") {
                 route("roles") {
-                    get {
-                        call.respond(rbacService.getAllRoles())
+                    post("all") {
+                        val roleFilterDto = call.receive<RoleFilterDto>()
+
+                        call.respond(rbacService.getFiltered(roleFilterDto))
                     }
                     post {
                         val roleInputDto = call.receive<RoleInputDto>()
@@ -33,37 +36,32 @@ class RbacController(override val di: DI) : KodeinController() {
                     }
                     route("{roleId}") {
                         get {
-                            val roleId =
-                                call.parameters["roleId"]?.toInt() ?: throw BadRequestException("Role id must be INT")
+                            val roleId = call.parameters.getInt("roleId", "Role id must be INT")
                             call.respond(rbacService.getRole(roleId))
                         }
-                        post("append/rules") {
+                        post("rules") {
                             val onAppend = call.receive<List<LinkedRuleInputDto>>()
-                            val roleId =
-                                call.parameters["roleId"]?.toInt() ?: throw BadRequestException("Role id must be INT")
+                            val roleId = call.parameters.getInt("roleId", "Role id must be INT")
                             val authorizedUser = call.getAuthorized()
 
                             call.respond(rbacService.appendRulesToRole(authorizedUser, roleId, onAppend))
                         }
-                        delete("remove/rules") {
+                        delete("rules") {
                             val onRemove = call.receive<List<LinkedRuleInputDto>>()
-                            val roleId =
-                                call.parameters["roleId"]?.toInt() ?: throw BadRequestException("Role id must be INT")
+                            val roleId = call.parameters.getInt("roleId", "Role id must be INT")
                             val authorizedUser = call.getAuthorized()
 
                             call.respond(rbacService.removeRulesFromRole(authorizedUser, roleId, onRemove))
                         }
                         patch {
-                            val roleInputDto = call.receive<RoleInputDto>()
-                            val roleId =
-                                call.parameters["roleId"]?.toInt() ?: throw BadRequestException("Role id must be INT")
+                            val roleUpdateDto = call.receive<RoleUpdateDto>()
+                            val roleId = call.parameters.getInt("roleId", "Role id must be INT")
                             val authorizedUser = call.getAuthorized()
 
-                            call.respond(rbacService.updateRole(authorizedUser, roleId, roleInputDto))
+                            call.respond(rbacService.updateRole(authorizedUser, roleId, roleUpdateDto))
                         }
                         delete {
-                            val roleId =
-                                call.parameters["roleId"]?.toInt() ?: throw BadRequestException("Role id must be INT")
+                            val roleId = call.parameters.getInt("roleId", "Role id must be INT")
                             val authorizedUser = call.getAuthorized()
 
                             call.respond(rbacService.removeRole(authorizedUser, roleId))

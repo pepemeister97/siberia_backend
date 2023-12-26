@@ -62,8 +62,8 @@ class UserDao(id: EntityID<Int>): BaseIntEntity<UserOutputDto>(id, UserModel) {
             hash = CryptoUtil.hash(userPatchDto.password)
     }
 
-    fun flush(authorName: String, batch: EntityBatchUpdate? = null): Boolean {
-        val userUpdateEvent = UserUpdateEvent(authorName, login)
+    fun flush(authorName: String, oldLogin: String, batch: EntityBatchUpdate? = null): Boolean {
+        val userUpdateEvent = UserUpdateEvent(authorName, oldLogin, login)
         SystemEventModel.logEvent(userUpdateEvent)
         return super.flush(batch)
     }

@@ -63,9 +63,10 @@ class UserService(di: DI) : KodeinService(di) {
     fun updateUser(authorizedUser: AuthorizedUser, userId: Int, userPatchDto: UserPatchDto): UserOutputDto = transaction {
         val authorName = UserDao[authorizedUser.id].login
         val userDao = UserDao[userId]
+        val oldLogin = userDao.login
 
         userDao.loadPatch(userPatchDto)
-        userDao.flush(authorName)
+        userDao.flush(authorName, oldLogin)
         commit()
 
         userDao.toOutputDto()
