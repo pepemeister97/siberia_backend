@@ -1,11 +1,13 @@
 package siberia.utils.kodein
 
+import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.routing.*
 import org.kodein.di.DIAware
 import org.kodein.di.instance
+import siberia.exceptions.BadRequestException
 import siberia.modules.auth.data.dto.RefreshTokenDto
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.utils.security.jwt.JwtUtil
@@ -29,6 +31,15 @@ abstract class KodeinController : DIAware {
     fun ApplicationCall.getAuthorized(): AuthorizedUser {
         val principal = principal<JWTPrincipal>()!!
         return JwtUtil.decodeAccessToken(principal)
+    }
+
+    fun Parameters.getInt(name: String, errorMsg: String): Int {
+        val param = this[name] ?: throw BadRequestException(errorMsg)
+        return try {
+            param.toInt()
+        } catch (e: NumberFormatException) {
+            throw BadRequestException(errorMsg)
+        }
     }
 
     fun getRefresh(call: ApplicationCall): RefreshTokenDto {

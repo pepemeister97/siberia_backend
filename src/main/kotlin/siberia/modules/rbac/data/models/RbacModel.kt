@@ -16,7 +16,7 @@ import siberia.utils.database.BaseIntIdTable
 
 object RbacModel: BaseIntIdTable() {
     val user = reference("user", UserModel, ReferenceOption.CASCADE, ReferenceOption.CASCADE).nullable().default(null)
-    val role = reference("user", UserModel, ReferenceOption.CASCADE, ReferenceOption.CASCADE).nullable().default(null)
+    val role = reference("role", RoleModel, ReferenceOption.CASCADE, ReferenceOption.CASCADE).nullable().default(null)
     val rule = reference("rule", RuleModel, ReferenceOption.CASCADE, ReferenceOption.CASCADE).nullable().default(null)
     val stock = reference("stock", StockModel, ReferenceOption.CASCADE, ReferenceOption.CASCADE).nullable().default(null)
 
@@ -33,31 +33,35 @@ object RbacModel: BaseIntIdTable() {
 
     fun getRuleLinks(query: Op<Boolean>, withStock: Boolean, expanded: Boolean = false): List<LinkedRuleOutputDto> = transaction {
         val cols = mutableListOf<Expression<*>>(rule, stock, RuleModel.category, RuleModel.needStock)
-        RbacModel
-            .leftJoin(RuleModel).apply {
-                if (withStock) {
-                    leftJoin(StockModel)
-                    cols.add(StockModel.name)
-                }
+        RbacModel.let {
+            if (withStock) {
+                println("I WAS CALLED!!!!!!")
+                cols.add(StockModel.name)
+                it.leftJoin(StockModel)
+            } else {
+                it
             }
-            .slice(cols)
-            .select {
-                query and rule.isNotNull() and
-                // If expanded we will show ALL rows included which were auto-generated
-                // So we just put the query-param which won`t change the query res - rule.isNotNull()
-                if (expanded) rule.isNotNull() else simplifiedBy.isNull()
+        }
+        .leftJoin(RuleModel)
+        .slice(cols)
+        .select {
+            query and rule.isNotNull() and
+            // If expanded we will show ALL rows included which were auto-generated
+            // So we just put the query-param which won`t change the query res - rule.isNotNull()
+            if (expanded) rule.isNotNull() else simplifiedBy.isNull()
+        }
+        .map {
+            LinkedRuleOutputDto(
+                ruleId = it[rule]!!.value,
+                categoryId = it[RuleModel.category]?.value,
+                needStock = it[RuleModel.needStock],
+                stockId = it[stock]?.value
+            ).apply {
+                println(it[stock])
+                if (withStock && it[stock] != null)
+                    stockName = it[StockModel.name]
             }
-            .map {
-                LinkedRuleOutputDto(
-                    ruleId = it[rule]!!.value,
-                    categoryId = it[RuleModel.category]?.value,
-                    needStock = it[RuleModel.needStock],
-                    stockId = it[stock]?.value
-                ).apply {
-                    if (withStock)
-                        stockName = it[StockModel.name]
-                }
-            }
+        }
     }
 
     fun getRolesLinks(query: Op<Boolean>, withRules: Boolean, withStock: Boolean): List<RoleOutputDto> = transaction {

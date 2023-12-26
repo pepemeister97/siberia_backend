@@ -9,16 +9,16 @@ import siberia.utils.database.BaseIntIdTable
 object SystemEventModel: BaseIntIdTable() {
     val author = text("author")
     val eventObjectName = text("event_object_name")
-    val eventObjectType = reference("event_type", SystemEventObjectTypeModel, ReferenceOption.RESTRICT, ReferenceOption.RESTRICT)
+    val eventObjectType = reference("event_object_type", SystemEventObjectTypeModel, ReferenceOption.RESTRICT, ReferenceOption.RESTRICT)
     val eventType = reference("event_type", SystemEventTypeModel, ReferenceOption.RESTRICT, ReferenceOption.RESTRICT)
     val eventDescription = text("event_description")
 
     //Next iterations
-    val eventObject = integer("event_object")
-    val objectBefore = text("objectBefore")
-    val objectAfter = text("objectAfter")
-    val relatedTo = reference("related_to", SystemEventModel, ReferenceOption.CASCADE, ReferenceOption.CASCADE)
-    val canBeRestored = bool("can_be_restored")
+//    val eventObject = integer("event_object")
+//    val objectBefore = text("objectBefore")
+//    val objectAfter = text("objectAfter")
+//    val relatedTo = reference("related_to", SystemEventModel, ReferenceOption.CASCADE, ReferenceOption.CASCADE)
+//    val canBeRestored = bool("can_be_restored")
 
     fun getList(query: SqlExpressionBuilder.() -> Op<Boolean>): List<SystemEventOutputDto<*>> = transaction {
         SystemEventModel

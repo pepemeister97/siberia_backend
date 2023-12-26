@@ -35,15 +35,18 @@ abstract class BaseIntEntityClass<Output, E : BaseIntEntity<Output>>(table: Base
             }
         }
 
+//    fun SqlExpressionBuilder.createListCond(filter: List<Int>?, defaultCond: Op<Boolean>, field: Column<EntityID<Int>>): Op<Boolean> =
+//        if (filter == null)
+//            defaultCond
+//        else
+//            field inList filter
+
+
     fun SqlExpressionBuilder.createListCond(filter: List<Int>?, defaultCond: Op<Boolean>, field: Column<EntityID<Int>>): Op<Boolean> =
         if (filter == null)
             defaultCond
         else
             field inList filter
-
-
-    fun SqlExpressionBuilder.createListCond(filter: List<Int>?, defaultCond: Op<Boolean>, field: Column<EntityID<Int>?>): Op<Boolean> =
-        createListCond(filter, defaultCond, field)
 
 
     fun SqlExpressionBuilder.createLikeCond(filter: String?, defaultCond: Op<Boolean>, field: Column<String>): Op<Boolean> =

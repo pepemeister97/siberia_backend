@@ -90,9 +90,9 @@ class ProductService(di: DI) : KodeinService(di) {
             createRangeCond(searchFilterDto.commonPrice, (ProductModel.id neq 0), ProductModel.commonPrice, -1.0, Double.MAX_VALUE) and
             createRangeCond(searchFilterDto.distributorPrice, (ProductModel.id neq 0), ProductModel.distributorPrice, -1.0, Double.MAX_VALUE) and
             createRangeCond(searchFilterDto.professionalPrice, (ProductModel.id neq 0), ProductModel.professionalPrice, -1.0, Double.MAX_VALUE) and
-            createListCond(searchFilterDto.brand, (ProductModel.id neq 0), ProductModel.brand)and
-            createListCond(searchFilterDto.category, (ProductModel.id neq 0), ProductModel.category) and
-            createListCond(searchFilterDto.collection, (ProductModel.id neq 0), ProductModel.collection)
+            createListCond(searchFilterDto.brand, (ProductModel.id neq 0), ProductModel.brand.referee()!!) and
+            createListCond(searchFilterDto.category, (ProductModel.id neq 0), ProductModel.category.referee()!!) and
+            createListCond(searchFilterDto.collection, (ProductModel.id neq 0), ProductModel.collection.referee()!!) and
             createLikeCond(searchFilterDto.name, (ProductModel.id neq 0), ProductModel.name) and
             createLikeCond(searchFilterDto.color, (ProductModel.id neq 0), ProductModel.color) and
             createLikeCond(searchFilterDto.vendorCode, (ProductModel.id neq 0), ProductModel.vendorCode) and

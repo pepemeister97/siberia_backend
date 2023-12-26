@@ -15,6 +15,11 @@ class AuthController(override val di: DI) : KodeinController() {
     private val authService: AuthService by instance()
     override fun Routing.registerRoutes() {
         route("auth") {
+            post {
+                val authInput = call.receive<AuthInputDto>()
+
+                call.respond(authService.auth(authInput))
+            }
             authenticate("refresh") {
                 post("refresh") {
                     val refreshTokenDto = getRefresh(call)
@@ -22,16 +27,11 @@ class AuthController(override val di: DI) : KodeinController() {
                     call.respond(authService.refreshUser(refreshTokenDto))
                 }
             }
-            post {
-                val authInput = call.receive<AuthInputDto>()
-
-                call.respond(authService.auth(authInput))
-            }
-        }
-        authenticate("default") {
-            route("authorized") {
-                get {
-                    call.respond(call.getAuthorized())
+            authenticate("default") {
+                route("authorized") {
+                    get {
+                        call.respond(call.getAuthorized())
+                    }
                 }
             }
         }

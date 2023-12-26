@@ -84,7 +84,11 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
 
     fun getUserRules(authorizedUser: AuthorizedUser): List<LinkedRuleOutputDto> = transaction { UserDao[authorizedUser.id].rulesWithStocks }
 
+    fun getUserRules(userId: Int): List<LinkedRuleOutputDto> = transaction { UserDao[userId].rulesWithStocks }
+
     fun getUserRoles(authorizedUser: AuthorizedUser): List<RoleOutputDto> = transaction { UserDao[authorizedUser.id].rolesWithRules }
+
+    fun getUserRoles(userId: Int): List<RoleOutputDto> = transaction { UserDao[userId].rolesWithRules }
 
     fun removeRules(authorizedUser: AuthorizedUser, targetId: Int, linkedRules: List<LinkedRuleInputDto>) = transaction {
         val targetDao = UserDao[targetId]
@@ -130,6 +134,6 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
     fun getAvailableStocksByRule(userId: Int, ruleId: Int): List<Int> = transaction {
         RbacModel.select {
             (RbacModel.user eq userId) and (RbacModel.rule eq ruleId)
-        }.map { it[RbacModel.stock]?.value ?: 0 }
+        }.mapNotNull { it[RbacModel.stock]?.value }
     }
 }

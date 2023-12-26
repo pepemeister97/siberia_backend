@@ -1,13 +1,16 @@
 package siberia.modules.user.service
 
 import io.ktor.util.date.*
+import org.jetbrains.exposed.sql.and
 import siberia.utils.database.transaction
 import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.exceptions.BadRequestException
 import siberia.modules.auth.data.dto.AuthorizedUser
+import siberia.modules.transaction.data.dao.TransactionStatusDao.Companion.createLikeCond
 import siberia.modules.user.data.dao.UserDao
 import siberia.modules.user.data.dto.*
+import siberia.modules.user.data.models.UserModel
 import siberia.utils.database.idValue
 import siberia.utils.kodein.KodeinService
 import siberia.utils.security.bcrypt.CryptoUtil
@@ -43,7 +46,6 @@ class UserService(di: DI) : KodeinService(di) {
             id = userDao.idValue,
             name = userDao.name,
             login = userDao.login,
-            hash = userDao.hash,
             lastLogin = 0,
         )
     }
@@ -67,5 +69,14 @@ class UserService(di: DI) : KodeinService(di) {
         commit()
 
         userDao.toOutputDto()
+    }
+
+    fun getOne(userId: Int): UserOutputDto = transaction { UserDao[userId].toOutputDto() }
+
+    fun getByFilter(userFilterDto: UserFilterDto): List<UserOutputDto> = transaction {
+        UserDao.find {
+            createLikeCond(userFilterDto.login, UserModel.id neq 0, UserModel.login) and
+            createLikeCond(userFilterDto.name, UserModel.id neq 0, UserModel.name)
+        }.map { it.toOutputDto() }
     }
 }

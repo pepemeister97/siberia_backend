@@ -5,10 +5,12 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
+import org.jetbrains.exposed.dao.exceptions.EntityNotFoundException
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import siberia.conf.AppConf
 import siberia.exceptions.BaseException
 import siberia.exceptions.InternalServerException
+import siberia.exceptions.NotFoundException
 
 fun Application.configureExceptionFilter() {
 
@@ -30,6 +32,15 @@ fun Application.configureExceptionFilter() {
                 call.respond<InternalServerException>(
                     HttpStatusCode.InternalServerError,
                     InternalServerException(exposedSqlException.getClientMessage())
+                )
+        }
+
+        exception<EntityNotFoundException> {
+            call, exposedException ->
+                Logger.callFailed(call, exposedException, "Database")
+                call.respond<NotFoundException>(
+                    HttpStatusCode.NotFound,
+                    NotFoundException(exposedException.getClientMessage())
                 )
         }
 

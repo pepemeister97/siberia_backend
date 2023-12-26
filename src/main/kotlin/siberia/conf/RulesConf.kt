@@ -8,6 +8,7 @@ data class RulesConf (
     val collectionManaging: Int,
     val categoryManaging: Int,
     val productsManaging: Int,
+    val stockManaging: Int,
 
     val createIncomeRequest: Int,
     val approveIncomeRequest: Int,

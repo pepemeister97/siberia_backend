@@ -4,6 +4,7 @@ import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import siberia.conf.AppConf
+import siberia.conf.DatabaseInitializer
 import siberia.modules.auth.controller.AuthController
 import siberia.modules.rbac.data.models.role.RoleModel
 import siberia.modules.rbac.data.models.rule.RuleCategoryModel
@@ -20,6 +21,9 @@ import siberia.modules.collection.controller.CollectionController
 import siberia.modules.collection.data.models.CollectionModel
 import siberia.modules.collection.service.CollectionService
 import siberia.modules.logger.controller.SystemEventController
+import siberia.modules.logger.data.models.SystemEventModel
+import siberia.modules.logger.data.models.SystemEventObjectTypeModel
+import siberia.modules.logger.data.models.SystemEventTypeModel
 import siberia.modules.logger.service.SystemEventService
 import siberia.modules.notifications.controller.NotificationsWebSocketController
 import siberia.modules.notifications.data.models.NotificationModel
@@ -31,6 +35,7 @@ import siberia.modules.product.service.ProductService
 import siberia.modules.stock.data.models.StockModel
 import siberia.modules.stock.data.models.StockToProductModel
 import siberia.modules.rbac.controller.RbacController
+import siberia.modules.rbac.data.models.RbacModel
 import siberia.modules.user.controller.UserController
 import siberia.modules.user.data.models.UserModel
 import siberia.modules.rbac.service.RbacService
@@ -40,6 +45,7 @@ import siberia.modules.transaction.controller.TransactionController
 import siberia.modules.transaction.data.models.*
 import siberia.modules.transaction.service.TransactionService
 import siberia.modules.user.service.UserAccessControlService
+import siberia.modules.user.service.UserService
 import siberia.plugins.*
 import siberia.utils.database.DatabaseConnector
 import siberia.utils.kodein.bindSingleton
@@ -60,6 +66,7 @@ fun Application.module() {
 
     kodeinApplication {
         bindSingleton { AuthService(it) }
+        bindSingleton { UserService(it) }
         bindSingleton { UserAccessControlService(it) }
         bindSingleton { RbacService(it) }
         bindSingleton { SystemEventService(it) }
@@ -86,14 +93,23 @@ fun Application.module() {
 
     DatabaseConnector(
         UserModel,
-        RoleModel, RuleModel, RuleCategoryModel,
+        RbacModel, RoleModel, RuleModel, RuleCategoryModel,
         StockModel, StockToProductModel,
         BrandModel, CollectionModel,
         CategoryModel, CategoryToCategoryModel,
         ProductModel,
+        SystemEventModel, SystemEventTypeModel, SystemEventObjectTypeModel,
         TransactionModel, TransactionToProductModel, TransactionRelatedUserModel, TransactionStatusModel, TransactionTypeModel,
         NotificationModel, NotificationTypeModel, NotificationTypeModel
     ) {
-
+        DatabaseInitializer.initRules()
+        DatabaseInitializer.initEventTypes()
+        DatabaseInitializer.initObjectTypes()
+        DatabaseInitializer.initRequestTypes()
+        DatabaseInitializer.initRequestStatuses()
+        DatabaseInitializer.initNotificationTypes()
+        DatabaseInitializer.initNotificationDomains()
+        DatabaseInitializer.initUsers()
+        commit()
     }
 }

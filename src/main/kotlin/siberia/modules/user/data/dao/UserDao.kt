@@ -49,7 +49,7 @@ class UserDao(id: EntityID<Int>): BaseIntEntity<UserOutputDto>(id, UserModel) {
         get() = RbacModel.userToRuleLinks(userId = idValue, withStock = true)
 
     override fun toOutputDto(): UserOutputDto =
-        UserOutputDto(idValue, name, login, hash, lastLogin)
+        UserOutputDto(idValue, name, login, null, lastLogin)
 
     fun loadPatch(userPatchDto: UserPatchDto) = transaction {
         if (userPatchDto.login != null) {
