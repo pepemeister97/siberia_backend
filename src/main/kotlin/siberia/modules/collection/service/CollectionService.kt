@@ -39,7 +39,7 @@ class CollectionService(di: DI) : KodeinService(di) {
 
         CollectionRemoveResultDto(
             success = true,
-            message = "Brand successfully removed"
+            message = "Collection $collectionId successfully removed"
         )
     }
 

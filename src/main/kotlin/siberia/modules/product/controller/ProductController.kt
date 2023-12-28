@@ -7,7 +7,6 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.kodein.di.DI
 import org.kodein.di.instance
-import siberia.exceptions.BadRequestException
 import siberia.modules.product.data.dto.ProductCreateDto
 import siberia.modules.product.data.dto.ProductSearchDto
 import siberia.modules.product.data.dto.ProductUpdateDto
@@ -20,15 +19,15 @@ class ProductController(override val di: DI) : KodeinController() {
      * Method that subtypes must override to register the handled [Routing] routes.
      */
     override fun Routing.registerRoutes() {
-        route("products") {
+        route("product") {
             authenticate("default") {
-                post {
+                post("all") {
                     val searchFilterDto = call.receive<ProductSearchDto>()
 
                     call.respond(productService.getByFilter(searchFilterDto))
                 }
                 get("{productId}") {
-                    val productId = call.parameters["productId"]?.toInt() ?: throw BadRequestException("Product id must be INT")
+                    val productId = call.parameters.getInt("productId", "Product id must be INT")
 
                     call.respond(productService.getOne(productId))
                 }
@@ -38,11 +37,14 @@ class ProductController(override val di: DI) : KodeinController() {
                     val productCreateDto = call.receive<ProductCreateDto>()
                     val authorizedUser = call.getAuthorized()
 
+                    //TODO: File uploading
+                    productCreateDto.photo = "fake-photo"
+
                     call.respond(productService.create(authorizedUser, productCreateDto))
                 }
                 route("{productId}") {
                     delete {
-                        val productId = call.parameters["productId"]?.toInt() ?: throw BadRequestException("Product id must be INT")
+                        val productId = call.parameters.getInt("productId", "Product id must be INT")
                         val authorizedUser = call.getAuthorized()
 
                         call.respond(productService.remove(authorizedUser, productId))
@@ -50,7 +52,7 @@ class ProductController(override val di: DI) : KodeinController() {
                     patch {
                         val productUpdateDto = call.receive<ProductUpdateDto>()
                         val authorizedUser = call.getAuthorized()
-                        val productId = call.parameters["productId"]?.toInt() ?: throw BadRequestException("Product id must be INT")
+                        val productId = call.parameters.getInt("productId", "Product id must be INT")
 
                         call.respond(productService.update(authorizedUser, productId, productUpdateDto))
                     }

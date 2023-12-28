@@ -15,8 +15,8 @@ import siberia.modules.product.data.dto.systemevents.ProductCreateEvent
 import siberia.modules.product.data.dto.systemevents.ProductRemoveEvent
 import siberia.modules.product.data.dto.systemevents.ProductUpdateEvent
 import siberia.modules.product.data.models.ProductModel
+import siberia.modules.rbac.data.dao.RuleCategoryDao.Companion.createNullableListCond
 import siberia.modules.stock.data.dao.StockDao.Companion.createLikeCond
-import siberia.modules.stock.data.dao.StockDao.Companion.createListCond
 import siberia.modules.user.data.dao.UserDao
 import siberia.utils.kodein.KodeinService
 
@@ -86,24 +86,31 @@ class ProductService(di: DI) : KodeinService(di) {
         val searchFilterDto = productSearchDto.filters
         val paginationOutputDto = productSearchDto.pagination
         ProductDao.find {
-            createRangeCond(searchFilterDto.amountInBox, (ProductModel.id neq 0), ProductModel.amountInBox, -1, Int.MAX_VALUE) and
-            createRangeCond(searchFilterDto.commonPrice, (ProductModel.id neq 0), ProductModel.commonPrice, -1.0, Double.MAX_VALUE) and
-            createRangeCond(searchFilterDto.distributorPrice, (ProductModel.id neq 0), ProductModel.distributorPrice, -1.0, Double.MAX_VALUE) and
-            createRangeCond(searchFilterDto.professionalPrice, (ProductModel.id neq 0), ProductModel.professionalPrice, -1.0, Double.MAX_VALUE) and
-            createListCond(searchFilterDto.brand, (ProductModel.id neq 0), ProductModel.brand.referee()!!) and
-            createListCond(searchFilterDto.category, (ProductModel.id neq 0), ProductModel.category.referee()!!) and
-            createListCond(searchFilterDto.collection, (ProductModel.id neq 0), ProductModel.collection.referee()!!) and
-            createLikeCond(searchFilterDto.name, (ProductModel.id neq 0), ProductModel.name) and
-            createLikeCond(searchFilterDto.color, (ProductModel.id neq 0), ProductModel.color) and
-            createLikeCond(searchFilterDto.vendorCode, (ProductModel.id neq 0), ProductModel.vendorCode) and
-            createLikeCond(searchFilterDto.description, (ProductModel.id neq 0), ProductModel.description)
+            createRangeCond(searchFilterDto?.amountInBox, (ProductModel.id neq 0), ProductModel.amountInBox, -1, Int.MAX_VALUE) and
+            createRangeCond(searchFilterDto?.commonPrice, (ProductModel.id neq 0), ProductModel.commonPrice, -1.0, Double.MAX_VALUE) and
+            createRangeCond(searchFilterDto?.purchasePrice, (ProductModel.id neq 0), ProductModel.purchasePrice, -1.0, Double.MAX_VALUE) and
+            createRangeCond(searchFilterDto?.distributorPrice, (ProductModel.id neq 0), ProductModel.distributorPrice, -1.0, Double.MAX_VALUE) and
+            createRangeCond(searchFilterDto?.professionalPrice, (ProductModel.id neq 0), ProductModel.professionalPrice, -1.0, Double.MAX_VALUE) and
+            createNullableListCond(searchFilterDto?.brand, (ProductModel.id neq 0), ProductModel.brand) and
+            createNullableListCond(searchFilterDto?.category, (ProductModel.id neq 0), ProductModel.category) and
+            createNullableListCond(searchFilterDto?.collection, (ProductModel.id neq 0), ProductModel.collection) and
+            createLikeCond(searchFilterDto?.name, (ProductModel.id neq 0), ProductModel.name) and
+            createLikeCond(searchFilterDto?.color, (ProductModel.id neq 0), ProductModel.color) and
+            createLikeCond(searchFilterDto?.vendorCode, (ProductModel.id neq 0), ProductModel.vendorCode) and
+            createLikeCond(searchFilterDto?.description, (ProductModel.id neq 0), ProductModel.description)
 
 //            Future iterations
 //            createRangeCond(searchFilterDto.size, (ProductModel.id neq 0), ProductModel.size, -1.0, Double.MAX_VALUE) and
 //            createRangeCond(searchFilterDto.volume, (ProductModel.id neq 0), ProductModel.volume, -1.0, Double.MAX_VALUE) and
-        }.limit(paginationOutputDto.n, paginationOutputDto.offset).map { it.toOutputDto() }
+        }.let {
+            if (paginationOutputDto == null)
+                it
+            else
+                it.limit(paginationOutputDto.n, paginationOutputDto.offset)
+        }.map { it.toOutputDto() }
     }
 
-    fun getOne(productId: Int): ProductFullOutputDto =
+    fun getOne(productId: Int): ProductFullOutputDto = transaction {
         ProductDao[productId].fullOutput()
+    }
 }

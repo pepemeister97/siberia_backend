@@ -24,7 +24,7 @@ data class ProductFullOutputDto (
     val collection: CollectionOutputDto?,
     val color: String,
     val amountInBox: Int,
-    val expirationDate: Int,
+    val expirationDate: Long,
     val link: String,
 
 //    Future iterations

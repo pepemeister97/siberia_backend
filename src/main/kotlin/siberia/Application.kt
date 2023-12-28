@@ -110,6 +110,7 @@ fun Application.module() {
         DatabaseInitializer.initNotificationTypes()
         DatabaseInitializer.initNotificationDomains()
         DatabaseInitializer.initUsers()
+        DatabaseInitializer.initCategory()
         commit()
     }
 }

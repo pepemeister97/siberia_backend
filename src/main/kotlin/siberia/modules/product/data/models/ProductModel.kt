@@ -23,7 +23,7 @@ object ProductModel: BaseIntIdTable() {
     val collection = reference("collection", CollectionModel, ReferenceOption.SET_NULL, ReferenceOption.SET_NULL).nullable().default(null)
     val color = text("color")
     val amountInBox = integer("amount_in_box")
-    val expirationDate = integer("expiration_date")
+    val expirationDate = long("expiration_date")
     val link = text("link")
 
     //Future iterations

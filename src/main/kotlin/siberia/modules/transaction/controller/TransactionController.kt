@@ -28,7 +28,7 @@ class TransactionController(override val di: DI) : KodeinController() {
                 route("{transactionId}") {
                     get {
                         val authorizedUser = call.getAuthorized()
-                        val transactionId = call.parameters["transactionId"]?.toInt() ?: throw BadRequestException("Transaction id must be INT")
+                        val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")
 
                         val transactionFullOutputDto = transactionService.getOne(authorizedUser, transactionId)
                         transactionFullOutputDto.availableStatuses = transactionService.getAvailableStatuses(authorizedUser, transactionId)
@@ -38,96 +38,110 @@ class TransactionController(override val di: DI) : KodeinController() {
                 }
             }
             route("income") {
-                post {
-                    val transactionInputDto = call.receive<TransactionInputDto>()
-                    val authorizedUser = call.getAuthorized()
-
-                    call.respond(transactionService.createIncomeTransaction(authorizedUser, transactionInputDto))
-                }
-                route("{transactionId}") {
-                    patch("approve") {
-                        val transactionId = call.parameters["transactionId"]?.toInt() ?: throw BadRequestException("Transaction id must be INT")
+                authenticate ("create-income-request") {
+                    post {
+                        val transactionInputDto = call.receive<TransactionInputDto>()
                         val authorizedUser = call.getAuthorized()
 
-                        call.respond(transactionService.approveIncomeTransaction(authorizedUser, transactionId))
+                        call.respond(transactionService.createIncomeTransaction(authorizedUser, transactionInputDto))
                     }
-                    patch("cancel") {
-                        val transactionId = call.parameters["transactionId"]?.toInt() ?: throw BadRequestException("Transaction id must be INT")
-                        val authorizedUser = call.getAuthorized()
+                }
+                authenticate ("approve-income-request") {
+                    route("{transactionId}") {
+                        patch("approve") {
+                            val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")
+                            val authorizedUser = call.getAuthorized()
 
-                        call.respond(transactionService.cancelIncomeTransaction(authorizedUser, transactionId))
+                            call.respond(transactionService.approveIncomeTransaction(authorizedUser, transactionId))
+                        }
+                        patch("cancel") {
+                            val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")
+                            val authorizedUser = call.getAuthorized()
+
+                            call.respond(transactionService.cancelIncomeTransaction(authorizedUser, transactionId))
+                        }
                     }
                 }
             }
             route("outcome") {
-                post {
-                    val transactionInputDto = call.receive<TransactionInputDto>()
-                    val authorizedUser = call.getAuthorized()
-
-                    call.respond(transactionService.createOutcomeTransaction(authorizedUser, transactionInputDto))
-                }
-                route("{transactionId}") {
-                    patch("approve") {
-                        val transactionId = call.parameters["transactionId"]?.toInt() ?: throw BadRequestException("Transaction id must be INT")
+                authenticate ("create-outcome-request") {
+                    post {
+                        val transactionInputDto = call.receive<TransactionInputDto>()
                         val authorizedUser = call.getAuthorized()
 
-                        call.respond(transactionService.approveOutcomeTransaction(authorizedUser, transactionId))
+                        call.respond(transactionService.createOutcomeTransaction(authorizedUser, transactionInputDto))
                     }
-                    patch("cancel") {
-                        val transactionId = call.parameters["transactionId"]?.toInt() ?: throw BadRequestException("Transaction id must be INT")
-                        val authorizedUser = call.getAuthorized()
+                }
+                authenticate("approve-outcome-request") {
+                    route("{transactionId}") {
+                        patch("approve") {
+                            val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")
+                            val authorizedUser = call.getAuthorized()
 
-                        call.respond(transactionService.cancelOutcomeTransaction(authorizedUser, transactionId))
+                            call.respond(transactionService.approveOutcomeTransaction(authorizedUser, transactionId))
+                        }
+                        patch("cancel") {
+                            val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")
+                            val authorizedUser = call.getAuthorized()
+
+                            call.respond(transactionService.cancelOutcomeTransaction(authorizedUser, transactionId))
+                        }
                     }
                 }
             }
             route("transfer") {
-                post {
-                    val transactionInputDto = call.receive<TransactionInputDto>()
-                    val authorizedUser = call.getAuthorized()
+                authenticate ("create-transfer-request") {
+                    post {
+                        val transactionInputDto = call.receive<TransactionInputDto>()
+                        val authorizedUser = call.getAuthorized()
 
-                    call.respond(transactionService.createTransferTransaction(authorizedUser, transactionInputDto))
+                        call.respond(transactionService.createTransferTransaction(authorizedUser, transactionInputDto))
+                    }
                 }
-                route("{transactionId}") {
-                    patch("{statusId}") {
-                        val transactionId = call.parameters["transactionId"]?.toInt() ?: throw BadRequestException("Transaction id must be INT")
-                        val statusId = call.parameters["statusId"]?.toInt() ?: throw BadRequestException("Status id must be INT")
-                        val authorizedUser = call.getAuthorized()
+                authenticate ("default") {
+                    route("{transactionId}") {
+                        patch("{statusId}") {
+                            val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")
+                            val statusId = call.parameters.getInt("statusId", "Status id must be INT")
+                            val authorizedUser = call.getAuthorized()
 
-                        when (statusId) {
-                            AppConf.requestStatus.open -> call.respond(transactionService.approveTransferTransactionCreation(authorizedUser, transactionId))
-                            AppConf.requestStatus.creationCancelled ->  call.respond(transactionService.cancelTransferTransactionCreation(authorizedUser, transactionId))
-                            AppConf.requestStatus.processingCancelled -> call.respond(transactionService.cancelProcessingTransferTransaction(authorizedUser, transactionId))
-                            AppConf.requestStatus.delivered -> call.respond(transactionService.approveTransferDelivery(authorizedUser, transactionId))
-                            AppConf.requestStatus.notDelivered -> call.respond(transactionService.markAsNotDelivered(authorizedUser, transactionId))
-                            else -> throw BadRequestException("Bad status provided")
+                            when (statusId) {
+                                AppConf.requestStatus.open -> call.respond(transactionService.approveTransferTransactionCreation(authorizedUser, transactionId))
+                                AppConf.requestStatus.creationCancelled ->  call.respond(transactionService.cancelTransferTransactionCreation(authorizedUser, transactionId))
+                                AppConf.requestStatus.processingCancelled -> call.respond(transactionService.cancelProcessingTransferTransaction(authorizedUser, transactionId))
+                                AppConf.requestStatus.delivered -> call.respond(transactionService.approveTransferDelivery(authorizedUser, transactionId))
+                                AppConf.requestStatus.notDelivered -> call.respond(transactionService.markAsNotDelivered(authorizedUser, transactionId))
+                                else -> throw BadRequestException("Bad status provided")
+                            }
                         }
-                    }
-                    patch("{statusId}/{stockId}") {
-                        val transactionId = call.parameters["transactionId"]?.toInt() ?: throw BadRequestException("Transaction id must be INT")
-                        val statusId = call.parameters["statusId"]?.toInt() ?: throw BadRequestException("Status id must be INT")
-                        val stockId = call.parameters["stockId"]?.toInt() ?: throw BadRequestException("Stock id must be INT")
-                        val authorizedUser = call.getAuthorized()
+                        patch("{statusId}/{stockId}") {
+                            val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")
+                            val statusId = call.parameters.getInt("statusId", "Status id must be INT")
+                            val stockId = call.parameters.getInt("stockId", "Stock id must be INT")
+                            val authorizedUser = call.getAuthorized()
 
-                        if (statusId == AppConf.requestStatus.inProgress) {
-                            call.respond(transactionService.startProcessTransferTransaction(authorizedUser, transactionId, stockId))
-                        } else {
-                            throw BadRequestException("Bad status provided")
+                            if (statusId == AppConf.requestStatus.inProgress) {
+                                call.respond(transactionService.startProcessTransferTransaction(authorizedUser, transactionId, stockId))
+                            } else {
+                                throw BadRequestException("Bad status provided")
+                            }
                         }
-                    }
-                    patch("solve/{statusId}") {
-                        val transactionId = call.parameters["transactionId"]?.toInt() ?: throw BadRequestException("Transaction id must be INT")
-                        val statusId = call.parameters["statusId"]?.toInt() ?: throw BadRequestException("Status id must be INT")
-                        val authorizedUser = call.getAuthorized()
+                        authenticate ("solve-not-delivered-problem") {
+                            patch("solve/{statusId}") {
+                                val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")
+                                val statusId = call.parameters.getInt("statusId", "Status id must be INT")
+                                val authorizedUser = call.getAuthorized()
 
-                        val availableToSolve = listOf(
-                            AppConf.requestStatus.delivered, AppConf.requestStatus.deliveryCancelled, AppConf.requestStatus.failed
-                        )
+                                val availableToSolve = listOf(
+                                    AppConf.requestStatus.delivered, AppConf.requestStatus.deliveryCancelled, AppConf.requestStatus.failed
+                                )
 
-                        if (availableToSolve.contains(statusId))
-                            call.respond(transactionService.solveNotDelivered(authorizedUser, transactionId, statusId))
-                        else
-                            throw BadRequestException("Bad status provided")
+                                if (availableToSolve.contains(statusId))
+                                    call.respond(transactionService.solveNotDelivered(authorizedUser, transactionId, statusId))
+                                else
+                                    throw BadRequestException("Bad status provided")
+                            }
+                        }
                     }
                 }
             }

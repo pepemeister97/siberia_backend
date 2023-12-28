@@ -28,7 +28,7 @@ object CategoryModel: BaseIntIdTable() {
 
     fun getTreeFrom(categoryOutputDto: CategoryOutputDto): List<CategoryOutputDto> = transaction {
         CategoryToCategoryModel
-            .join(CategoryModel, JoinType.LEFT, CategoryToCategoryModel.child)
+            .join(CategoryModel, JoinType.LEFT, CategoryToCategoryModel.child, CategoryModel.id)
             .slice(CategoryModel.id, name, CategoryToCategoryModel.child)
             .select {
                 CategoryToCategoryModel.parent eq categoryOutputDto.id
@@ -36,7 +36,7 @@ object CategoryModel: BaseIntIdTable() {
                 CategoryOutputDto(
                     id = it[CategoryModel.id].value, name = it[name]
                 ).apply {
-                    children = getTreeFrom(categoryOutputDto)
+                    children = getTreeFrom(this)
                 }
             }
     }
@@ -45,7 +45,6 @@ object CategoryModel: BaseIntIdTable() {
         ids.add(categoryOutputDto.id)
         categoryOutputDto.children.forEach { getIdsFromTree(it, ids) }
     }
-
 
     fun getFullTree(): List<CategoryOutputDto> = transaction {
         val categoryDao = CategoryDao[1]

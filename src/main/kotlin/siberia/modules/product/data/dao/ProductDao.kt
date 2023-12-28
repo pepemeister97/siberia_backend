@@ -21,7 +21,7 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
     var barcode by ProductModel.barcode
 
     private val _brandId by ProductModel.brand
-    val brandId: Int? = _brandId?.value
+    val brandId: Int? get() = _brandId?.value
     var brand by BrandDao optionalReferencedOn ProductModel.brand
 
     var name by ProductModel.name
@@ -34,11 +34,11 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
     var commonPrice by ProductModel.commonPrice
 
     private val _categoryId by ProductModel.category
-    val categoryId: Int? = _categoryId?.value
+    val categoryId: Int? get() = _categoryId?.value
     var category by CategoryDao optionalReferencedOn ProductModel.category
 
     private val _collectionId by ProductModel.collection
-    val collectionId: Int? = _collectionId?.value
+    val collectionId: Int? get() = _collectionId?.value
     var collection by CollectionDao optionalReferencedOn ProductModel.collection
 
     var color by ProductModel.color

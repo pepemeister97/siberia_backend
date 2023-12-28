@@ -18,7 +18,7 @@ data class ProductCreateDto (
     val collection: Int? = null,
     val color: String,
     val amountInBox: Int,
-    val expirationDate: Int,
+    val expirationDate: Long,
     val link: String
 
 //    Future iterations

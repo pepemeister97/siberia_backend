@@ -7,7 +7,6 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.kodein.di.DI
 import org.kodein.di.instance
-import siberia.exceptions.BadRequestException
 import siberia.modules.category.data.dto.CategoryInputDto
 import siberia.modules.category.data.dto.CategoryOnRemoveDto
 import siberia.modules.category.service.CategoryService
@@ -25,7 +24,7 @@ class CategoryController(override val di: DI) : KodeinController() {
                     call.respond(categoryService.getAll())
                 }
                 get("{categoryId}") {
-                    val categoryId: Int = call.parameters["categoryId"]?.toInt() ?: throw BadRequestException("Category id must be INT")
+                    val categoryId: Int = call.parameters.getInt("categoryId", "Category id must be INT")
 
                     call.respond(categoryService.getOne(categoryId))
                 }
@@ -39,14 +38,14 @@ class CategoryController(override val di: DI) : KodeinController() {
                 }
                 route("{categoryId}") {
                     patch {
-                        val categoryId: Int = call.parameters["categoryId"]?.toInt() ?: throw BadRequestException("Category id must be INT")
+                        val categoryId: Int = call.parameters.getInt("categoryId", "Category id must be INT")
                         val categoryInputDto = call.receive<CategoryInputDto>()
                         val authorizedUser = call.getAuthorized()
 
                         call.respond(categoryService.update(authorizedUser, categoryId, categoryInputDto))
                     }
                     delete {
-                        val categoryId: Int = call.parameters["categoryId"]?.toInt() ?: throw BadRequestException("Category id must be INT")
+                        val categoryId: Int = call.parameters.getInt("categoryId", "Category id must be INT")
                         val categoryOnRemoveDto = call.receive<CategoryOnRemoveDto>()
                         val authorizedUser = call.getAuthorized()
 

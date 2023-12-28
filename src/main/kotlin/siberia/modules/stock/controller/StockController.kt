@@ -7,7 +7,6 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.kodein.di.DI
 import org.kodein.di.instance
-import siberia.exceptions.BadRequestException
 import siberia.modules.stock.data.dto.StockCreateDto
 import siberia.modules.stock.data.dto.StockSearchDto
 import siberia.modules.stock.data.dto.StockUpdateDto
@@ -22,13 +21,13 @@ class StockController(override val di: DI) : KodeinController() {
     override fun Routing.registerRoutes() {
         route("stock") {
             authenticate ("default") {
-                post {
+                post("all") {
                     val stockSearchDto = call.receive<StockSearchDto>()
 
                     call.respond(stockService.getByFilter(stockSearchDto))
                 }
                 get("{stockId}") {
-                    val stockId = call.parameters["stockId"]?.toInt() ?: throw BadRequestException("Stock id must be INT")
+                    val stockId = call.parameters.getInt("stockId", "Stock id must be INT")
 
                     call.respond(stockService.getOne(stockId))
                 }
@@ -43,14 +42,14 @@ class StockController(override val di: DI) : KodeinController() {
                 route("{stockId}") {
                     delete {
                         val authorizedUser = call.getAuthorized()
-                        val stockId = call.parameters["stockId"]?.toInt() ?: throw BadRequestException("Stock id must be INT")
+                        val stockId = call.parameters.getInt("stockId", "Stock id must be INT")
 
                         call.respond(stockService.remove(authorizedUser, stockId))
                     }
                     patch {
                         val authorizedUser = call.getAuthorized()
                         val stockUpdateDto = call.receive<StockUpdateDto>()
-                        val stockId = call.parameters["stockId"]?.toInt() ?: throw BadRequestException("Stock id must be INT")
+                        val stockId = call.parameters.getInt("stockId", "Stock id must be INT")
 
                         call.respond(stockService.update(authorizedUser, stockId, stockUpdateDto))
                     }

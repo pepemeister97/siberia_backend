@@ -5,7 +5,7 @@ import siberia.utils.database.transaction
 import org.kodein.di.DI
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.logger.data.models.SystemEventModel
-import siberia.modules.stock.data.StockFullOutputDto
+import siberia.modules.stock.data.dto.StockFullOutputDto
 import siberia.modules.stock.data.dao.StockDao
 import siberia.modules.stock.data.dao.StockDao.Companion.createLikeCond
 import siberia.modules.stock.data.dto.*
@@ -50,6 +50,7 @@ class StockService(di: DI) : KodeinService(di) {
         val stockName = stockDao.name
 
         val event = StockRemoveEvent(userDao.login, stockName)
+        stockDao.delete()
         SystemEventModel.logEvent(event)
         commit()
 
@@ -61,11 +62,17 @@ class StockService(di: DI) : KodeinService(di) {
 
     fun getByFilter(stockSearchDto: StockSearchDto): List<StockOutputDto> = transaction {
         StockDao.find {
-            createLikeCond(stockSearchDto.filters.name, (StockModel.id neq 0), StockModel.name) and
-            createLikeCond(stockSearchDto.filters.address, (StockModel.id neq 0), StockModel.address)
-        }.limit(stockSearchDto.pagination.n, stockSearchDto.pagination.offset).map { it.toOutputDto() }
+            createLikeCond(stockSearchDto.filters?.name, (StockModel.id neq 0), StockModel.name) and
+            createLikeCond(stockSearchDto.filters?.address, (StockModel.id neq 0), StockModel.address)
+        }.let {
+            if (stockSearchDto.pagination == null)
+                it
+            else
+                it.limit(stockSearchDto.pagination.n, stockSearchDto.pagination.offset)
+        }.map { it.toOutputDto() }
     }
 
-    fun getOne(stockId: Int): StockFullOutputDto =
+    fun getOne(stockId: Int): StockFullOutputDto = transaction {
         StockDao[stockId].fullOutput()
+    }
 }

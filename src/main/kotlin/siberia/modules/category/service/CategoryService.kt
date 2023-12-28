@@ -39,8 +39,13 @@ class CategoryService(di: DI) : KodeinService(di) {
         if (categoryDao.idValue == 1)
             throw BadRequestException("You cant remove root category")
 
-        if (categoryOnRemoveDto.transferChildrenTo != null)
-            CategoryDao[categoryOnRemoveDto.transferChildrenTo]
+        if (categoryOnRemoveDto.transferChildrenTo != null) {
+            val transferTo = CategoryDao[categoryOnRemoveDto.transferChildrenTo]
+            categoryDao.getWithChildren().children.forEach {
+                val category = CategoryDao[it.id]
+                CategoryModel.moveToNewParent(category, transferTo)
+            }
+        }
 
         CategoryModel.remove(categoryDao, categoryOnRemoveDto)
 
@@ -58,8 +63,13 @@ class CategoryService(di: DI) : KodeinService(di) {
         val userDao = UserDao[authorizedUser.id]
         val categoryDao = CategoryDao[categoryId]
         categoryDao.name = categoryInputDto.name
-        if (categoryInputDto.parent != null) {
+        if (categoryInputDto.parent == categoryDao.idValue)
+            throw BadRequestException("Bad parent ID")
+        if (categoryInputDto.parent != null && categoryInputDto.parent != 0) {
             val newParent = CategoryDao[categoryInputDto.parent]
+            CategoryModel.moveToNewParent(categoryDao, newParent)
+        } else if (categoryInputDto.parent == 0) {
+            val newParent = CategoryDao[1]
             CategoryModel.moveToNewParent(categoryDao, newParent)
         }
         categoryDao.flush(userDao.login)

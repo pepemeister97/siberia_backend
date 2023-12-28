@@ -24,7 +24,7 @@ data class ProductUpdateDto (
     val collection: Int? = null,
     val color: String? = null,
     val amountInBox: Int? = null,
-    val expirationDate: Int? = null,
+    val expirationDate: Long? = null,
     val link: String? = null
 
 //    Future iterations

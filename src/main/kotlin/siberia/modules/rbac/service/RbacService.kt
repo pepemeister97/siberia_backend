@@ -106,6 +106,7 @@ class RbacService(di: DI) : KodeinService(di) {
                 logUpdateEvent(authorizedUser, roleDao.name, roleDao.name)
             this
         }
+        RbacModel.expandAppendedRules(roleId, appendedRules)
         commit()
 
         appendedRules
@@ -116,6 +117,7 @@ class RbacService(di: DI) : KodeinService(di) {
 
         RbacModel.unlinkRules(RbacModel.role eq roleDao.idValue, linkedRules)
         logUpdateEvent(authorizedUser, roleDao.name, roleDao.name)
+        RbacModel.removeExpandedRules(roleId, linkedRules)
         commit()
     }
 

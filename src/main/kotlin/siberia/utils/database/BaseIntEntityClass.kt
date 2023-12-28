@@ -42,6 +42,13 @@ abstract class BaseIntEntityClass<Output, E : BaseIntEntity<Output>>(table: Base
 //            field inList filter
 
 
+    fun SqlExpressionBuilder.createNullableListCond(filter: List<Int>?, defaultCond: Op<Boolean>, field: Column<EntityID<Int>?>): Op<Boolean> =
+        if (filter == null)
+            defaultCond
+        else
+            field inList filter
+
+
     fun SqlExpressionBuilder.createListCond(filter: List<Int>?, defaultCond: Op<Boolean>, field: Column<EntityID<Int>>): Op<Boolean> =
         if (filter == null)
             defaultCond

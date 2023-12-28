@@ -2,7 +2,7 @@ package siberia.modules.stock.data.dao
 
 import org.jetbrains.exposed.dao.id.EntityID
 import siberia.modules.product.data.dao.ProductDao
-import siberia.modules.stock.data.StockFullOutputDto
+import siberia.modules.stock.data.dto.StockFullOutputDto
 import siberia.modules.stock.data.dto.StockOutputDto
 import siberia.modules.stock.data.dto.StockUpdateDto
 import siberia.modules.stock.data.models.StockModel

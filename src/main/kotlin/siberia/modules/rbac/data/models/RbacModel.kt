@@ -27,10 +27,11 @@ object RbacModel: BaseIntIdTable() {
     // 2) user-rule-stock and role-rule-stock (forAll) to be the manu user-rule-stocks and role-rule-stocks relations
     val simplifiedBy = reference("simplified_by", RbacModel, ReferenceOption.CASCADE, ReferenceOption.CASCADE).nullable().default(null)
 
+    //Future iterations
     // Field is created for user-rule-stock and role-rule-stock (rules with stock) relations
     // it means that user have access to all stocks by this rule ex. can view all stocks
     // For such rule will be automatically generated all user-rule-stocks relations and marked as simplifiedBy this one
-    val forAll = bool("for_all").default(false)
+    //val forAll = bool("for_all").default(false)
 
     fun getRuleLinks(query: Op<Boolean>, withStock: Boolean, expanded: Boolean = false): List<LinkedRuleOutputDto> = transaction {
         val cols = mutableListOf<Expression<*>>(rule, stock, RuleModel.category, RuleModel.needStock)
@@ -101,7 +102,7 @@ object RbacModel: BaseIntIdTable() {
     fun unlinkRules(from: Op<Boolean>, linkedRules: List<LinkedRuleInputDto>) = transaction {
         // Firstly remove rules which are haven`t stock id OR marked as forAll
         // We can delete them by one query
-        val rulesWithoutStock = linkedRules.filter { it.stockId == null || it.forAll }.map { it.ruleId }
+        val rulesWithoutStock = linkedRules.filter { it.stockId == null }.map { it.ruleId }
         RbacModel.deleteWhere {
             from and (rule inList rulesWithoutStock)
         }
@@ -120,50 +121,31 @@ object RbacModel: BaseIntIdTable() {
         }
     }
 
-    private data class RelationOnUpdate(
-        val simplifiedBy: Int,
-        val parent: Int,
-        val child: Int,
-        val isRole: Boolean
-    )
+    fun expandAppendedRules(roleId: Int, linkedRules: List<LinkedRuleOutputDto>) {
+        val onInsert = RbacModel.select {
+            (role eq roleId) and (user.isNotNull())
+        }.mapNotNull { if (it[user] == null) null else Pair(it[user]!!.value, it[id].value) }.map {
+            Pair(it, linkedRules)
+        }.flatMap { row ->
+            row.second.map { Pair(row.first, it) }
+        }
 
-    //We are search for user-rule-stock and role-rule-stock relations which are marked as "forAll" and creates new expanded rules
-    fun updateSimplifiedRules(stockId: Int) = transaction {
-        //Firstly look for user-rule relations
-        val relations = RbacModel.slice(RbacModel.id, user, rule).select {
-            stock eq stockId and forAll and role.isNull() and user.isNotNull()
-        }.map {
-            RelationOnUpdate(
-                simplifiedBy = it[RbacModel.id].value,
-                parent = it[user]!!.value,
-                child = it[rule]!!.value,
-                isRole = false
-            )
-        }.toMutableList()
+        RbacModel.batchInsert(onInsert) {
+            this[user] = it.first.first
+            this[rule] = it.second.ruleId
+            this[stock] = it.second.stockId
+            this[simplifiedBy] = it.first.second
+        }
+    }
 
-        //Then for role-rule relations
-        relations.addAll(
-            RbacModel.slice(RbacModel.id, role, rule).select {
-                stock eq stockId and forAll and role.isNotNull() and user.isNull()
-            }.map {
-                RelationOnUpdate(
-                    simplifiedBy = it[RbacModel.id].value,
-                    parent = it[role]!!.value,
-                    child = it[rule]!!.value,
-                    isRole = false
-                )
+    fun removeExpandedRules(roleId: Int, linkedRules: List<LinkedRuleInputDto>) {
+        val simplifiedRowsIds = RbacModel.select {
+            (role eq roleId) and (user.isNotNull())
+        }.map { it[id] }
+        linkedRules.map { row ->
+            RbacModel.deleteWhere {
+                (rule eq row.ruleId) and (stock eq row.stockId) and (simplifiedBy inList simplifiedRowsIds)
             }
-        )
-
-        RbacModel.batchInsert(relations) {
-            if (it.isRole)
-                this[role] = it.parent
-            else
-                this[user] = it.parent
-
-            this[rule] = it.child
-            this[stock] = stockId
-            this[simplifiedBy] = it.simplifiedBy
         }
     }
 }

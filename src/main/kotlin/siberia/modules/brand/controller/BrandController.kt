@@ -7,7 +7,6 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.kodein.di.DI
 import org.kodein.di.instance
-import siberia.exceptions.BadRequestException
 import siberia.modules.brand.data.dto.BrandInputDto
 import siberia.modules.brand.service.BrandService
 import siberia.utils.kodein.KodeinController
@@ -30,14 +29,14 @@ class BrandController(override val di: DI) : KodeinController() {
                     patch {
                         val brandInputDto = call.receive<BrandInputDto>()
                         val authorizedUser = call.getAuthorized()
-                        val brandId = call.parameters["brandId"]?.toInt() ?: throw BadRequestException("Brand id must be INT")
+                        val brandId = call.parameters.getInt("brandId", "Brand id must be INT")
 
                         call.respond(brandService.update(authorizedUser, brandId, brandInputDto))
                     }
 
                     delete {
                         val authorizedUser = call.getAuthorized()
-                        val brandId = call.parameters["brandId"]?.toInt() ?: throw BadRequestException("Brand id must be INT")
+                        val brandId = call.parameters.getInt("brandId", "Brand id must be INT")
 
                         call.respond(brandService.remove(authorizedUser, brandId))
                     }
@@ -49,7 +48,7 @@ class BrandController(override val di: DI) : KodeinController() {
                 }
 
                 get("{brandId}") {
-                    val brandId = call.parameters["brandId"]?.toInt() ?: throw BadRequestException("Brand id must be INT")
+                    val brandId = call.parameters.getInt("brandId", "Brand id must be INT")
 
                     call.respond(brandService.getOne(brandId))
                 }

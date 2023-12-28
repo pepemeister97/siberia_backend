@@ -3,6 +3,7 @@ package siberia.conf
 import io.ktor.util.date.*
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
+import siberia.modules.category.data.models.CategoryModel
 import siberia.modules.logger.data.models.SystemEventObjectTypeModel
 import siberia.modules.logger.data.models.SystemEventTypeModel
 import siberia.modules.notifications.data.models.NotificationDomainModel
@@ -50,6 +51,11 @@ object DatabaseInitializer {
         RuleModel.insert {
             it[id] = AppConf.rules.productsManaging
             it[name] = "Products managing"
+            it[description] = "Ability to create new users and manage their rules, roles and personal info"
+        }
+        RuleModel.insert {
+            it[id] = AppConf.rules.stockManaging
+            it[name] = "Stock managing"
             it[description] = "Ability to create new users and manage their rules, roles and personal info"
         }
 
@@ -251,6 +257,15 @@ object DatabaseInitializer {
         NotificationDomainModel.insert {
             it[id] = AppConf.notificationDomains.transactions
             it[name] = "Transaction"
+        }
+    }
+
+    fun initCategory() {
+        if (!CategoryModel.selectAll().empty())
+            return
+        CategoryModel.insert {
+            it[id] = 1
+            it[name] = "Root"
         }
     }
 

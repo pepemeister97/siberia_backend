@@ -7,7 +7,6 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.kodein.di.DI
 import org.kodein.di.instance
-import siberia.exceptions.BadRequestException
 import siberia.modules.collection.data.dto.CollectionInputDto
 import siberia.modules.collection.service.CollectionService
 import siberia.utils.kodein.KodeinController
@@ -18,7 +17,7 @@ class CollectionController(override val di: DI) : KodeinController() {
      * Method that subtypes must override to register the handled [Routing] routes.
      */
     override fun Routing.registerRoutes() {
-        route("brand") {
+        route("collection") {
             authenticate ("collection-managing") {
                 post {
                     val collectionInputDto = call.receive<CollectionInputDto>()
@@ -30,14 +29,14 @@ class CollectionController(override val di: DI) : KodeinController() {
                     patch {
                         val collectionInputDto = call.receive<CollectionInputDto>()
                         val authorizedUser = call.getAuthorized()
-                        val collectionId = call.parameters["collectionId"]?.toInt() ?: throw BadRequestException("Collection id must be INT")
+                        val collectionId = call.parameters.getInt("collectionId", "Collection id must be INT")
 
                         call.respond(collectionService.update(authorizedUser, collectionId, collectionInputDto))
                     }
 
                     delete {
                         val authorizedUser = call.getAuthorized()
-                        val collectionId = call.parameters["collectionId"]?.toInt() ?: throw BadRequestException("Collection id must be INT")
+                        val collectionId = call.parameters.getInt("collectionId", "Collection id must be INT")
 
                         call.respond(collectionService.remove(authorizedUser, collectionId))
                     }
@@ -49,7 +48,7 @@ class CollectionController(override val di: DI) : KodeinController() {
                 }
 
                 get("{collectionId}") {
-                    val collectionId = call.parameters["collectionId"]?.toInt() ?: throw BadRequestException("Collection id must be INT")
+                    val collectionId = call.parameters.getInt("collectionId", "Collection id must be INT")
 
                     call.respond(collectionService.getOne(collectionId))
                 }
