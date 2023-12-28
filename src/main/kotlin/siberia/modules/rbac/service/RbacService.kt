@@ -67,7 +67,7 @@ class RbacService(di: DI) : KodeinService(di) {
                     addError(ValidateException.ValidateError("stock_id", "must be provided"))
                 }
         }
-        LinkedRuleOutputDto(ruleId, stockId)
+        LinkedRuleOutputDto(ruleId = ruleId, stockId = stockId)
     }
 
     fun validateRole(roleId: Int): RoleOutputDto = transaction {

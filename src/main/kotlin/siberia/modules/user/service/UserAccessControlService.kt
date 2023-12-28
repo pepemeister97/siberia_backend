@@ -52,6 +52,7 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
         }
 
     fun addRules(userDao: UserDao, newRules: List<LinkedRuleInputDto>): List<LinkedRuleOutputDto> = transaction {
+        println(newRules)
         val appendedRules = newRules.map {
             val linkedRule = rbacService.validateRule(it.ruleId, it.stockId)
             linkedRule
@@ -110,6 +111,7 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
         }.count() > 0
     }
 
+    // Return Map <StockID, List<Rules>>
     fun getAvailableStocks(userId: Int): Map<Int, List<Int>> = transaction {
         val result = mutableMapOf<Int, MutableList<Int>>()
         RbacModel.select {
@@ -131,9 +133,9 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
         }.mapNotNull { it[RbacModel.stock]?.value }
     }
 
-    fun getAvailableStocksByRule(userId: Int, ruleId: Int): List<Int> = transaction {
-        RbacModel.select {
-            (RbacModel.user eq userId) and (RbacModel.rule eq ruleId)
-        }.mapNotNull { it[RbacModel.stock]?.value }
-    }
+//    fun getAvailableStocksByRule(userId: Int, ruleId: Int): List<Int> = transaction {
+//        RbacModel.select {
+//            (RbacModel.user eq userId) and (RbacModel.rule eq ruleId)
+//        }.mapNotNull { it[RbacModel.stock]?.value }
+//    }
 }

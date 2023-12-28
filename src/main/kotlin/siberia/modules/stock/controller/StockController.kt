@@ -23,13 +23,15 @@ class StockController(override val di: DI) : KodeinController() {
             authenticate ("default") {
                 post("all") {
                     val stockSearchDto = call.receive<StockSearchDto>()
+                    val authorizedUser = call.getAuthorized()
 
-                    call.respond(stockService.getByFilter(stockSearchDto))
+                    call.respond(stockService.getAvailableByFilter(authorizedUser, stockSearchDto))
                 }
                 get("{stockId}") {
                     val stockId = call.parameters.getInt("stockId", "Stock id must be INT")
+                    val authorizedUser = call.getAuthorized()
 
-                    call.respond(stockService.getOne(stockId))
+                    call.respond(stockService.getOne(authorizedUser, stockId))
                 }
             }
             authenticate ("stock-managing") {
