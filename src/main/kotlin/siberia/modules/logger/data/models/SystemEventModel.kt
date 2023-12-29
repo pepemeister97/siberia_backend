@@ -20,13 +20,14 @@ object SystemEventModel: BaseIntIdTable() {
 //    val relatedTo = reference("related_to", SystemEventModel, ReferenceOption.CASCADE, ReferenceOption.CASCADE)
 //    val canBeRestored = bool("can_be_restored")
 
-    fun getList(query: SqlExpressionBuilder.() -> Op<Boolean>): List<SystemEventOutputDto<*>> = transaction {
+    fun getList(query: SqlExpressionBuilder.() -> Op<Boolean>): List<SystemEventOutputDto> = transaction {
         SystemEventModel
             .leftJoin(SystemEventTypeModel)
             .leftJoin(SystemEventObjectTypeModel)
             .slice(
                 SystemEventModel.id,
                 author,
+                eventType,
                 SystemEventTypeModel.name,
                 eventObjectName,
                 eventObjectType,
@@ -36,14 +37,16 @@ object SystemEventModel: BaseIntIdTable() {
             )
             .select(query)
             .map {
-                SystemEventOutputDto<Any>(
+                SystemEventOutputDto(
                     id = it[SystemEventModel.id].value,
                     author = it[author],
                     eventType = it[SystemEventTypeModel.name],
                     eventObjectName = it[eventObjectName],
                     eventObjectType = it[SystemEventObjectTypeModel.name],
                     eventDescription = it[eventDescription],
-                    timestamp = it[createdAt].toString()
+                    timestamp = it[createdAt].toString(),
+                    eventObjectTypeId = it[eventObjectType].value,
+                    eventTypeId = it[eventType].value
                 )
             }
     }

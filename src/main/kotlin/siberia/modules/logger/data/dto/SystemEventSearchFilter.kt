@@ -1,10 +1,12 @@
 package siberia.modules.logger.data.dto
 
-import java.time.LocalDateTime
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class SystemEventSearchFilter (
-    val userName: String? = null,
-    val range: Pair<LocalDateTime?, LocalDateTime?>? = null,
-    val type: Int? = null,
-    val objectType: Int? = null
+    val author: String? = null,
+    val rangeStart: Long? = null,
+    val rangeEnd: Long? = null,
+    val eventTypeId: List<Int>? = null,
+    val eventObjectTypeId: List<Int>? = null
 )

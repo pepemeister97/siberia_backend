@@ -20,9 +20,6 @@ class SystemEventController(override val di: DI) : KodeinController() {
     override fun Routing.registerRoutes() {
         authenticate("check-logs") {
             route("logs") {
-                get {
-                    call.respond(systemEventService.getByFilter(null))
-                }
                 post {
                     val filter = call.receive<SystemEventSearchFilter>()
 
