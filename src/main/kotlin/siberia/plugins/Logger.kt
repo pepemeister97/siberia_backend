@@ -9,17 +9,32 @@ object Logger {
         "main" to KtorSimpleLogger("siberia.ExceptionFilter"),
         "database" to KtorSimpleLogger("siberia.ExceptionFilter.Database"),
         "Transformation" to KtorSimpleLogger("siberia.ExceptionFilter.Transformation"),
-        "websocket" to KtorSimpleLogger("siberia.ExceptionFilter.WebSocket")
+        "websocket" to KtorSimpleLogger("siberia.ExceptionFilter.WebSocket"),
+        "info" to KtorSimpleLogger("siberia.info")
     )
 
     fun callFailed(call: ApplicationCall, cause: Throwable, prefix: String = "main") {
-        (logger[prefix].apply { if (this == null) logger["main"]!!.debug("Logger $prefix not found") } ?: logger["main"])!!.info("Request ${call.request.path()} was failed due to $cause")
-        (logger[prefix] ?: logger["main"])!!.debug("Stacktrace => ${cause.stackTraceToString()}")
+        logger[prefix].let {
+            val channel = if (it == null) {
+                val logger = this.logger["main"]!!
+                logger.debug("Logger $prefix not found")
+                logger
+            } else
+                it
+
+            channel.warn("Request ${call.request.path()} was failed due to $cause")
+            channel.debug("Stacktrace => ${cause.stackTraceToString()}")
+        }
     }
 
     fun debug(message: Any?, prefix: String) {
-        (logger[prefix].apply {
-            if (this == null) logger["main"]!!.debug("Logger $prefix not found")
-        } ?: logger["main"])!!.debug(message.toString())
+        logger[prefix].let {
+            val logger = if (it == null) {
+                logger["main"]!!.debug("Logger $prefix not found")
+                logger["main"]!!
+            } else it
+
+            logger.debug(message.toString())
+        }
     }
 }

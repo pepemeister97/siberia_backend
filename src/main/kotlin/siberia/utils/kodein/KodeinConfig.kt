@@ -8,6 +8,7 @@ import io.ktor.server.routing.*
 import org.kodein.di.Instance
 import org.kodein.di.instance
 import org.kodein.type.jvmType
+import siberia.plugins.Logger
 
 inline fun <reified T : Any> DI.MainBuilder.bindSingleton(crossinline callback: (DI) -> T) {
     bind<T>() with singleton { callback(this@singleton.di) }
@@ -28,7 +29,7 @@ fun Application.kodeinApplication(
             val bindClass = bind.key.type.jvmType as? Class<*>?
             if (bindClass != null && KodeinController::class.java.isAssignableFrom(bindClass)) {
                 val res by kodein.Instance(bind.key.type)
-                println("Registering '$res' routes...")
+                Logger.debug("Registering '$res' routes...", "info")
                 (res as KodeinController).apply { registerRoutes() }
             }
         }

@@ -69,7 +69,6 @@ class NotificationsWebSocketController(override val di: DI) : KodeinController()
                     } catch (e: Exception) {
                         Logger.debug("WebSocket request: $request was failed", "websocket")
                     }
-                    println("New $message")
                 }
             }
         }

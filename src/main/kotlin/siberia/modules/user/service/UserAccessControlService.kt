@@ -52,7 +52,6 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
         }
 
     fun addRules(userDao: UserDao, newRules: List<LinkedRuleInputDto>): List<LinkedRuleOutputDto> = transaction {
-        println(newRules)
         val appendedRules = newRules.map {
             val linkedRule = rbacService.validateRule(it.ruleId, it.stockId)
             linkedRule

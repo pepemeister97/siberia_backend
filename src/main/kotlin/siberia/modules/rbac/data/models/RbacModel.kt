@@ -58,7 +58,6 @@ object RbacModel: BaseIntIdTable() {
                 needStock = it[RuleModel.needStock],
                 stockId = it[stock]?.value
             ).apply {
-                println(it[stock])
                 if (withStock && it[stock] != null)
                     stockName = it[StockModel.name]
             }
