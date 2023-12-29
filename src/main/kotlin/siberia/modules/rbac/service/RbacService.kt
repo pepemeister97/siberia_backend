@@ -38,7 +38,7 @@ class RbacService(di: DI) : KodeinService(di) {
     fun getFiltered(roleFilterDto: RoleFilterDto): List<RoleOutputDto> = transaction {
         RoleDao.find {
             createLikeCond(roleFilterDto.name, RoleModel.id neq 0, RoleModel.name)
-        } .map { it.toOutputDto() }
+        }.map { it.withRelatedUsers }
     }
 
     fun getRole(roleId: Int): RoleOutputDto = transaction { RoleDao[roleId].outputWithChildren }

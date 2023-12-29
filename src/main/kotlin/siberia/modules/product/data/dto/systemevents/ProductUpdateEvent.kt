@@ -8,7 +8,7 @@ data class ProductUpdateEvent(
     override val eventType: Int
         get() = AppConf.eventTypes.updateEvent
     override val eventDescription: String
-        get() = "Product $updatedProductName ($updatedProductVendorCode) was updated."
+        get() = "Product $updatedProductName (Vendor Code = $updatedProductVendorCode) was updated."
     override val eventObjectName: String
         get() = updatedProductName
 }

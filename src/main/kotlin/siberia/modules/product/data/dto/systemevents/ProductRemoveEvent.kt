@@ -8,7 +8,7 @@ data class ProductRemoveEvent(
     override val eventType: Int
         get() = AppConf.eventTypes.removeEvent
     override val eventDescription: String
-        get() = "Product $removedProductName ($removedProductVendorCode) was removed."
+        get() = "Product $removedProductName (Vendor Code = $removedProductVendorCode) was removed."
     override val eventObjectName: String
         get() = removedProductName
 }

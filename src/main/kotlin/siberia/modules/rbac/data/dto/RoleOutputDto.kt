@@ -8,4 +8,6 @@ data class RoleOutputDto (
     val name: String,
     val description: String?,
     var rules: List<LinkedRuleOutputDto> = listOf(),
+    val relatedUsersCount: Long? = null,
+    val relatedUsers: List<String>? = null
 ) {}

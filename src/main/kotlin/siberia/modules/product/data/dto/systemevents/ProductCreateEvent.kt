@@ -8,7 +8,7 @@ data class ProductCreateEvent(
     override val eventType: Int
         get() = AppConf.eventTypes.createEvent
     override val eventDescription: String
-        get() = "Product $createdProductName ($createdProductVendorCode) was created."
+        get() = "Product $createdProductName (Vendor Code = $createdProductVendorCode) was created."
     override val eventObjectName: String
         get() = createdProductName
 }

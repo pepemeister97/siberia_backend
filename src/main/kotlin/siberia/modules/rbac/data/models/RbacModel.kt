@@ -121,10 +121,15 @@ object RbacModel: BaseIntIdTable() {
         }
     }
 
-    fun expandAppendedRules(roleId: Int, linkedRules: List<LinkedRuleOutputDto>) {
-        val onInsert = RbacModel.select {
+    fun getRelatedUsers(roleId: Int) = RbacModel
+        .leftJoin(UserModel)
+        .slice(id, user, role, stock, rule, simplifiedBy, UserModel.name)
+        .select {
             (role eq roleId) and (user.isNotNull())
-        }.mapNotNull { if (it[user] == null) null else Pair(it[user]!!.value, it[id].value) }.map {
+        }
+
+    fun expandAppendedRules(roleId: Int, linkedRules: List<LinkedRuleOutputDto>) {
+        val onInsert = getRelatedUsers(roleId).mapNotNull { if (it[user] == null) null else Pair(it[user]!!.value, it[id].value) }.map {
             Pair(it, linkedRules)
         }.flatMap { row ->
             row.second.map { Pair(row.first, it) }
