@@ -37,9 +37,6 @@ class ProductController(override val di: DI) : KodeinController() {
                     val productCreateDto = call.receive<ProductCreateDto>()
                     val authorizedUser = call.getAuthorized()
 
-                    //TODO: File uploading
-                    productCreateDto.photo = "fake-photo"
-
                     call.respond(productService.create(authorizedUser, productCreateDto))
                 }
                 route("{productId}") {

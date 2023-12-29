@@ -4,7 +4,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ProductCreateDto (
-    var photo: String? = null,
+    var photoName: String,
+    var photoBase64: String,
     val vendorCode: String,
     val barcode: String?,
     val brand: Int? = null,

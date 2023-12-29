@@ -18,15 +18,17 @@ import siberia.modules.product.data.models.ProductModel
 import siberia.modules.rbac.data.dao.RuleCategoryDao.Companion.createNullableListCond
 import siberia.modules.stock.data.dao.StockDao.Companion.createLikeCond
 import siberia.modules.user.data.dao.UserDao
+import siberia.utils.files.FilesUtil
 import siberia.utils.kodein.KodeinService
 
 class ProductService(di: DI) : KodeinService(di) {
     fun create(authorizedUser: AuthorizedUser, productCreateDto: ProductCreateDto): ProductFullOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
         val event = ProductCreateEvent(userDao.login, productCreateDto.name, productCreateDto.vendorCode)
+        val photoName = FilesUtil.buildName(productCreateDto.photoName)
 
         val productDao = ProductDao.new {
-            photo = productCreateDto.photo!!
+            photo = photoName
             vendorCode = productCreateDto.vendorCode
             barcode = productCreateDto.barcode
             brand = if (productCreateDto.brand != null) BrandDao[productCreateDto.brand] else null
@@ -49,6 +51,7 @@ class ProductService(di: DI) : KodeinService(di) {
         }
 
         SystemEventModel.logEvent(event)
+        FilesUtil.upload(productCreateDto.photoBase64, photoName)
         commit()
 
         productDao.fullOutput()

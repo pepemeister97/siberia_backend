@@ -20,6 +20,7 @@ import siberia.modules.category.service.CategoryService
 import siberia.modules.collection.controller.CollectionController
 import siberia.modules.collection.data.models.CollectionModel
 import siberia.modules.collection.service.CollectionService
+import siberia.modules.files.FilesController
 import siberia.modules.logger.controller.SystemEventController
 import siberia.modules.logger.data.models.SystemEventModel
 import siberia.modules.logger.data.models.SystemEventObjectTypeModel
@@ -89,6 +90,7 @@ fun Application.module() {
         bindSingleton { StockController(it) }
         bindSingleton { TransactionController(it) }
         bindSingleton { NotificationsWebSocketController(it) }
+        bindSingleton { FilesController(it) }
     }
 
     DatabaseConnector(
