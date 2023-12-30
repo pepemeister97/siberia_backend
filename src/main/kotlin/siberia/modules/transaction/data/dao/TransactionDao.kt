@@ -17,19 +17,19 @@ class TransactionDao(id: EntityID<Int>) : BaseIntEntity<TransactionOutputDto>(id
     companion object : BaseIntEntityClass<TransactionOutputDto, TransactionDao>(TransactionModel)
 
     private val _fromId by TransactionModel.from
-    val fromId = _fromId?.value
+    val fromId: Int? get() = _fromId?.value
     var from by StockDao optionalReferencedOn TransactionModel.from
 
     private val _toId by TransactionModel.to
-    val toId = _toId?.value
+    val toId: Int? get() = _toId?.value
     val to by StockDao optionalReferencedOn TransactionModel.to
 
     private val _statusId by TransactionModel.status
-    val statusId = _statusId.value
+    val statusId: Int get() = _statusId.value
     var status by TransactionStatusDao referencedOn TransactionModel.status
 
     private val _typeId by TransactionModel.type
-    val typeId = _typeId.value
+    val typeId: Int get() = _typeId.value
     val type by TransactionTypeDao referencedOn TransactionModel.type
 
     val products by ProductDao via TransactionToProductModel
@@ -40,7 +40,16 @@ class TransactionDao(id: EntityID<Int>) : BaseIntEntity<TransactionOutputDto>(id
     fun toInputDto(): TransactionInputDto =
         TransactionInputDto(fromId, toId, typeId, listOf())
 
-    fun listItemOutputDto(): TransactionListItemOutputDto =
+    val inputProductsList get(): List<TransactionInputDto.TransactionProductInputDto> =
+        TransactionModel.getFullProductList(idValue).map {
+            TransactionInputDto.TransactionProductInputDto(
+                it.product.id,
+                it.amount
+            )
+        }
+
+
+    val listItemOutputDto: TransactionListItemOutputDto get() =
         TransactionListItemOutputDto(
             idValue, fromId, from?.name,
             toId, to?.name,

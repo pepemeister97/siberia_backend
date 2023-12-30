@@ -86,7 +86,7 @@ object RbacModel: BaseIntIdTable() {
         getRuleLinks(
             user eq userId and if (expanded) rule.isNotNull() else simplifiedBy.isNull() and role.isNull(),
             withStock, expanded = expanded
-        ).distinctBy { it.ruleId }
+        ).distinctBy { Pair(it.ruleId, it.stockId) }
 
     fun roleToRuleLinks(roleId: Int, withStock: Boolean = false): List<LinkedRuleOutputDto> =
         getRuleLinks(

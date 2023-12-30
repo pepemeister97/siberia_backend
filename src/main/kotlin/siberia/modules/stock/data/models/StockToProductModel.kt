@@ -8,5 +8,4 @@ object StockToProductModel: BaseIntIdTable() {
     val product = reference("product", ProductModel, ReferenceOption.CASCADE, ReferenceOption.CASCADE)
     val stock = reference("stock", StockModel, ReferenceOption.CASCADE, ReferenceOption.CASCADE)
     val amount = double("amount")
-    val notifyAfter = double("amount_for_notification")
 }

@@ -12,18 +12,18 @@ class NotificationDao(id: EntityID<Int>) : BaseIntEntity<NotificationOutputDto>(
     companion object : BaseIntEntityClass<NotificationOutputDto, NotificationDao>(NotificationModel)
 
     private val _targetId by NotificationModel.target
-    val targetId: Int = _targetId.value
+    val targetId: Int get() = _targetId.value
     var target by UserDao referencedOn NotificationModel.target
 
     val watched by NotificationModel.watched
     var description by NotificationModel.description
 
     private val _typeId by NotificationModel.type
-    val typeId: Int = _typeId.value
+    val typeId: Int get() = _typeId.value
     var type by NotificationTypeDao referencedOn NotificationModel.type
 
     private val _domainId by NotificationModel.domain
-    val domainId: Int = _domainId.value
+    val domainId: Int get() = _domainId.value
     var domain by NotificationDomainDao referencedOn NotificationModel.domain
     override fun toOutputDto(): NotificationOutputDto =
         NotificationOutputDto(

@@ -31,7 +31,7 @@ object TransactionModel : BaseIntIdTable() {
 
         TransactionToProductModel.batchInsert(transactionInputDto.products) {
             this[TransactionToProductModel.transaction] = createdTransaction.idValue
-            this[TransactionToProductModel.product] = it.product.id
+            this[TransactionToProductModel.product] = it.productId
             this[TransactionToProductModel.amount] = it.amount
         }
 

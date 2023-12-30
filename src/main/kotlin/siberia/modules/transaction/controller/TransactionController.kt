@@ -10,6 +10,7 @@ import org.kodein.di.instance
 import siberia.conf.AppConf
 import siberia.exceptions.BadRequestException
 import siberia.modules.transaction.data.dto.TransactionInputDto
+import siberia.modules.transaction.data.dto.TransactionSearchFilter
 import siberia.modules.transaction.service.TransactionService
 import siberia.utils.kodein.KodeinController
 
@@ -21,9 +22,11 @@ class TransactionController(override val di: DI) : KodeinController() {
     override fun Routing.registerRoutes() {
         route("transaction") {
             authenticate ("default") {
-                get {
+                post {
                     val authorizedUser = call.getAuthorized()
-                    call.respond(transactionService.getAvailableTransactions(authorizedUser))
+                    val transactionSearchFilter = call.receive<TransactionSearchFilter>()
+
+                    call.respond(transactionService.getAvailableTransactions(authorizedUser, transactionSearchFilter))
                 }
                 route("{transactionId}") {
                     get {

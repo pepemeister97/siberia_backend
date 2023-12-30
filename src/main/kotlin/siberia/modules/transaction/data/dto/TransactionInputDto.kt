@@ -4,8 +4,14 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class TransactionInputDto (
-    val from: Int?,
-    val to: Int?,
+    val from: Int? = null,
+    val to: Int? = null,
     val type: Int,
-    val products: List<TransactionFullOutputDto.TransactionProductDto>
-)
+    val products: List<TransactionProductInputDto>
+) {
+    @Serializable
+    data class TransactionProductInputDto(
+        val productId: Int,
+        val amount: Double
+    )
+}
