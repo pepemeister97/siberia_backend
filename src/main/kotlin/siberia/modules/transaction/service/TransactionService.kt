@@ -1,5 +1,7 @@
 package siberia.modules.transaction.service
 
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
@@ -122,9 +124,10 @@ class TransactionService(di: DI) : KodeinService(di) {
     private fun getTargetStock(transactionDao: TransactionDao, statusId: Int): Int {
         val statusToStock = AppConf.requestToStockMapper[transactionDao.typeId]
         val stockPair = if (statusToStock != null)
-                            statusToStock[statusId] ?: throw Exception("Bad status")
+                            statusToStock[statusId] ?: throw BadRequestException("Bad status")
                         else
-                            throw Exception("Bad type")
+                            throw BadRequestException("Bad type")
+
         return (if (stockPair == AppConf.StockPair.TO)
                     transactionDao.to?.idValue
                 else
@@ -151,10 +154,6 @@ class TransactionService(di: DI) : KodeinService(di) {
 
     private fun checkAccessToStatusForTransaction(userDao: UserDao, transactionId: Int, statusId: Int): Boolean {
         val transactionDao = TransactionDao[transactionId]
-        println("check status")
-        println(statusId)
-        println(transactionDao.statusId)
-        println(availableStatuses(transactionDao).contains(statusId))
         return if (availableStatuses(transactionDao).contains(statusId)) {
             val ruleId = mapTypeToRule(transactionDao.typeId, statusId)
             val targetStock = getTargetStock(transactionDao, statusId)
@@ -328,8 +327,14 @@ class TransactionService(di: DI) : KodeinService(di) {
 
     fun startProcessTransferTransaction(authorizedUser: AuthorizedUser, transactionId: Int, stockId: Int): TransactionOutputDto = transaction {
         val stockDao = StockDao[stockId]
+        var transactionDao = TransactionDao[transactionId]
 
-        val transactionDao = changeTransactionStatus(UserDao[authorizedUser.id], transactionId, AppConf.requestStatus.inProgress)
+        if (transactionDao.to == stockDao)
+            throw ForbiddenException()
+
+        transactionDao.from = stockDao
+
+        transactionDao = changeTransactionStatus(UserDao[authorizedUser.id], transactionId, AppConf.requestStatus.inProgress)
         if (transactionDao.typeId != AppConf.requestTypes.transfer)
             throw ForbiddenException()
 
@@ -415,9 +420,17 @@ class TransactionService(di: DI) : KodeinService(di) {
     fun getAvailableTransactions(authorizedUser: AuthorizedUser, transactionSearchFilter: TransactionSearchFilter): List<TransactionListItemOutputDto> = transaction {
         val availableStocksWithRules = userAccessControlService.getAvailableStocks(authorizedUser.id)
         val availableStocks = availableStocksWithRules.map { it.key }
+        //If status is OPEN it means that managers from all other stocks can see that request
+        val processQuery = if (authorizedUser.rules.map { rule -> rule.ruleId }.contains(AppConf.rules.manageTransferRequest))
+            TransactionModel.status eq AppConf.requestStatus.open
+        else
+            TransactionModel.to inList availableStocks
         TransactionModel.select {
-            (TransactionModel.from inList availableStocks) or (TransactionModel.to inList availableStocks) and
-
+            (
+                    (TransactionModel.from inList availableStocks) or
+                    (TransactionModel.to inList availableStocks) or
+                    processQuery
+            ) and
             createNullableListCond(transactionSearchFilter.to, TransactionModel.id.isNotNull(), TransactionModel.to) and
             createNullableListCond(transactionSearchFilter.from, TransactionModel.id.isNotNull(), TransactionModel.from) and
             createListCond(transactionSearchFilter.status, TransactionModel.id.isNotNull(), TransactionModel.status) and

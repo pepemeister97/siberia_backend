@@ -117,17 +117,13 @@ class TransactionController(override val di: DI) : KodeinController() {
                                 else -> throw BadRequestException("Bad status provided")
                             }
                         }
-                        patch("{statusId}/{stockId}") {
+                        patch("${AppConf.requestStatus.inProgress}/{stockId}") {
                             val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")
-                            val statusId = call.parameters.getInt("statusId", "Status id must be INT")
                             val stockId = call.parameters.getInt("stockId", "Stock id must be INT")
+
                             val authorizedUser = call.getAuthorized()
 
-                            if (statusId == AppConf.requestStatus.inProgress) {
-                                call.respond(transactionService.startProcessTransferTransaction(authorizedUser, transactionId, stockId))
-                            } else {
-                                throw BadRequestException("Bad status provided")
-                            }
+                            call.respond(transactionService.startProcessTransferTransaction(authorizedUser, transactionId, stockId))
                         }
                         authenticate ("solve-not-delivered-problem") {
                             patch("solve/{statusId}") {
