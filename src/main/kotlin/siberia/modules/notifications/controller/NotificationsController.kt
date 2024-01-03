@@ -17,19 +17,21 @@ class NotificationsController(override val di: DI) : KodeinController() {
      * Method that subtypes must override to register the handled [Routing] routes.
      */
     override fun Routing.registerRoutes() {
-        authenticate("default") {
-            post("/all") {
-                val authorizedUser = call.getAuthorized()
-                val notificationFilterDto = call.receive<NotificationsFilterDto>()
+        route("notification") {
+            authenticate("default") {
+                post("/all") {
+                    val authorizedUser = call.getAuthorized()
+                    val notificationFilterDto = call.receive<NotificationsFilterDto>()
 
-                call.respond(notificationService.getNotifications(authorizedUser.id, notificationFilterDto))
-            }
+                    call.respond(notificationService.getNotifications(authorizedUser.id, notificationFilterDto))
+                }
 
-            post("/watch") {
-                val authorizedUser = call.getAuthorized()
-                val onWatch = call.receive<List<Int>>()
+                post("/watch") {
+                    val authorizedUser = call.getAuthorized()
+                    val onWatch = call.receive<List<Int>>()
 
-                call.respond(notificationService.setWatched(authorizedUser.id, onWatch))
+                    call.respond(notificationService.setWatched(authorizedUser.id, onWatch))
+                }
             }
         }
     }
