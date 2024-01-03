@@ -29,5 +29,5 @@ class StockDao(id: EntityID<Int>): BaseIntEntity<StockOutputDto>(id, StockModel)
     }
 
     fun fullOutput(): StockFullOutputDto =
-        StockFullOutputDto(idValue, name, address, products.map { it.toOutputDto() })
+        StockFullOutputDto(idValue, name, address, products.map { it.listItemDto })
 }

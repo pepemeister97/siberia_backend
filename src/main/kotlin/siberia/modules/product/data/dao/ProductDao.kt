@@ -5,6 +5,7 @@ import siberia.modules.brand.data.dao.BrandDao
 import siberia.modules.category.data.dao.CategoryDao
 import siberia.modules.collection.data.dao.CollectionDao
 import siberia.modules.product.data.dto.ProductFullOutputDto
+import siberia.modules.product.data.dto.ProductListItemOutputDto
 import siberia.modules.product.data.dto.ProductOutputDto
 import siberia.modules.product.data.dto.ProductUpdateDto
 import siberia.modules.product.data.models.ProductModel
@@ -69,6 +70,10 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
             collection?.toOutputDto(), color, amountInBox,
             expirationDate, link //size, volume
         )
+
+    val listItemDto: ProductListItemOutputDto get() = ProductListItemOutputDto(
+        id = idValue, name = name, vendorCode = vendorCode, price = commonPrice
+    )
 
     fun loadUpdateDto(productUpdateDto: ProductUpdateDto) {
         photo = productUpdateDto.photo ?: photo

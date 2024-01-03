@@ -26,6 +26,7 @@ import siberia.modules.logger.data.models.SystemEventModel
 import siberia.modules.logger.data.models.SystemEventObjectTypeModel
 import siberia.modules.logger.data.models.SystemEventTypeModel
 import siberia.modules.logger.service.SystemEventService
+import siberia.modules.notifications.controller.NotificationsController
 import siberia.modules.notifications.controller.NotificationsWebSocketController
 import siberia.modules.notifications.data.models.NotificationModel
 import siberia.modules.notifications.data.models.NotificationTypeModel
@@ -90,6 +91,7 @@ fun Application.module() {
         bindSingleton { StockController(it) }
         bindSingleton { TransactionController(it) }
         bindSingleton { NotificationsWebSocketController(it) }
+        bindSingleton { NotificationsController(it) }
         bindSingleton { FilesController(it) }
     }
 

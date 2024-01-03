@@ -9,12 +9,12 @@ import org.kodein.di.instance
 import siberia.exceptions.BadRequestException
 import siberia.exceptions.ForbiddenException
 import siberia.modules.auth.data.dto.AuthorizedUser
-import siberia.modules.notifications.data.dto.NotificationsFilterDto
 import siberia.modules.notifications.service.NotificationService
 import siberia.plugins.Logger
 import siberia.utils.kodein.KodeinController
 import siberia.utils.security.jwt.JwtUtil
-import siberia.utils.websockets.WebSocketRequestDto
+import siberia.utils.websockets.dto.WebSocketRequestDto
+import siberia.utils.websockets.dto.WebSocketResponseDto
 
 class NotificationsWebSocketController(override val di: DI) : KodeinController() {
     private val notificationService: NotificationService by instance()
@@ -30,8 +30,9 @@ class NotificationsWebSocketController(override val di: DI) : KodeinController()
     private suspend fun websocketBadRequest(message: String, socketSession: DefaultWebSocketSession) {
         socketSession.send(
             Frame.Text(
-            json.encodeToString(BadRequestException.serializer(), BadRequestException(message))
-        ))
+                WebSocketResponseDto.wrap("bad-request", BadRequestException(message)).json
+            )
+        )
     }
 
     private suspend fun websocketRoutesProcessor(requestDto: WebSocketRequestDto, socketSession: DefaultWebSocketSession) {
@@ -44,14 +45,6 @@ class NotificationsWebSocketController(override val di: DI) : KodeinController()
         when (requestDto.headers.uri) {
             "connect" -> {
                 notificationService.newConnection(authorizedUser, socketSession)
-            }
-            "notifications/get" -> {
-                val filter = try {
-                    json.decodeFromString<NotificationsFilterDto>(requestDto.body)
-                } catch (e: Exception) {
-                    NotificationsFilterDto()
-                }
-                notificationService.getNotifications(socketSession, authorizedUser, filter)
             }
         }
     }

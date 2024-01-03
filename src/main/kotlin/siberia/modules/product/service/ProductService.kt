@@ -85,7 +85,7 @@ class ProductService(di: DI) : KodeinService(di) {
         )
     }
 
-    fun getByFilter(productSearchDto: ProductSearchDto): List<ProductOutputDto> = transaction {
+    fun getByFilter(productSearchDto: ProductSearchDto): List<ProductListItemOutputDto> = transaction {
         val searchFilterDto = productSearchDto.filters
         val paginationOutputDto = productSearchDto.pagination
         ProductDao.find {
@@ -110,7 +110,7 @@ class ProductService(di: DI) : KodeinService(di) {
                 it
             else
                 it.limit(paginationOutputDto.n, paginationOutputDto.offset)
-        }.map { it.toOutputDto() }
+        }.map { it.listItemDto }
     }
 
     fun getOne(productId: Int): ProductFullOutputDto = transaction {

@@ -1,4 +1,4 @@
-package siberia.utils.websockets
+package siberia.utils.websockets.dto
 
 import kotlinx.serialization.Serializable
 

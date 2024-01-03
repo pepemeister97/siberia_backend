@@ -6,6 +6,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.actor
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.update
 import org.kodein.di.DI
 import siberia.conf.AppConf
 import siberia.modules.auth.data.dto.AuthorizedUser
@@ -17,6 +18,7 @@ import siberia.modules.notifications.data.dao.NotificationDomainDao
 import siberia.modules.notifications.data.dao.NotificationTypeDao
 import siberia.modules.notifications.data.dto.NotificationCreateDto
 import siberia.modules.notifications.data.dto.NotificationOutputDto
+import siberia.modules.notifications.data.dto.NotificationSuccessWatchedDto
 import siberia.modules.notifications.data.dto.NotificationsFilterDto
 import siberia.modules.notifications.data.models.NotificationModel
 import siberia.modules.transaction.data.dao.TransactionStatusDao
@@ -24,6 +26,7 @@ import siberia.modules.transaction.data.models.TransactionRelatedUserModel
 import siberia.modules.user.data.dao.UserDao
 import siberia.utils.database.transaction
 import siberia.utils.kodein.KodeinService
+import siberia.utils.websockets.dto.WebSocketResponseDto
 
 class NotificationService(di: DI) : KodeinService(di) {
     private val connections: MutableMap<Int, MutableList<DefaultWebSocketSession>> = mutableMapOf()
@@ -43,16 +46,6 @@ class NotificationService(di: DI) : KodeinService(di) {
 
             fun getNotificationFrame(): Frame = Frame.Text(
                 serializer.encodeToString(NotificationOutputDto.serializer(), notificationDao.toOutputDto())
-            )
-        }
-
-        class GetNotifications(
-            val authorizedUser: AuthorizedUser,
-            val notificationsFilter: NotificationsFilterDto,
-            val socketSession: DefaultWebSocketSession,
-        ): NotificationChannelEvent() {
-            fun getNotificationsFrame(notifications: List<NotificationOutputDto>): Frame = Frame.Text(
-                serializer.encodeToString(NotificationOutputDto.NotificationList.serializer(), NotificationOutputDto.NotificationList(notifications))
             )
         }
     }
@@ -79,13 +72,8 @@ class NotificationService(di: DI) : KodeinService(di) {
                     val connectionsByUser = connections[event.notificationDao.targetId] ?: continue
                     connectionsByUser.forEach {
                         if (it.isActive)
-                            it.send(event.getNotificationFrame())
+                            it.send(WebSocketResponseDto.wrap("new-notification", event.getNotificationFrame()).json)
                     }
-                }
-
-                is NotificationChannelEvent.GetNotifications -> {
-                    val notifications = getNotifications(event.authorizedUser.id, event.notificationsFilter)
-                    event.socketSession.send(event.getNotificationsFrame(notifications))
                 }
             }
         }
@@ -100,7 +88,16 @@ class NotificationService(di: DI) : KodeinService(di) {
         }.map { it.toOutputDto() }
     }
 
-    fun createNotification(notificationCreateDto: NotificationCreateDto) = transaction {
+    fun setWatched(userId: Int, onWatch: List<Int>): NotificationSuccessWatchedDto = transaction {
+        NotificationModel.update({ (NotificationModel.target eq userId) and (NotificationModel.id inList onWatch) } ) {
+            it[watched] = true
+        }
+        commit()
+
+        NotificationSuccessWatchedDto(true)
+    }
+
+    private fun createNotification(notificationCreateDto: NotificationCreateDto) = transaction {
         val createdNotificationDao = NotificationDao.new {
             target = UserDao[notificationCreateDto.targetId]
             type = NotificationTypeDao[notificationCreateDto.typeId]
@@ -129,17 +126,5 @@ class NotificationService(di: DI) : KodeinService(di) {
                 description = "Status of transaction (id = $transactionId) was changed to ${statusAfterDto.name}"
             ))
         }
-    }
-
-    fun getNotifications(
-        socketSession: DefaultWebSocketSession,
-        authorizedUser: AuthorizedUser,
-        notificationsFilter: NotificationsFilterDto
-    ) {
-        notificationChannel.trySend(
-            NotificationChannelEvent.GetNotifications(
-                authorizedUser, notificationsFilter, socketSession
-            )
-        )
     }
 }
