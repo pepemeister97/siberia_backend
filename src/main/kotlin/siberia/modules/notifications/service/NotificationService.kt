@@ -84,7 +84,7 @@ class NotificationService(di: DI) : KodeinService(di) {
             createListCond(notificationsFilter.domain, NotificationModel.id neq 0, NotificationModel.domain) and
             createListCond(notificationsFilter.type, NotificationModel.id neq 0, NotificationModel.type) and
             createLikeCond(notificationsFilter.description, NotificationModel.id neq 0, NotificationModel.description) and
-            createBooleanCond(notificationsFilter.new, NotificationModel.id neq 0, NotificationModel.watched, reversed = true)
+            createBooleanCond(notificationsFilter.isNew, NotificationModel.id neq 0, NotificationModel.watched, reversed = true)
         }.map { it.toOutputDto() }
     }
 
