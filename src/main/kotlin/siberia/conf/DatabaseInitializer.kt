@@ -3,6 +3,7 @@ package siberia.conf
 import io.ktor.util.date.*
 import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import siberia.modules.brand.data.models.BrandModel
 import siberia.modules.category.data.models.CategoryModel
@@ -21,6 +22,7 @@ import siberia.modules.stock.data.models.StockModel
 import siberia.modules.transaction.data.models.TransactionStatusModel
 import siberia.modules.transaction.data.models.TransactionTypeModel
 import siberia.modules.user.data.models.UserModel
+import siberia.utils.database.transaction
 import siberia.utils.security.bcrypt.CryptoUtil
 
 object DatabaseInitializer {
@@ -340,21 +342,26 @@ object DatabaseInitializer {
         RbacModel.expandAppendedRules(roleId, linkedRules)
     }
 
-    fun initTestData() {
+    fun initTestData() = transaction {
         val items = listOf<Int>(2, 3, 4)
+        var createProducts = true
         if (BrandModel.selectAll().empty()) {
             BrandModel.batchInsert(items) {
                 this[BrandModel.id] = it
                 this[BrandModel.name] = "Brand #$it"
             }
         }
+        else
+            createProducts = false
         if (CollectionModel.selectAll().empty()) {
             CollectionModel.batchInsert(items) {
                 this[CollectionModel.id] = it
                 this[CollectionModel.name] = "Collection #$it"
             }
         }
-        if (CategoryModel.selectAll().empty()) {
+        else
+            createProducts = false
+        if (CategoryModel.selectAll().count() <= 1) {
             CategoryModel.insert {
                 it[id] = items[0]
                 it[name] = "Category #${items[0]}"
@@ -380,9 +387,14 @@ object DatabaseInitializer {
                 it[child] = items[2]
             }
         }
-        if (ProductModel.selectAll().empty()) {
+        else
+            createProducts = false
+        commit()
+
+        if (ProductModel.selectAll().empty() && createProducts) {
             ProductModel.batchInsert(items) {
                 this[ProductModel.id] = it
+                this[ProductModel.photo] = "$it.png"
                 this[ProductModel.vendorCode] = getTimeMillis().toString()
                 this[ProductModel.barcode] = getTimeMillis().toString()
                 this[ProductModel.brand] = it
@@ -405,6 +417,39 @@ object DatabaseInitializer {
                 this[StockModel.id] = it
                 this[StockModel.name] = "Description for auto-generated stock #$it"
                 this[StockModel.address] = "$it Podrochitte ave."
+            }
+            val roleId = 1
+            if (
+                !RoleModel.select { RoleModel.id eq roleId }.empty() &&
+                !UserModel.select { UserModel.id eq 1 }.empty() &&
+                !UserModel.select { UserModel.id eq 2 }.empty()
+            ) {
+                val rules = listOf(
+                    Pair(9, 2),
+                    Pair(10, 2),
+                    Pair(11, 2),
+                    Pair(12, 2),
+                    Pair(13, 2),
+                    Pair(14, 2),
+                    Pair(15, 2),
+                    Pair(16, 2),
+                    Pair(17, 2),
+                    Pair(9, 3),
+                    Pair(10, 3),
+                    Pair(11, 3),
+                    Pair(12, 3),
+                    Pair(13, 3),
+                    Pair(14, 3),
+                    Pair(15, 3),
+                    Pair(16, 3),
+                    Pair(17, 3),
+                )
+                RbacModel.batchInsert(rules) {
+                    this[RbacModel.role] = roleId
+                    this[RbacModel.rule] = it.first
+                    this[RbacModel.stock] = it.second
+                }
+                RbacModel.expandAppendedRules(roleId, rules.map { LinkedRuleOutputDto(it.first, stockId = it.second, needStock = true) })
             }
         }
     }
