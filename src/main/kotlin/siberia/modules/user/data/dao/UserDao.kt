@@ -2,8 +2,8 @@ package siberia.modules.user.data.dao
 
 import org.jetbrains.exposed.dao.EntityBatchUpdate
 import org.jetbrains.exposed.dao.id.EntityID
+import siberia.exceptions.BadRequestException
 import siberia.utils.database.transaction
-import siberia.exceptions.UnauthorizedException
 import siberia.modules.rbac.data.dto.LinkedRuleOutputDto
 import siberia.modules.rbac.data.dto.RoleOutputDto
 import siberia.modules.rbac.data.models.RbacModel
@@ -26,7 +26,7 @@ class UserDao(id: EntityID<Int>): BaseIntEntity<UserOutputDto>(id, UserModel) {
                 UserModel.login eq login
             }
             if (!search.empty())
-                throw UnauthorizedException()
+                throw BadRequestException("Login must be unique")
         }
 
         fun new(authorName: String, init: UserDao.() -> Unit): UserDao {
@@ -52,7 +52,7 @@ class UserDao(id: EntityID<Int>): BaseIntEntity<UserOutputDto>(id, UserModel) {
         UserOutputDto(idValue, name, login, null, lastLogin)
 
     fun loadPatch(userPatchDto: UserPatchDto) = transaction {
-        if (userPatchDto.login != null) {
+        if (userPatchDto.login != null && userPatchDto.login != login) {
             checkUnique(userPatchDto.login)
             login = userPatchDto.login
         }
