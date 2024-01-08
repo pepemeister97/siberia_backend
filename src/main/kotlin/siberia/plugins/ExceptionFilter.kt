@@ -40,6 +40,8 @@ fun Application.configureExceptionFilter() {
                 )
         }
 
+
+
         exception<EntityNotFoundException> {
             call, exposedException ->
                 Logger.callFailed(call, exposedException, "Database")

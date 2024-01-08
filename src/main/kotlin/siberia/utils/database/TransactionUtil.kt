@@ -5,6 +5,7 @@ import org.jetbrains.exposed.sql.Transaction
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransaction
 import java.sql.Connection.TRANSACTION_READ_COMMITTED
+import java.sql.SQLNonTransientConnectionException
 
 suspend fun <T> suspendedTransaction(statements: suspend Transaction.() -> T) = TransactionManager.currentOrNew(TRANSACTION_READ_COMMITTED).suspendedTransaction {
     try {
@@ -12,7 +13,13 @@ suspend fun <T> suspendedTransaction(statements: suspend Transaction.() -> T) = 
     } catch (e: Exception) {
         throw e
     } catch (e: ExposedSQLException) {
-        throw e
+        if (e.cause is SQLNonTransientConnectionException){
+            DatabaseConnector.connect()
+            rollback()
+            statements()
+        } else {
+            throw e
+        }
     }
 }
 
@@ -22,12 +29,12 @@ fun <T> transaction(statements: Transaction.() -> T) = TransactionManager.curren
     } catch (e: Exception) {
         throw e
     } catch (e: ExposedSQLException) {
-        throw e
+        if (e.cause is SQLNonTransientConnectionException){
+            DatabaseConnector.connect()
+            rollback()
+            statements()
+        } else {
+            throw e
+        }
     }
-}
-
-
-interface TransactionalService {
-    suspend fun <T> transaction(statements: suspend Transaction.() -> T) = suspendedTransaction(statements)
-
 }
