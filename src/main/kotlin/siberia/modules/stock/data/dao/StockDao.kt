@@ -1,7 +1,10 @@
 package siberia.modules.stock.data.dao
 
 import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.sql.select
 import siberia.modules.product.data.dao.ProductDao
+import siberia.modules.product.data.dto.ProductListItemOutputDto
+import siberia.modules.product.data.models.ProductModel
 import siberia.modules.stock.data.dto.StockFullOutputDto
 import siberia.modules.stock.data.dto.StockOutputDto
 import siberia.modules.stock.data.dto.StockUpdateDto
@@ -28,6 +31,21 @@ class StockDao(id: EntityID<Int>): BaseIntEntity<StockOutputDto>(id, StockModel)
         address = stockUpdateDto.address ?: address
     }
 
-    fun fullOutput(): StockFullOutputDto =
-        StockFullOutputDto(idValue, name, address, products.map { it.listItemDto })
+    fun fullOutput(): StockFullOutputDto {
+        val stockToProduct = StockToProductModel.leftJoin(ProductModel).select {
+            StockToProductModel.stock eq this@StockDao.id
+        }.orderBy(StockToProductModel.product)
+
+        val products = stockToProduct.map {
+            ProductListItemOutputDto(
+                id = it[ProductModel.id].value,
+                name = it[ProductModel.name],
+                vendorCode = it[ProductModel.vendorCode],
+                quantity = it[StockToProductModel.amount],
+                price = it[ProductModel.commonPrice]
+            )
+        }
+
+        return StockFullOutputDto(idValue, name, address, products)
+    }
 }

@@ -7,6 +7,6 @@ data class ProductListItemOutputDto (
     val id: Int,
     val name: String,
     val vendorCode: String,
-    val quantity: Int = 0,
+    val quantity: Double = 0.0,
     val price: Double
 )

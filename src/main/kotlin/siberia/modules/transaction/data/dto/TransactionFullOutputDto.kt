@@ -19,6 +19,7 @@ data class TransactionFullOutputDto (
     @Serializable
     data class TransactionProductDto(
         val product: ProductOutputDto,
-        val amount: Double
+        val amount: Double,
+        val price: Double? = null
     )
 }

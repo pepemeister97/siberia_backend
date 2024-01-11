@@ -9,6 +9,8 @@ import java.sql.SQLNonTransientConnectionException
 
 suspend fun <T> suspendedTransaction(statements: suspend Transaction.() -> T) = TransactionManager.currentOrNew(TRANSACTION_READ_COMMITTED).suspendedTransaction {
     try {
+        if (connection.isClosed)
+            DatabaseConnector.connect()
         statements()
     } catch (e: Exception) {
         throw e
@@ -25,6 +27,8 @@ suspend fun <T> suspendedTransaction(statements: suspend Transaction.() -> T) = 
 
 fun <T> transaction(statements: Transaction.() -> T) = TransactionManager.currentOrNew(TRANSACTION_READ_COMMITTED).run {
     try {
+        if (connection.isClosed)
+            DatabaseConnector.connect()
         statements()
     } catch (e: Exception) {
         throw e

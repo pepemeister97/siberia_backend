@@ -1,6 +1,7 @@
 package siberia.modules.product.service
 
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.update
 import siberia.utils.database.transaction
 import org.kodein.di.DI
 import siberia.modules.auth.data.dto.AuthorizedUser
@@ -17,9 +18,12 @@ import siberia.modules.product.data.dto.systemevents.ProductUpdateEvent
 import siberia.modules.product.data.models.ProductModel
 import siberia.modules.rbac.data.dao.RuleCategoryDao.Companion.createNullableListCond
 import siberia.modules.stock.data.dao.StockDao.Companion.createLikeCond
+import siberia.modules.transaction.data.dto.TransactionFullOutputDto
 import siberia.modules.user.data.dao.UserDao
 import siberia.utils.files.FilesUtil
 import siberia.utils.kodein.KodeinService
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 class ProductService(di: DI) : KodeinService(di) {
     fun create(authorizedUser: AuthorizedUser, productCreateDto: ProductCreateDto): ProductFullOutputDto = transaction {
@@ -91,7 +95,7 @@ class ProductService(di: DI) : KodeinService(di) {
         ProductDao.find {
             createRangeCond(searchFilterDto?.amountInBox, (ProductModel.id neq 0), ProductModel.amountInBox, -1, Int.MAX_VALUE) and
             createRangeCond(searchFilterDto?.commonPrice, (ProductModel.id neq 0), ProductModel.commonPrice, -1.0, Double.MAX_VALUE) and
-            createRangeCond(searchFilterDto?.purchasePrice, (ProductModel.id neq 0), ProductModel.purchasePrice, -1.0, Double.MAX_VALUE) and
+            createRangeCond(searchFilterDto?.purchasePrice, (ProductModel.id neq 0), ProductModel.lastPurchasePrice, -1.0, Double.MAX_VALUE) and
             createRangeCond(searchFilterDto?.distributorPrice, (ProductModel.id neq 0), ProductModel.distributorPrice, -1.0, Double.MAX_VALUE) and
             createRangeCond(searchFilterDto?.professionalPrice, (ProductModel.id neq 0), ProductModel.professionalPrice, -1.0, Double.MAX_VALUE) and
             createNullableListCond(searchFilterDto?.brand, (ProductModel.id neq 0), ProductModel.brand) and
@@ -115,5 +119,15 @@ class ProductService(di: DI) : KodeinService(di) {
 
     fun getOne(productId: Int): ProductFullOutputDto = transaction {
         ProductDao[productId].fullOutput()
+    }
+
+    fun updateLastPurchaseData(products: List<TransactionFullOutputDto.TransactionProductDto>, timestamp: LocalDateTime) {
+        val timestampLong = timestamp.toEpochSecond(ZoneOffset.ofHours(3))
+        products.forEach { product ->
+            ProductModel.update({ ProductModel.id eq product.product.id }) {
+                it[lastPurchasePrice] = (product.price ?: 0.0)
+                it[lastPurchaseDate] = timestampLong
+            }
+        }
     }
 }

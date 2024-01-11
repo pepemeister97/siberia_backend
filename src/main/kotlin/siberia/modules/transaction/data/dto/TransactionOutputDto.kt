@@ -8,5 +8,5 @@ data class TransactionOutputDto (
     val from: Int? = null,
     val to: Int? = null,
     val status: Int,
-    val type: Int
+    val type: Int,
 )

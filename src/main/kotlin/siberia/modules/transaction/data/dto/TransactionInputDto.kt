@@ -12,6 +12,7 @@ data class TransactionInputDto (
     @Serializable
     data class TransactionProductInputDto(
         val productId: Int,
-        val amount: Double
+        val amount: Double,
+        val price: Double? = null
     )
 }

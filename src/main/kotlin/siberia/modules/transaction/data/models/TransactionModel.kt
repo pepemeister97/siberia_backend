@@ -33,6 +33,7 @@ object TransactionModel : BaseIntIdTable() {
             this[TransactionToProductModel.transaction] = createdTransaction.idValue
             this[TransactionToProductModel.product] = it.productId
             this[TransactionToProductModel.amount] = it.amount
+            this[TransactionToProductModel.price] = it.price
         }
 
         createdTransaction
@@ -41,6 +42,7 @@ object TransactionModel : BaseIntIdTable() {
     fun getFullProductList(transactionId: Int): List<TransactionFullOutputDto.TransactionProductDto> = transaction {
         val slice = ProductModel.columns.toMutableList()
         slice.add(TransactionToProductModel.amount)
+        slice.add(TransactionToProductModel.price)
         TransactionToProductModel
             .leftJoin(ProductModel)
             .slice(slice)
@@ -49,7 +51,7 @@ object TransactionModel : BaseIntIdTable() {
             }
             .map {
                 val productDao = ProductDao.wrapRow(it)
-                TransactionFullOutputDto.TransactionProductDto(productDao.toOutputDto(), it[TransactionToProductModel.amount])
+                TransactionFullOutputDto.TransactionProductDto(productDao.toOutputDto(), it[TransactionToProductModel.amount], it[TransactionToProductModel.price])
             }
 
     }

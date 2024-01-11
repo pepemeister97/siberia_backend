@@ -2,6 +2,7 @@ package siberia.modules.stock.data.models
 
 import io.ktor.server.plugins.*
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import siberia.modules.transaction.data.dto.TransactionInputDto
 import siberia.utils.database.BaseIntIdTable
@@ -43,7 +44,7 @@ object StockModel: BaseIntIdTable() {
         val exist = StockToProductModel.select {
             (StockToProductModel.product inList products.map { it.productId }) and (StockToProductModel.stock eq stockId)
         }.map {
-            if (it[StockToProductModel.amount] - (productsMapped[it[StockToProductModel.product].value] ?: 0.0) <= 0.0)
+            if (it[StockToProductModel.amount] - (productsMapped[it[StockToProductModel.product].value] ?: 0.0) < 0.0)
                 throw Exception("Not enough")
             it
         }
@@ -72,6 +73,10 @@ object StockModel: BaseIntIdTable() {
                 throw BadRequestException("Not enough products in stock")
 
             this[StockToProductModel.amount] = resultAmount
+        }
+
+        StockToProductModel.deleteWhere {
+            amount eq 0.0
         }
     }
 }

@@ -362,29 +362,58 @@ object DatabaseInitializer {
         else
             createProducts = false
         if (CategoryModel.selectAll().count() <= 1) {
+            val item = 0
             CategoryModel.insert {
-                it[id] = items[0]
-                it[name] = "Category #${items[0]}"
+                it[id] = items[0] + item
+                it[name] = "Category #${items[0] + item}"
             }
             CategoryModel.insert {
-                it[id] = items[1]
-                it[name] = "Sub Category #${items[1]}"
+                it[id] = items[1] + item
+                it[name] = "Sub Category #${items[1] + item}"
             }
             CategoryModel.insert {
-                it[id] = items[2]
-                it[name] = "Sub Sub Category #${items[2]}"
+                it[id] = items[2] + item
+                it[name] = "Sub Sub Category #${items[2] + item}"
             }
             CategoryToCategoryModel.insert {
                 it[parent] = 1
-                it[child] = items[0]
+                it[child] = items[0] + item
             }
             CategoryToCategoryModel.insert {
-                it[parent] = items[0]
-                it[child] = items[1]
+                it[parent] = items[0] + item
+                it[child] = items[1] + item
             }
             CategoryToCategoryModel.insert {
-                it[parent] = items[1]
-                it[child] = items[2]
+                it[parent] = items[1] + item
+                it[child] = items[2] + item
+            }
+            items.forEach {
+                item -> run {
+                    CategoryModel.insert {
+                        it[id] = items[0] + item * 100
+                        it[name] = "Category #${items[0] + item* 100}"
+                    }
+                    CategoryModel.insert {
+                        it[id] = items[1] + item* 100
+                        it[name] = "Sub Category #${items[1] + item* 100}"
+                    }
+                    CategoryModel.insert {
+                        it[id] = items[2] + item* 100
+                        it[name] = "Sub Sub Category #${items[2] + item* 100}"
+                    }
+                    CategoryToCategoryModel.insert {
+                        it[parent] = 1
+                        it[child] = items[0] + item* 100
+                    }
+                    CategoryToCategoryModel.insert {
+                        it[parent] = items[0] + item* 100
+                        it[child] = items[1] + item* 100
+                    }
+                    CategoryToCategoryModel.insert {
+                        it[parent] = items[1] + item* 100
+                        it[child] = items[2] + item* 100
+                    }
+                }
             }
         }
         else
@@ -400,7 +429,7 @@ object DatabaseInitializer {
                 this[ProductModel.brand] = it
                 this[ProductModel.name] = "Product #$it"
                 this[ProductModel.description] = "Description for product #$it"
-                this[ProductModel.purchasePrice] = (it * 8).toDouble()
+                this[ProductModel.lastPurchasePrice] = (it * 8).toDouble()
                 this[ProductModel.distributorPrice] = (it * 16).toDouble()
                 this[ProductModel.professionalPrice] = (it * 24).toDouble()
                 this[ProductModel.commonPrice] = (it * 32).toDouble()

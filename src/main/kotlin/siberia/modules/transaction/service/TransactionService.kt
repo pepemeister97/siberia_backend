@@ -13,6 +13,7 @@ import siberia.exceptions.ForbiddenException
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.logger.data.models.SystemEventModel
 import siberia.modules.notifications.service.NotificationService
+import siberia.modules.product.service.ProductService
 import siberia.modules.rbac.data.dao.RuleDao.Companion.createListCond
 import siberia.modules.rbac.data.dao.RuleDao.Companion.createNullableListCond
 import siberia.modules.stock.data.dao.StockDao
@@ -27,6 +28,7 @@ import siberia.modules.transaction.data.models.TransactionModel
 import siberia.modules.transaction.data.models.TransactionRelatedUserModel
 import siberia.modules.user.data.dao.UserDao
 import siberia.modules.user.service.UserAccessControlService
+import siberia.plugins.Logger
 import siberia.utils.database.idValue
 import siberia.utils.database.transaction
 import siberia.utils.kodein.KodeinService
@@ -34,6 +36,7 @@ import siberia.utils.kodein.KodeinService
 class TransactionService(di: DI) : KodeinService(di) {
     private val userAccessControlService: UserAccessControlService by instance()
     private val notificationService: NotificationService by instance()
+    private val productService: ProductService by instance()
 
     /*
         This method takes type of the request and status
@@ -127,6 +130,10 @@ class TransactionService(di: DI) : KodeinService(di) {
                             statusToStock[statusId] ?: throw BadRequestException("Bad status")
                         else
                             throw BadRequestException("Bad type")
+
+        Logger.debug(stockPair, "main")
+        Logger.debug(statusId, "main")
+        Logger.debug(transactionDao, "main")
 
         return (if (stockPair == AppConf.StockPair.TO)
                     transactionDao.to?.idValue
@@ -229,6 +236,7 @@ class TransactionService(di: DI) : KodeinService(di) {
         val approvedTransaction = approveIncomeOutcomeTransaction(authorizedUser, transactionId)
         val targetStock = StockDao[getTargetStock(transactionDao.toInputDto())]
         val products = TransactionModel.getFullProductList(transactionId)
+        productService.updateLastPurchaseData(products, approvedTransaction.updatedAt ?: approvedTransaction.createdAt)
         StockModel.appendProducts(targetStock.idValue, products.map { TransactionInputDto.TransactionProductInputDto(it.product.id, it.amount) })
         notificationService.notifyTransactionStatusChange(transactionId, approvedTransaction.statusId)
         commit()
@@ -445,9 +453,13 @@ class TransactionService(di: DI) : KodeinService(di) {
         if (!checkAccessToTransaction(authorizedUser, transactionId))
             throw ForbiddenException()
         availableStatuses(transactionDao).filter {
-            val ruleId = mapTypeToRule(transactionDao.typeId, it)
-            val targetStock = getTargetStock(transactionDao, it)
-            (userAccessControlService.checkAccessToStock(authorizedUser.id, ruleId, targetStock))
+            if (transactionDao.statusId == AppConf.requestStatus.open && transactionDao.typeId == AppConf.requestTypes.transfer)
+                true
+            else {
+                val ruleId = mapTypeToRule(transactionDao.typeId, it)
+                val targetStock = getTargetStock(transactionDao, it)
+                (userAccessControlService.checkAccessToStock(authorizedUser.id, ruleId, targetStock))
+            }
         }.map { TransactionStatusDao[it].toOutputDto() }
     }
 

@@ -1,6 +1,7 @@
 package siberia.modules.product.data.dao
 
 import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.sql.select
 import siberia.modules.brand.data.dao.BrandDao
 import siberia.modules.category.data.dao.CategoryDao
 import siberia.modules.collection.data.dao.CollectionDao
@@ -9,6 +10,7 @@ import siberia.modules.product.data.dto.ProductListItemOutputDto
 import siberia.modules.product.data.dto.ProductOutputDto
 import siberia.modules.product.data.dto.ProductUpdateDto
 import siberia.modules.product.data.models.ProductModel
+import siberia.modules.stock.data.models.StockToProductModel
 import siberia.utils.database.BaseIntEntity
 import siberia.utils.database.BaseIntEntityClass
 import siberia.utils.database.idValue
@@ -27,7 +29,7 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
 
     var name by ProductModel.name
     var description by ProductModel.description
-    var purchasePrice by ProductModel.purchasePrice
+    var purchasePrice by ProductModel.lastPurchasePrice
     val cost by ProductModel.cost
     val lastPurchaseDate by ProductModel.lastPurchaseDate
     var distributorPrice by ProductModel.distributorPrice
@@ -61,15 +63,20 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
             expirationDate, link, // size, volume,
         )
 
-    fun fullOutput(): ProductFullOutputDto =
-        ProductFullOutputDto(
+    fun fullOutput(): ProductFullOutputDto {
+        val quantity = StockToProductModel.select {
+            StockToProductModel.product eq this@ProductDao.id
+        }.sumOf { it[StockToProductModel.amount] }
+        return ProductFullOutputDto(
             idValue, photo, vendorCode, barcode,
             brand?.toOutputDto(), name, description, purchasePrice,
             cost, lastPurchaseDate, distributorPrice,
             professionalPrice, commonPrice, category?.toOutputDto(),
             collection?.toOutputDto(), color, amountInBox,
-            expirationDate, link //size, volume
+            expirationDate, link, quantity
+            //size, volume
         )
+    }
 
     val listItemDto: ProductListItemOutputDto get() = ProductListItemOutputDto(
         id = idValue, name = name, vendorCode = vendorCode, price = commonPrice
