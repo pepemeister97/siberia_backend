@@ -29,7 +29,7 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
 
     var name by ProductModel.name
     var description by ProductModel.description
-    var purchasePrice by ProductModel.lastPurchasePrice
+    var lastPurchasePrice by ProductModel.lastPurchasePrice
     val cost by ProductModel.cost
     val lastPurchaseDate by ProductModel.lastPurchaseDate
     var distributorPrice by ProductModel.distributorPrice
@@ -56,7 +56,7 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
     override fun toOutputDto(): ProductOutputDto =
         ProductOutputDto(
             idValue, photo, vendorCode, barcode,
-            brandId, name, description, purchasePrice,
+            brandId, name, description, lastPurchasePrice,
             cost, lastPurchaseDate, distributorPrice,
             professionalPrice, commonPrice, categoryId,
             collectionId, color, amountInBox,
@@ -69,7 +69,7 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
         }.sumOf { it[StockToProductModel.amount] }
         return ProductFullOutputDto(
             idValue, photo, vendorCode, barcode,
-            brand?.toOutputDto(), name, description, purchasePrice,
+            brand?.toOutputDto(), name, description, lastPurchasePrice,
             cost, lastPurchaseDate, distributorPrice,
             professionalPrice, commonPrice, category?.toOutputDto(),
             collection?.toOutputDto(), color, amountInBox,
@@ -93,7 +93,6 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
 
         name = productUpdateDto.name ?: name
         description = productUpdateDto.description ?: description
-        purchasePrice = productUpdateDto.purchasePrice ?: purchasePrice
         distributorPrice = productUpdateDto.distributorPrice ?: distributorPrice
         professionalPrice = productUpdateDto.professionalPrice ?: professionalPrice
         commonPrice = productUpdateDto.commonPrice ?: commonPrice

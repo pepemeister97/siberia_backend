@@ -38,7 +38,6 @@ class ProductService(di: DI) : KodeinService(di) {
             brand = if (productCreateDto.brand != null) BrandDao[productCreateDto.brand] else null
             name = productCreateDto.name
             description = productCreateDto.description
-            purchasePrice = productCreateDto.purchasePrice
             distributorPrice = productCreateDto.distributorPrice
             professionalPrice = productCreateDto.professionalPrice
             commonPrice = productCreateDto.commonPrice

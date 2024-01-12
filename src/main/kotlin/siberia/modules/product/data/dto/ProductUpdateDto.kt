@@ -13,7 +13,6 @@ data class ProductUpdateDto (
     val brand: Int? = null,
     val name: String? = null,
     val description: String? = null,
-    val purchasePrice: Double? = null,
     val distributorPrice: Double? = null,
     val professionalPrice: Double? = null,
     val commonPrice: Double? = null,

@@ -11,7 +11,6 @@ data class ProductCreateDto (
     val brand: Int? = null,
     val name: String,
     val description: String,
-    val purchasePrice: Double,
     val distributorPrice: Double,
     val professionalPrice: Double,
     val commonPrice: Double,
