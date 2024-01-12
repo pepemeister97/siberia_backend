@@ -3,6 +3,7 @@ package siberia.modules.rbac.service
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.selectAll
 import siberia.utils.database.transaction
 import org.kodein.di.DI
 import siberia.exceptions.ValidateException
@@ -18,6 +19,7 @@ import siberia.modules.rbac.data.dto.systemevents.RoleCreateEvent
 import siberia.modules.rbac.data.dto.systemevents.RoleRemoveEvent
 import siberia.modules.rbac.data.dto.systemevents.RoleUpdateEvent
 import siberia.modules.rbac.data.models.role.RoleModel
+import siberia.modules.rbac.data.models.rule.RuleModel
 import siberia.modules.stock.data.dao.StockDao
 import siberia.modules.transaction.data.dao.TransactionStatusDao.Companion.createLikeCond
 import siberia.modules.user.data.dao.UserDao
@@ -43,8 +45,10 @@ class RbacService(di: DI) : KodeinService(di) {
 
     fun getRole(roleId: Int): RoleOutputDto = transaction { RoleDao[roleId].outputWithChildren }
 
-    fun getAllRules(): List<RuleOutputDto> =
-        RuleDao.find { Op.nullOp() }.map { it.toOutputDto() }
+    fun getAllRules(): List<RuleOutputDto> = transaction {
+        RuleDao.wrapRows(RuleModel.selectAll()).map { it.toOutputDto() }
+    }
+
 
     private fun List<LinkedRuleOutputDto>.appendToRole(roleDao: RoleDao): List<LinkedRuleOutputDto> = transaction {
         map { link ->

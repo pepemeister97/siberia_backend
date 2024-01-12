@@ -1,5 +1,6 @@
 package siberia.modules.product.service
 
+import io.ktor.server.plugins.*
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.update
 import siberia.utils.database.transaction
@@ -64,11 +65,20 @@ class ProductService(di: DI) : KodeinService(di) {
     fun update(authorizedUser: AuthorizedUser, productId: Int, productUpdateDto: ProductUpdateDto): ProductFullOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
         val productDao = ProductDao[productId]
+        val photoName = if (productUpdateDto.photoName != null)
+            FilesUtil.buildName(productUpdateDto.photoName!!)
+        else null
 
+        productUpdateDto.photoName = photoName
         productDao.loadUpdateDto(productUpdateDto)
         productDao.flush()
         val event = ProductUpdateEvent(userDao.login, productDao.name, productDao.vendorCode)
         SystemEventModel.logEvent(event)
+        if (photoName != null && productUpdateDto.photoBase64 != null)
+            FilesUtil.upload(productUpdateDto.photoBase64, photoName)
+        else if (photoName != null && productUpdateDto.photoBase64 == null)
+            throw BadRequestException("Photo base 64 must be provided")
+
         commit()
 
         productDao.fullOutput()

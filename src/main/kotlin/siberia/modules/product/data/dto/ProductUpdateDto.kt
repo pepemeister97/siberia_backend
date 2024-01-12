@@ -4,7 +4,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ProductUpdateDto (
-    val photo: String? = null,
+    var photoName: String? = null,
+    val photoBase64: String? = null,
     val vendorCode: String? = null,
     val barcode: String? = null,
     //If null -> dont update

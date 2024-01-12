@@ -83,7 +83,7 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
     )
 
     fun loadUpdateDto(productUpdateDto: ProductUpdateDto) {
-        photo = productUpdateDto.photo ?: photo
+        photo = productUpdateDto.photoName ?: photo
         vendorCode = productUpdateDto.vendorCode ?: vendorCode
         barcode = productUpdateDto.barcode ?: barcode
 
