@@ -14,7 +14,7 @@ data class ProductFullOutputDto (
     val brand: BrandOutputDto?,
     val name: String,
     val description: String,
-    val lastPurchasePrice: Double,
+    val lastPurchasePrice: Double?,
     val cost: Double?,
     val lastPurchaseDate: Long?,
     val distributorPrice: Double,

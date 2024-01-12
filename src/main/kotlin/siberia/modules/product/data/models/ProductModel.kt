@@ -13,7 +13,7 @@ object ProductModel: BaseIntIdTable() {
     val brand = reference("brand", BrandModel, ReferenceOption.SET_NULL, ReferenceOption.SET_NULL).nullable().default(null)
     val name = text("name")
     val description = text("description")
-    val lastPurchasePrice = double("last_purchase_price")
+    val lastPurchasePrice = double("last_purchase_price").nullable().default(null)
     val cost = double("cost").nullable().default(null)
     val lastPurchaseDate = long("last_purchase_date").nullable().default(null)
     val distributorPrice = double("distributor_price")

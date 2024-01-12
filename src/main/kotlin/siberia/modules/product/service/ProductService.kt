@@ -16,6 +16,7 @@ import siberia.modules.product.data.dto.systemevents.ProductCreateEvent
 import siberia.modules.product.data.dto.systemevents.ProductRemoveEvent
 import siberia.modules.product.data.dto.systemevents.ProductUpdateEvent
 import siberia.modules.product.data.models.ProductModel
+import siberia.modules.rbac.data.dao.RoleDao.Companion.createNullableRangeCond
 import siberia.modules.rbac.data.dao.RuleCategoryDao.Companion.createNullableListCond
 import siberia.modules.stock.data.dao.StockDao.Companion.createLikeCond
 import siberia.modules.transaction.data.dto.TransactionFullOutputDto
@@ -94,7 +95,7 @@ class ProductService(di: DI) : KodeinService(di) {
         ProductDao.find {
             createRangeCond(searchFilterDto?.amountInBox, (ProductModel.id neq 0), ProductModel.amountInBox, -1, Int.MAX_VALUE) and
             createRangeCond(searchFilterDto?.commonPrice, (ProductModel.id neq 0), ProductModel.commonPrice, -1.0, Double.MAX_VALUE) and
-            createRangeCond(searchFilterDto?.purchasePrice, (ProductModel.id neq 0), ProductModel.lastPurchasePrice, -1.0, Double.MAX_VALUE) and
+            createNullableRangeCond(searchFilterDto?.purchasePrice, (ProductModel.id neq 0), ProductModel.lastPurchasePrice, -1.0, Double.MAX_VALUE) and
             createRangeCond(searchFilterDto?.distributorPrice, (ProductModel.id neq 0), ProductModel.distributorPrice, -1.0, Double.MAX_VALUE) and
             createRangeCond(searchFilterDto?.professionalPrice, (ProductModel.id neq 0), ProductModel.professionalPrice, -1.0, Double.MAX_VALUE) and
             createNullableListCond(searchFilterDto?.brand, (ProductModel.id neq 0), ProductModel.brand) and
