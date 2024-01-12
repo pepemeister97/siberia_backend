@@ -35,6 +35,19 @@ abstract class BaseIntEntityClass<Output, E : BaseIntEntity<Output>>(table: Base
             }
         }
 
+    fun <T: Number> SqlExpressionBuilder.createNullableRangeCond(fieldFilterWrapper: FieldFilterWrapper<T>?, defaultCond: Op<Boolean>, field: Column<T?>, fieldMin: T, fieldMax: T): Op<Boolean> =
+        if (fieldFilterWrapper == null)
+            defaultCond
+        else {
+            if (fieldFilterWrapper.specificValue != null) {
+                field eq fieldFilterWrapper.specificValue
+            } else {
+                val min = (fieldFilterWrapper.bottomBound ?: fieldMin).toDouble()
+                val max = (fieldFilterWrapper.topBound ?: fieldMax).toDouble()
+                (field lessEq min) and (field greaterEq max)
+            }
+        }
+
 //    fun SqlExpressionBuilder.createListCond(filter: List<Int>?, defaultCond: Op<Boolean>, field: Column<EntityID<Int>>): Op<Boolean> =
 //        if (filter == null)
 //            defaultCond
