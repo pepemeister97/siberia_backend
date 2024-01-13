@@ -20,6 +20,11 @@ class StockController(override val di: DI) : KodeinController() {
      */
     override fun Routing.registerRoutes() {
         route("stock") {
+            authenticate("user-managing") {
+                get("all/input") {
+                    call.respond(stockService.getAll())
+                }
+            }
             authenticate ("default") {
                 post("all") {
                     val stockSearchDto = call.receive<StockSearchDto>()

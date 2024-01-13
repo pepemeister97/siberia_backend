@@ -89,6 +89,10 @@ class StockService(di: DI) : KodeinService(di) {
         }.map { it.toOutputDto() }
     }
 
+    fun getAll(): List<StockOutputDto> = transaction {
+        StockDao.all().map { it.toOutputDto() }
+    }
+
     fun getOne(authorizedUser: AuthorizedUser, stockId: Int): StockFullOutputDto = transaction {
         if (!(userAccessControlService.getAvailableStocks(authorizedUser.id).map { it.key }).contains(stockId))
             throw ForbiddenException()
