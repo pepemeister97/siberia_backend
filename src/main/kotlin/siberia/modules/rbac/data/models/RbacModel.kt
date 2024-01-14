@@ -122,7 +122,7 @@ object RbacModel: BaseIntIdTable() {
 
     fun getRelatedUsers(roleId: Int) = RbacModel
         .leftJoin(UserModel)
-        .slice(id, user, role, stock, rule, simplifiedBy, UserModel.name)
+        .slice(id, user, role, stock, rule, simplifiedBy, UserModel.id, UserModel.name)
         .select {
             (role eq roleId) and (user.isNotNull())
         }
