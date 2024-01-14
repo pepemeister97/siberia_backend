@@ -31,7 +31,7 @@ abstract class BaseIntEntityClass<Output, E : BaseIntEntity<Output>>(table: Base
             } else {
                 val min = (fieldFilterWrapper.bottomBound ?: fieldMin).toDouble()
                 val max = (fieldFilterWrapper.topBound ?: fieldMax).toDouble()
-                (field lessEq min) and (field greaterEq max)
+                (field lessEq max) and (field greaterEq min)
             }
         }
 
@@ -44,7 +44,7 @@ abstract class BaseIntEntityClass<Output, E : BaseIntEntity<Output>>(table: Base
             } else {
                 val min = (fieldFilterWrapper.bottomBound ?: fieldMin).toDouble()
                 val max = (fieldFilterWrapper.topBound ?: fieldMax).toDouble()
-                (field lessEq min) and (field greaterEq max)
+                (field lessEq max) and (field greaterEq min)
             }
         }
 
