@@ -5,6 +5,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.conf.AppConf
@@ -24,8 +25,11 @@ import siberia.modules.transaction.data.dto.*
 import siberia.modules.transaction.data.dto.status.TransactionStatusOutputDto
 import siberia.modules.transaction.data.dto.systemevents.TransactionCreateEvent
 import siberia.modules.transaction.data.dto.systemevents.TransactionUpdateStatusEvent
+import siberia.modules.transaction.data.dto.type.TransactionTypeOutputDto
 import siberia.modules.transaction.data.models.TransactionModel
 import siberia.modules.transaction.data.models.TransactionRelatedUserModel
+import siberia.modules.transaction.data.models.TransactionStatusModel
+import siberia.modules.transaction.data.models.TransactionTypeModel
 import siberia.modules.user.data.dao.UserDao
 import siberia.modules.user.service.UserAccessControlService
 import siberia.plugins.Logger
@@ -38,6 +42,9 @@ class TransactionService(di: DI) : KodeinService(di) {
     private val notificationService: NotificationService by instance()
     private val productService: ProductService by instance()
 
+    fun getAllTypes() = transaction { TransactionTypeModel.selectAll().map { TransactionTypeOutputDto(id = it[TransactionTypeModel.id].value, name = it[TransactionTypeModel.name]) } }
+
+    fun getAllStatuses() = transaction { TransactionStatusModel.selectAll().map { TransactionStatusOutputDto(id = it[TransactionStatusModel.id].value, name = it[TransactionStatusModel.name]) } }
     /*
         This method takes type of the request and status
         that user wants to set and returns the rules, which user must have to set corresponding status.

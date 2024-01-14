@@ -18,12 +18,20 @@ class SystemEventController(override val di: DI) : KodeinController() {
      * Method that subtypes must override to register the handled [Routing] routes.
      */
     override fun Routing.registerRoutes() {
-        authenticate("check-logs") {
-            route("logs") {
+        route("logs") {
+            authenticate("check-logs") {
                 post {
                     val filter = call.receive<SystemEventSearchFilter>()
 
                     call.respond(systemEventService.getByFilter(filter))
+                }
+            }
+            authenticate("default") {
+                get("types") {
+                    call.respond(systemEventService.getAllTypes())
+                }
+                get("object/types") {
+                    call.respond(systemEventService.getAllObjectTypes())
                 }
             }
         }

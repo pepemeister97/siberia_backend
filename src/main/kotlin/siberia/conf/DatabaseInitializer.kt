@@ -134,7 +134,7 @@ object DatabaseInitializer {
             return
         SystemEventTypeModel.insert {
             it[id] = AppConf.eventTypes.createEvent
-            it[name] = "Creation"
+            it[name] = "Create"
         }
         SystemEventTypeModel.insert {
             it[id] = AppConf.eventTypes.updateEvent

@@ -9,6 +9,8 @@ import org.kodein.di.DI
 import siberia.modules.logger.data.dto.SystemEventOutputDto
 import siberia.modules.logger.data.dto.SystemEventSearchFilter
 import siberia.modules.logger.data.models.SystemEventModel
+import siberia.modules.logger.data.models.SystemEventObjectTypeModel
+import siberia.modules.logger.data.models.SystemEventTypeModel
 import siberia.modules.rbac.data.dao.RuleDao.Companion.createLikeCond
 import siberia.modules.rbac.data.dao.RuleDao.Companion.createListCond
 import siberia.utils.kodein.KodeinService
@@ -55,4 +57,8 @@ class SystemEventService(di: DI) : KodeinService(di) {
                 timeCond(Pair(systemEventSearchFilter.rangeStart, systemEventSearchFilter.rangeEnd))
             }
         }.toList()
+
+    fun getAllTypes() = SystemEventTypeModel.getAll()
+
+    fun getAllObjectTypes() = SystemEventObjectTypeModel.getAll()
 }

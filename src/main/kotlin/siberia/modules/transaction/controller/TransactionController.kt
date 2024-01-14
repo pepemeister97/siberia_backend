@@ -22,6 +22,12 @@ class TransactionController(override val di: DI) : KodeinController() {
     override fun Routing.registerRoutes() {
         route("transaction") {
             authenticate ("default") {
+                get("types") {
+                    call.respond(transactionService.getAllTypes())
+                }
+                get("statuses") {
+                    call.respond(transactionService.getAllStatuses())
+                }
                 post {
                     val authorizedUser = call.getAuthorized()
                     val transactionSearchFilter = call.receive<TransactionSearchFilter>()
