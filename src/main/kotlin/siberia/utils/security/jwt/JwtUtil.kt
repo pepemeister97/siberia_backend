@@ -16,14 +16,14 @@ import siberia.utils.database.idValue
 import java.util.*
 
 object JwtUtil {
-    fun createToken(userDao: UserDao, refreshToken: Boolean = false): String {
+    fun createToken(userDao: UserDao, lastLogin: Long? = null): String {
         return JWT.create()
             .withIssuer(AppConf.jwt.domain)
             .withIssuedAt(Date(System.currentTimeMillis()))
             .withExpiresAt(
                 Date(
                 System.currentTimeMillis() +
-                        if (refreshToken) AppConf.jwt.refreshExpirationTime else AppConf.jwt.expirationTime
+                        if (lastLogin != null) AppConf.jwt.refreshExpirationTime else AppConf.jwt.expirationTime
                 )
             )
             .apply {
@@ -31,8 +31,8 @@ object JwtUtil {
                 val rules = RbacModel.userToRuleLinks(
                     userDao.idValue, expanded = true
                 )
-                if (refreshToken) {
-                    withClaim("lastLogin", userDao.lastLogin)
+                if (lastLogin != null) {
+                    withClaim("lastLogin", lastLogin)
                 } else {
                     withClaim("rules", rules.map { Json.encodeToString(LinkedRuleOutputDto.serializer(), it) }.toString())
                 }

@@ -4,6 +4,7 @@ import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.Transaction
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransaction
+import siberia.plugins.Logger
 import java.sql.Connection.TRANSACTION_READ_COMMITTED
 import java.sql.SQLNonTransientConnectionException
 
@@ -13,8 +14,10 @@ suspend fun <T> suspendedTransaction(statements: suspend Transaction.() -> T) = 
             DatabaseConnector.connect()
         statements()
     } catch (e: Exception) {
+        Logger.debugException("Exception during transaction execution", e, "main")
         throw e
     } catch (e: ExposedSQLException) {
+        Logger.debugException("Exposed exception during transaction execution", e, "main")
         if (e.cause is SQLNonTransientConnectionException){
             DatabaseConnector.connect()
             rollback()
@@ -31,8 +34,10 @@ fun <T> transaction(statements: Transaction.() -> T) = TransactionManager.curren
             DatabaseConnector.connect()
         statements()
     } catch (e: Exception) {
+        Logger.debugException("Exception during transaction execution", e, "main")
         throw e
     } catch (e: ExposedSQLException) {
+        Logger.debugException("Exposed exception during transaction execution", e, "main")
         if (e.cause is SQLNonTransientConnectionException){
             DatabaseConnector.connect()
             rollback()

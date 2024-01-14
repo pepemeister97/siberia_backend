@@ -37,4 +37,17 @@ object Logger {
             logger.debug(message.toString())
         }
     }
+
+    fun debugException(message: Any?, cause: Throwable, prefix: String) {
+        logger[prefix].let {
+            val logger = if (it == null) {
+                logger["main"]!!.debug("Logger $prefix not found")
+                logger["main"]!!
+            } else it
+
+            logger.debug(message.toString())
+            logger.debug("Something failed due to $cause")
+            logger.debug("Stacktrace => ${cause.stackTraceToString()}")
+        }
+    }
 }
