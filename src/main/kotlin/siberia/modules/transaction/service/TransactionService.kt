@@ -348,13 +348,13 @@ class TransactionService(di: DI) : KodeinService(di) {
             throw ForbiddenException()
 
         transactionDao.from = stockDao
+        transactionDao.flush()
 
         transactionDao = changeTransactionStatus(UserDao[authorizedUser.id], transactionId, AppConf.requestStatus.inProgress)
         if (transactionDao.typeId != AppConf.requestTypes.transfer)
             throw ForbiddenException()
 
         StockModel.removeProducts(stockDao.idValue, transactionDao.inputProductsList)
-        transactionDao.from = stockDao
         transactionDao.flush()
         notificationService.notifyTransactionStatusChange(transactionId, transactionDao.statusId)
         commit()
