@@ -14,8 +14,15 @@ suspend fun <T> suspendedTransaction(statements: suspend Transaction.() -> T) = 
             DatabaseConnector.connect()
         statements()
     } catch (e: Exception) {
-        Logger.debugException("Exception during transaction execution", e, "main")
-        throw e
+        if (e.cause is SQLNonTransientConnectionException || e is SQLNonTransientConnectionException) {
+            DatabaseConnector.connect()
+            rollback()
+            statements()
+        }
+        else {
+            Logger.debugException("Exception during transaction execution", e, "main")
+            throw e
+        }
     } catch (e: ExposedSQLException) {
         Logger.debugException("Exposed exception during transaction execution", e, "main")
         if (e.cause is SQLNonTransientConnectionException){
@@ -34,8 +41,15 @@ fun <T> transaction(statements: Transaction.() -> T) = TransactionManager.curren
             DatabaseConnector.connect()
         statements()
     } catch (e: Exception) {
-        Logger.debugException("Exception during transaction execution", e, "main")
-        throw e
+        if (e.cause is SQLNonTransientConnectionException || e is SQLNonTransientConnectionException) {
+            DatabaseConnector.connect()
+            rollback()
+            statements()
+        }
+        else {
+            Logger.debugException("Exception during transaction execution", e, "main")
+            throw e
+        }
     } catch (e: ExposedSQLException) {
         Logger.debugException("Exposed exception during transaction execution", e, "main")
         if (e.cause is SQLNonTransientConnectionException){

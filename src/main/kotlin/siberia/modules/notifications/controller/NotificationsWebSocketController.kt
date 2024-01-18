@@ -6,7 +6,6 @@ import io.ktor.websocket.*
 import kotlinx.serialization.json.Json
 import org.kodein.di.DI
 import org.kodein.di.instance
-import siberia.exceptions.BadRequestException
 import siberia.exceptions.ForbiddenException
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.notifications.service.NotificationService
@@ -30,7 +29,7 @@ class NotificationsWebSocketController(override val di: DI) : KodeinController()
     private suspend fun websocketBadRequest(message: String, socketSession: DefaultWebSocketSession) {
         socketSession.send(
             Frame.Text(
-                WebSocketResponseDto.wrap("bad-request", BadRequestException(message)).json
+                WebSocketResponseDto.wrap("bad-request").json
             )
         )
     }
@@ -39,6 +38,7 @@ class NotificationsWebSocketController(override val di: DI) : KodeinController()
         val authorizedUser = try {
             authorize(requestDto)
         } catch (e: Exception) {
+            Logger.debugException("Websocket exception", e, "main")
             closeForbidden(socketSession)
             throw ForbiddenException()
         }
@@ -54,6 +54,7 @@ class NotificationsWebSocketController(override val di: DI) : KodeinController()
     override fun Routing.registerRoutes() {
         webSocket("/ws") { // websocketSession
             for (frame in incoming) {
+                Logger.debug("Websocket new frame", "websocket")
                 if (frame is Frame.Text) {
                     val message = frame.readText()
                     val request = json.decodeFromString<WebSocketRequestDto>(message)

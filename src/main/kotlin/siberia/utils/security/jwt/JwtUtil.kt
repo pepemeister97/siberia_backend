@@ -12,6 +12,7 @@ import siberia.modules.auth.data.dto.RefreshTokenDto
 import siberia.modules.rbac.data.models.RbacModel
 import siberia.modules.user.data.dao.UserDao
 import siberia.modules.auth.data.dto.AuthorizedUser
+import siberia.plugins.Logger
 import siberia.utils.database.idValue
 import java.util.*
 
@@ -51,6 +52,7 @@ object JwtUtil {
     )
 
     fun verifyNative(token: String): AuthorizedUser {
+        Logger.debug("Verify native", "main")
         val jwtVerifier = JWT
             .require(Algorithm.HMAC256(AppConf.jwt.secret))
             .withIssuer(AppConf.jwt.domain)
@@ -60,18 +62,25 @@ object JwtUtil {
         return if (verified != null) {
             val claims = verified.claims
             val currentTime: Long = getTimeMillis() / 1000
+            Logger.debug(currentTime, "main")
+            Logger.debug(claims["exp"], "main")
+            Logger.debug(claims["iss"], "main")
+            Logger.debug(claims["id"], "main")
+            Logger.debug(claims["rules"], "main")
             if (currentTime > (claims["exp"]?.asInt()
                     ?: 0) || claims["iss"]?.asString() != AppConf.jwt.domain
             ) {
+                Logger.debug("expired exception", "main")
                 throw ForbiddenException()
             }
             else {
                 AuthorizedUser(
-                    id = claims["id"]?.asString()?.toInt() ?: throw ForbiddenException(),
+                    id = claims["id"]?.asInt() ?: throw ForbiddenException(),
                     rules = Json.decodeFromString<List<LinkedRuleOutputDto>>(claims["rules"]?.asString() ?: "[]")
                 )
             }
         } else {
+            Logger.debug("verified exception", "main")
             throw ForbiddenException()
         }
     }

@@ -5,6 +5,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.update
 import siberia.utils.database.transaction
 import org.kodein.di.DI
+import siberia.conf.AppConf
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.brand.data.dao.BrandDao
 import siberia.modules.brand.data.dao.BrandDao.Companion.createRangeCond
@@ -132,7 +133,7 @@ class ProductService(di: DI) : KodeinService(di) {
     }
 
     fun updateLastPurchaseData(products: List<TransactionFullOutputDto.TransactionProductDto>, timestamp: LocalDateTime) {
-        val timestampLong = timestamp.toEpochSecond(ZoneOffset.ofHours(3))
+        val timestampLong = timestamp.toEpochSecond(ZoneOffset.ofHours(AppConf.zoneOffset))
         products.forEach { product ->
             ProductModel.update({ ProductModel.id eq product.product.id }) {
                 it[lastPurchasePrice] = (product.price ?: 0.0)

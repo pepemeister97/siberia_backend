@@ -23,6 +23,8 @@ object AppConf {
     private fun ApplicationConfig.getString(name: String): String = this.property(name).getString()
     private fun ApplicationConfig.getInt(name: String): Int = this.getString(name).toInt()
 
+    val zoneOffset: Int = serverConfig.getInt("zoneOffset")
+
     val isDebug: Boolean = mainConfig.getString("debug") == "true"
 
     val jwt = JwtConf(

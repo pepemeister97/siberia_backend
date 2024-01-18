@@ -6,6 +6,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNotNull
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.lessEq
 import org.jetbrains.exposed.sql.and
 import org.kodein.di.DI
+import siberia.conf.AppConf
 import siberia.modules.logger.data.dto.SystemEventOutputDto
 import siberia.modules.logger.data.dto.SystemEventSearchFilter
 import siberia.modules.logger.data.models.SystemEventModel
@@ -25,20 +26,20 @@ class SystemEventService(di: DI) : KodeinService(di) {
         else {
             val leftBound = range.first.let {
                 if (it == null)
-                    LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.ofHours(3))
+                    LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.ofHours(AppConf.zoneOffset))
                 else {
                     val seconds: Long = it / 1000
                     val nanos: Int = (it % 1000).toInt()
-                    LocalDateTime.ofEpochSecond(seconds, nanos, ZoneOffset.ofHours(3))
+                    LocalDateTime.ofEpochSecond(seconds, nanos, ZoneOffset.ofHours(AppConf.zoneOffset))
                 }
             }
             val rightBound = range.second.let {
                 if (it == null) //Use INT.MAX * 2 (2106 year) because Long.MAX_VALUE is too big for timestamp
-                    LocalDateTime.ofEpochSecond(Int.MAX_VALUE.toLong() * 2, 0, ZoneOffset.ofHours(3))
+                    LocalDateTime.ofEpochSecond(Int.MAX_VALUE.toLong() * 2, 0, ZoneOffset.ofHours(AppConf.zoneOffset))
                 else {
                     val seconds: Long = it / 1000
                     val nanos: Int = (it % 1000).toInt()
-                    LocalDateTime.ofEpochSecond(seconds, nanos, ZoneOffset.ofHours(3))
+                    LocalDateTime.ofEpochSecond(seconds, nanos, ZoneOffset.ofHours(AppConf.zoneOffset))
                 }
             }
             (SystemEventModel.createdAt lessEq rightBound) and

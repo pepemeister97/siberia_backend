@@ -35,7 +35,7 @@ object SystemEventModel: BaseIntIdTable() {
                 SystemEventObjectTypeModel.name,
                 createdAt
             )
-            .select(query)
+            .select(query).orderBy(SystemEventModel.createdAt, SortOrder.DESC)
             .map {
                 SystemEventOutputDto(
                     id = it[SystemEventModel.id].value,

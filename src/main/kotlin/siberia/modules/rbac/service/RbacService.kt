@@ -6,10 +6,12 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import siberia.utils.database.transaction
 import org.kodein.di.DI
+import org.kodein.di.instance
 import siberia.exceptions.ValidateException
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.logger.data.dto.SystemEventCreateDto
 import siberia.modules.logger.data.models.SystemEventModel
+import siberia.modules.notifications.service.NotificationService
 import siberia.modules.rbac.data.dao.RoleDao
 import siberia.modules.rbac.data.dao.RuleCategoryDao
 import siberia.modules.rbac.data.dao.RuleDao
@@ -23,10 +25,12 @@ import siberia.modules.rbac.data.models.rule.RuleModel
 import siberia.modules.stock.data.dao.StockDao
 import siberia.modules.transaction.data.dao.TransactionStatusDao.Companion.createLikeCond
 import siberia.modules.user.data.dao.UserDao
+import siberia.modules.user.data.models.UserModel
 import siberia.utils.database.idValue
 import siberia.utils.kodein.KodeinService
 
 class RbacService(di: DI) : KodeinService(di) {
+    private val notificationService: NotificationService by instance()
     private fun logEvent(event: SystemEventCreateDto) {
         SystemEventModel.logEvent(event)
     }
@@ -113,6 +117,9 @@ class RbacService(di: DI) : KodeinService(di) {
         RbacModel.expandAppendedRules(roleId, appendedRules)
         commit()
 
+        val relatedUsers = RbacModel.getRelatedUsers(roleId).map { it[UserModel.id].value }
+        notificationService.emitUpdateRules(relatedUsers)
+
         appendedRules
     }
 
@@ -123,6 +130,9 @@ class RbacService(di: DI) : KodeinService(di) {
         logUpdateEvent(authorizedUser, roleDao.name, roleDao.name)
         RbacModel.removeExpandedRules(roleId, linkedRules)
         commit()
+
+        val relatedUsers = RbacModel.getRelatedUsers(roleId).map { it[UserModel.id].value }
+        notificationService.emitUpdateRules(relatedUsers)
     }
 
     fun updateRole(authorizedUser: AuthorizedUser, roleId: Int, roleUpdateDto: RoleUpdateDto): RoleOutputDto = transaction {

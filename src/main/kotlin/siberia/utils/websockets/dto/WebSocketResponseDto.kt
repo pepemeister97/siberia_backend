@@ -3,19 +3,21 @@ package siberia.utils.websockets.dto
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.serializer
+import siberia.plugins.Logger
 
 @Serializable
-data class WebSocketResponseDto <T> (
+data class WebSocketResponseDto (
     val type: String,
-    val data: T
 ) {
     @Transient private val serializer = Json { ignoreUnknownKeys = true }
     companion object {
-        fun <T> wrap(type: String, data: T): WebSocketResponseDto<T> {
-            return WebSocketResponseDto(type, data)
+        fun wrap(type: String): WebSocketResponseDto {
+            return WebSocketResponseDto(type)
         }
     }
 
-    val json: String get() = serializer.encodeToString(serializer(), this)
+    val json: String get() {
+        Logger.debug(this, "main")
+        return serializer.encodeToString(serializer(), this)
+    }
 }

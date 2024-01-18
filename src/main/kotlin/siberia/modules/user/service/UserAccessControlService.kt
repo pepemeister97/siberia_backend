@@ -15,12 +15,14 @@ import siberia.modules.logger.data.models.SystemEventModel
 import siberia.modules.rbac.service.RbacService
 import siberia.modules.user.data.dao.UserDao
 import siberia.modules.auth.data.dto.AuthorizedUser
+import siberia.modules.notifications.service.NotificationService
 import siberia.modules.user.data.dto.systemevents.useraccess.UserRightsUpdated
 import siberia.utils.database.idValue
 import siberia.utils.kodein.KodeinService
 
 class UserAccessControlService(di: DI) : KodeinService(di) {
     private val rbacService: RbacService by instance()
+    private val notificationService: NotificationService by instance()
 
     private fun logUpdate(author: AuthorizedUser, target: String, description: String) = transaction {
         val authorName: String = UserDao[author.id].login
@@ -58,6 +60,8 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
         }.appendToUser(userDao)
         commit()
 
+        notificationService.emitUpdateRules(userDao.idValue)
+
         appendedRules
     }
 
@@ -72,6 +76,8 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
             rbacService.validateRole(it)
         }.appendToUser(userDao)
         commit()
+
+        notificationService.emitUpdateRules(userDao.idValue)
 
         appendedRoles
     }
@@ -95,6 +101,7 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
         RbacModel.unlinkRules(RbacModel.user eq targetDao.idValue, linkedRules)
         logUpdate(authorizedUser, targetDao.login, "Some rules were removed")
         commit()
+        notificationService.emitUpdateRules(targetDao.idValue)
     }
 
     fun removeRoles(authorizedUser: AuthorizedUser, targetId: Int, linkedRoles: List<Int>) = transaction {
@@ -102,6 +109,7 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
         RbacModel.unlinkRoles(targetDao.idValue, linkedRoles)
         logUpdate(authorizedUser, targetDao.login, "Some roles were removed")
         commit()
+        notificationService.emitUpdateRules(targetDao.idValue)
     }
 
     fun checkAccessToStock(userId: Int, ruleId: Int, stockId: Int): Boolean = transaction {

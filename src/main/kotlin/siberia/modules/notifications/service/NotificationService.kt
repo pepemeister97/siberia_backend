@@ -24,6 +24,7 @@ import siberia.modules.notifications.data.models.NotificationModel
 import siberia.modules.transaction.data.dao.TransactionStatusDao
 import siberia.modules.transaction.data.models.TransactionRelatedUserModel
 import siberia.modules.user.data.dao.UserDao
+import siberia.plugins.Logger
 import siberia.utils.database.transaction
 import siberia.utils.kodein.KodeinService
 import siberia.utils.websockets.dto.WebSocketResponseDto
@@ -48,6 +49,9 @@ class NotificationService(di: DI) : KodeinService(di) {
                 serializer.encodeToString(NotificationOutputDto.serializer(), notificationDao.toOutputDto())
             )
         }
+        class UpdateRules(
+            val users: List<Int>
+        ): NotificationChannelEvent() {}
     }
 
     @OptIn(ObsoleteCoroutinesApi::class)
@@ -72,7 +76,20 @@ class NotificationService(di: DI) : KodeinService(di) {
                     val connectionsByUser = connections[event.notificationDao.targetId] ?: continue
                     connectionsByUser.forEach {
                         if (it.isActive)
-                            it.send(WebSocketResponseDto.wrap("new-notification", event.getNotificationFrame()).json)
+                            it.send(WebSocketResponseDto.wrap("new-notification").json)
+                    }
+                }
+
+                is NotificationChannelEvent.UpdateRules -> {
+                    val connectionsByUser = connections.filterKeys { event.users.contains(it) }
+                    Logger.debug("Connections by user", "main")
+                    Logger.debug(connectionsByUser.size, "main")
+                    Logger.debug(connectionsByUser, "main")
+                    connectionsByUser.forEach {
+                        it.value.forEach { connection ->
+                            if (connection.isActive)
+                                connection.send(WebSocketResponseDto.wrap("update-rules").json)
+                        }
                     }
                 }
             }
@@ -127,4 +144,12 @@ class NotificationService(di: DI) : KodeinService(di) {
             ))
         }
     }
+
+    fun emitUpdateRules(userId: List<Int>) {
+        Logger.debug("Notification service", "main")
+        Logger.debug(userId, "main")
+        Logger.debug(notificationChannel.trySend(NotificationChannelEvent.UpdateRules(userId)), "main")
+    }
+
+    fun emitUpdateRules(userId: Int) = emitUpdateRules(listOf(userId))
 }

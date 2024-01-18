@@ -59,6 +59,9 @@ object StockModel: BaseIntIdTable() {
             (StockToProductModel.product inList productsMapped.second) and (StockToProductModel.stock eq stockId)
         }.map { it }
 
+        if (products.size > exist.size)
+            throw BadRequestException("Not enough products in stock")
+
 
         StockToProductModel.deleteWhere {
             StockToProductModel.id inList exist.map { it[StockToProductModel.id] }
