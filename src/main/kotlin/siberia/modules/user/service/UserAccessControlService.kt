@@ -59,16 +59,16 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
             linkedRule
         }.appendToUser(userDao)
         commit()
-
-        notificationService.emitUpdateRules(userDao.idValue)
-
         appendedRules
     }
 
     fun addRules(authorizedUser: AuthorizedUser, targetId: Int, newRules: List<LinkedRuleInputDto>): List<LinkedRuleOutputDto> = transaction {
         val userDao = UserDao[targetId]
         logUpdate(authorizedUser, userDao.login, "New rules added")
-        addRules(userDao, newRules)
+        val addedRules = addRules(userDao, newRules)
+        if (userDao.idValue != authorizedUser.id)
+            notificationService.emitUpdateRules(userDao.idValue)
+        addedRules
     }
 
     fun addRoles(userDao: UserDao, newRoles: List<Int>): List<RoleOutputDto> = transaction {
@@ -76,16 +76,16 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
             rbacService.validateRole(it)
         }.appendToUser(userDao)
         commit()
-
-        notificationService.emitUpdateRules(userDao.idValue)
-
         appendedRoles
     }
 
     fun addRoles(authorizedUser: AuthorizedUser, targetId: Int, newRoles: List<Int>): List<RoleOutputDto> = transaction {
         val userDao = UserDao[targetId]
         logUpdate(authorizedUser, userDao.login, "New roles added")
-        addRoles(userDao, newRoles)
+        val addedRoles = addRoles(userDao, newRoles)
+        if (userDao.idValue != authorizedUser.id)
+            notificationService.emitUpdateRules(userDao.idValue)
+        addedRoles
     }
 
     fun getUserRules(authorizedUser: AuthorizedUser): List<LinkedRuleOutputDto> = transaction { UserDao[authorizedUser.id].rulesWithStocks }
@@ -101,7 +101,8 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
         RbacModel.unlinkRules(RbacModel.user eq targetDao.idValue, linkedRules)
         logUpdate(authorizedUser, targetDao.login, "Some rules were removed")
         commit()
-        notificationService.emitUpdateRules(targetDao.idValue)
+        if (authorizedUser.id != targetDao.idValue)
+            notificationService.emitUpdateRules(targetDao.idValue)
     }
 
     fun removeRoles(authorizedUser: AuthorizedUser, targetId: Int, linkedRoles: List<Int>) = transaction {
@@ -109,7 +110,8 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
         RbacModel.unlinkRoles(targetDao.idValue, linkedRoles)
         logUpdate(authorizedUser, targetDao.login, "Some roles were removed")
         commit()
-        notificationService.emitUpdateRules(targetDao.idValue)
+        if (authorizedUser.id != targetDao.idValue)
+            notificationService.emitUpdateRules(targetDao.idValue)
     }
 
     fun checkAccessToStock(userId: Int, ruleId: Int, stockId: Int): Boolean = transaction {

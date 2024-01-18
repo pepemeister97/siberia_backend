@@ -117,7 +117,7 @@ class RbacService(di: DI) : KodeinService(di) {
         RbacModel.expandAppendedRules(roleId, appendedRules)
         commit()
 
-        val relatedUsers = RbacModel.getRelatedUsers(roleId).map { it[UserModel.id].value }
+        val relatedUsers = RbacModel.getRelatedUsers(roleId).map { it[UserModel.id].value }.filter { it != authorizedUser.id }
         notificationService.emitUpdateRules(relatedUsers)
 
         appendedRules
@@ -131,7 +131,7 @@ class RbacService(di: DI) : KodeinService(di) {
         RbacModel.removeExpandedRules(roleId, linkedRules)
         commit()
 
-        val relatedUsers = RbacModel.getRelatedUsers(roleId).map { it[UserModel.id].value }
+        val relatedUsers = RbacModel.getRelatedUsers(roleId).map { it[UserModel.id].value }.filter { it != authorizedUser.id }
         notificationService.emitUpdateRules(relatedUsers)
     }
 
