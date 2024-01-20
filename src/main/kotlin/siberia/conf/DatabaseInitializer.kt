@@ -285,16 +285,9 @@ object DatabaseInitializer {
             return
         UserModel.insert {
             it[id] = 1
-            it[name] = "Andréas Podrochitté"
-            it[login] = "podrochitte"
-            it[hash] = CryptoUtil.hash("andreas")
-            it[lastLogin] = getTimeMillis()
-        }
-        UserModel.insert {
-            it[id] = 2
-            it[name] = "Pablo Él Huanitto"
-            it[login] = "huanitto"
-            it[hash] = CryptoUtil.hash("pablo")
+            it[name] = "Admin User"
+            it[login] = "admin"
+            it[hash] = CryptoUtil.hash("admin")
             it[lastLogin] = getTimeMillis()
         }
 
@@ -311,11 +304,6 @@ object DatabaseInitializer {
 
         RbacModel.insert {
             it[user] = 1
-            it[role] = roleId
-        }
-
-        RbacModel.insert {
-            it[user] = 2
             it[role] = roleId
         }
 

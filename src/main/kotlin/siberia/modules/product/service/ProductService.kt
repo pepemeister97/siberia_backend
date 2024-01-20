@@ -32,7 +32,11 @@ class ProductService(di: DI) : KodeinService(di) {
     fun create(authorizedUser: AuthorizedUser, productCreateDto: ProductCreateDto): ProductFullOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
         val event = ProductCreateEvent(userDao.login, productCreateDto.name, productCreateDto.vendorCode)
-        val photoName = FilesUtil.buildName(productCreateDto.photoName)
+
+        val photoName
+        = if (productCreateDto.photoName != "")
+            FilesUtil.buildName(productCreateDto.photoName)
+        else ""
 
         val productDao = ProductDao.new {
             photo = photoName
@@ -57,7 +61,8 @@ class ProductService(di: DI) : KodeinService(di) {
         }
 
         SystemEventModel.logEvent(event)
-        FilesUtil.upload(productCreateDto.photoBase64, photoName)
+        if (photoName != "")
+            FilesUtil.upload(productCreateDto.photoBase64, photoName)
         commit()
 
         productDao.fullOutput()

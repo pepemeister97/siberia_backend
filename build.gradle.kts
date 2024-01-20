@@ -3,6 +3,7 @@ val kotlinVersion: String by project
 val logbackVersion: String by project
 val prometeusVersion: String by project
 val exposedVersion: String by project
+val hikaricpVersion: String by project
 val kodeinVersion: String by project
 val jbcryptVersion: String by project
 
@@ -58,6 +59,7 @@ dependencies {
     api(jetBrains("exposed:exposed-dao", exposedVersion))
     api(jetBrains("exposed:exposed-jdbc", exposedVersion))
     api(jetBrains("exposed:exposed-java-time", exposedVersion))
+    implementation("com.zaxxer:HikariCP:$hikaricpVersion")
     implementation("org.mariadb.jdbc:mariadb-java-client:3.1.4")
     implementation("io.ktor:ktor-server-cors-jvm:2.3.6")
 

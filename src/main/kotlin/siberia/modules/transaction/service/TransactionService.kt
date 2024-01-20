@@ -429,7 +429,7 @@ class TransactionService(di: DI) : KodeinService(di) {
         val transactionStocks = listOfNotNull(
             transactionDao.to?.idValue, transactionDao.from?.idValue
         )
-        userAccessControlService.filterAvailable(authorizedUser.id, transactionStocks).isNotEmpty()
+        userAccessControlService.filterAvailable(authorizedUser.id, transactionStocks).isNotEmpty() || transactionDao.typeId == AppConf.requestTypes.transfer
     }
 
     fun getAvailableTransactions(authorizedUser: AuthorizedUser, transactionSearchFilter: TransactionSearchFilter): List<TransactionListItemOutputDto> = transaction {
