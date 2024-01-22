@@ -7,6 +7,7 @@ import org.jetbrains.exposed.sql.transactions.TransactionManager
 import siberia.conf.AppConf.database
 
 class DatabaseConnector(vararg tables: Table, initializer: Transaction.() -> Unit) {
+
     init {
         connect()
         transaction {
@@ -17,20 +18,24 @@ class DatabaseConnector(vararg tables: Table, initializer: Transaction.() -> Uni
         }
     }
     companion object {
+        private lateinit var hikariDataSource: HikariDataSource
         fun connect() {
+            hikariDataSource = HikariDataSource(
+                HikariConfig().apply {
+                    driverClassName = database.driver
+                    jdbcUrl = database.url
+                    username = database.user
+                    password = database.password
+                    maximumPoolSize = 5
+                    maxLifetime = 600000
+                    keepaliveTime = 300000
+                    isAutoCommit = false
+                    transactionIsolation = "TRANSACTION_REPEATABLE_READ"
+                    validate()
+                }
+            )
             TransactionManager.defaultDatabase = Database.connect(
-                HikariDataSource(
-                    HikariConfig().apply {
-                        driverClassName = database.driver
-                        jdbcUrl = database.url
-                        username = database.user
-                        password = database.password
-                        maximumPoolSize = 10
-                        isAutoCommit = false
-                        transactionIsolation = "TRANSACTION_REPEATABLE_READ"
-                        validate()
-                    }
-                ),
+                hikariDataSource,
                 databaseConfig = DatabaseConfig.invoke { maxEntitiesToStoreInCachePerEntity = 0 }
             )
         }
