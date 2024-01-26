@@ -3,7 +3,7 @@ package siberia.modules.product.service
 import io.ktor.server.plugins.*
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.update
-import siberia.utils.database.transaction
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import siberia.conf.AppConf
 import siberia.modules.auth.data.dto.AuthorizedUser

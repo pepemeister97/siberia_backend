@@ -22,7 +22,7 @@ import siberia.modules.stock.data.models.StockModel
 import siberia.modules.transaction.data.models.TransactionStatusModel
 import siberia.modules.transaction.data.models.TransactionTypeModel
 import siberia.modules.user.data.models.UserModel
-import siberia.utils.database.transaction
+import org.jetbrains.exposed.sql.transactions.transaction
 import siberia.utils.security.bcrypt.CryptoUtil
 
 object DatabaseInitializer {
@@ -469,5 +469,7 @@ object DatabaseInitializer {
                 RbacModel.expandAppendedRules(roleId, rules.map { LinkedRuleOutputDto(it.first, stockId = it.second, needStock = true) })
             }
         }
+
+        commit()
     }
 }

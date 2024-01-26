@@ -2,7 +2,7 @@ package siberia.modules.auth.service
 
 import io.ktor.util.date.*
 import org.jetbrains.exposed.sql.select
-import siberia.utils.database.transaction
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import siberia.exceptions.ForbiddenException
 import siberia.exceptions.UnauthorizedException

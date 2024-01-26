@@ -6,7 +6,7 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import siberia.modules.user.data.models.UserModel
 import siberia.utils.database.BaseIntIdTable
-import siberia.utils.database.transaction
+import org.jetbrains.exposed.sql.transactions.transaction
 
 object TransactionRelatedUserModel : BaseIntIdTable() {
     val user = reference("user", UserModel, ReferenceOption.CASCADE, ReferenceOption.CASCADE)

@@ -13,7 +13,7 @@ import siberia.modules.transaction.data.dto.TransactionFullOutputDto
 import siberia.modules.transaction.data.dto.TransactionInputDto
 import siberia.utils.database.BaseIntIdTable
 import siberia.utils.database.idValue
-import siberia.utils.database.transaction
+import org.jetbrains.exposed.sql.transactions.transaction
 
 object TransactionModel : BaseIntIdTable() {
     val from = reference("from", StockModel, ReferenceOption.CASCADE, ReferenceOption.CASCADE).nullable().default(null)

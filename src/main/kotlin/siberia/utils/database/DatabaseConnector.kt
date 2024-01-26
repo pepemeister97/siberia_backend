@@ -15,10 +15,12 @@ class DatabaseConnector(vararg tables: Table, initializer: Transaction.() -> Uni
                 SchemaUtils.create(it)
             }
             initializer()
+            commit()
+            close()
         }
     }
     companion object {
-        private lateinit var hikariDataSource: HikariDataSource
+        lateinit var hikariDataSource: HikariDataSource
         fun connect() {
             hikariDataSource = HikariDataSource(
                 HikariConfig().apply {
@@ -27,16 +29,20 @@ class DatabaseConnector(vararg tables: Table, initializer: Transaction.() -> Uni
                     username = database.user
                     password = database.password
                     maximumPoolSize = 5
+                    minimumIdle = 5
                     maxLifetime = 600000
-                    keepaliveTime = 300000
+                    keepaliveTime = 30000
                     isAutoCommit = false
-                    transactionIsolation = "TRANSACTION_REPEATABLE_READ"
-                    validate()
+                    leakDetectionThreshold = 10000
+                    transactionIsolation = "TRANSACTION_READ_COMMITTED"
+//                    validate()
                 }
             )
             TransactionManager.defaultDatabase = Database.connect(
                 hikariDataSource,
-                databaseConfig = DatabaseConfig.invoke { maxEntitiesToStoreInCachePerEntity = 0 }
+                databaseConfig = DatabaseConfig.invoke {
+                    maxEntitiesToStoreInCachePerEntity = 0
+                }
             )
         }
     }

@@ -1,7 +1,7 @@
 package siberia.modules.stock.service
 
 import org.jetbrains.exposed.sql.and
-import siberia.utils.database.transaction
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.exceptions.ForbiddenException

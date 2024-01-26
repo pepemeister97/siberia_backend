@@ -6,7 +6,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import siberia.modules.transaction.data.dto.TransactionInputDto
 import siberia.utils.database.BaseIntIdTable
-import siberia.utils.database.transaction
+import org.jetbrains.exposed.sql.transactions.transaction
 
 object StockModel: BaseIntIdTable() {
     val name = text("name")

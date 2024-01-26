@@ -34,7 +34,7 @@ import siberia.modules.user.data.dao.UserDao
 import siberia.modules.user.service.UserAccessControlService
 import siberia.plugins.Logger
 import siberia.utils.database.idValue
-import siberia.utils.database.transaction
+import org.jetbrains.exposed.sql.transactions.transaction
 import siberia.utils.kodein.KodeinService
 
 class TransactionService(di: DI) : KodeinService(di) {

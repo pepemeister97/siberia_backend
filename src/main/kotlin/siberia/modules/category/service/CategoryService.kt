@@ -1,7 +1,7 @@
 package siberia.modules.category.service
 
 import io.ktor.server.plugins.*
-import siberia.utils.database.transaction
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.category.data.dao.CategoryDao

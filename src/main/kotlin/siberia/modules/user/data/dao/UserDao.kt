@@ -3,7 +3,7 @@ package siberia.modules.user.data.dao
 import org.jetbrains.exposed.dao.EntityBatchUpdate
 import org.jetbrains.exposed.dao.id.EntityID
 import siberia.exceptions.BadRequestException
-import siberia.utils.database.transaction
+import org.jetbrains.exposed.sql.transactions.transaction
 import siberia.modules.rbac.data.dto.LinkedRuleOutputDto
 import siberia.modules.rbac.data.dto.RoleOutputDto
 import siberia.modules.rbac.data.models.RbacModel

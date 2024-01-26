@@ -5,7 +5,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNotNull
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
-import siberia.utils.database.transaction
+import org.jetbrains.exposed.sql.transactions.transaction
 import siberia.modules.rbac.data.dto.LinkedRuleInputDto
 import siberia.modules.rbac.data.dto.LinkedRuleOutputDto
 import siberia.modules.rbac.data.dto.RoleOutputDto

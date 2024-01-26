@@ -25,7 +25,7 @@ import siberia.modules.transaction.data.dao.TransactionStatusDao
 import siberia.modules.transaction.data.models.TransactionRelatedUserModel
 import siberia.modules.user.data.dao.UserDao
 import siberia.plugins.Logger
-import siberia.utils.database.transaction
+import org.jetbrains.exposed.sql.transactions.transaction
 import siberia.utils.kodein.KodeinService
 import siberia.utils.websockets.dto.WebSocketResponseDto
 

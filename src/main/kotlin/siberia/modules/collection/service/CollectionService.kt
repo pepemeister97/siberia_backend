@@ -1,6 +1,6 @@
 package siberia.modules.collection.service
 
-import siberia.utils.database.transaction
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.collection.data.dao.CollectionDao
