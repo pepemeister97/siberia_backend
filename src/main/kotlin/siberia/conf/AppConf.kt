@@ -65,7 +65,10 @@ object AppConf {
         collectionManaging = rulesConf.getInt("collection-managing"),
         categoryManaging = rulesConf.getInt("category-managing"),
         productsManaging = rulesConf.getInt("products-managing"),
+        viewProductsList = rulesConf.getInt("view-products-list"),
         stockManaging = rulesConf.getInt("stock-managing"),
+
+        concreteStockView = rulesConf.getInt("concrete-stock-view"),
 
         createIncomeRequest = rulesConf.getInt("create-income-request"),
         approveIncomeRequest = rulesConf.getInt("approve-income-request"),

@@ -126,6 +126,18 @@ object DatabaseInitializer {
             it[description] = "Ability to create new users and manage their rules, roles and personal info"
             it[needStock] = true
         }
+        RuleModel.insert {
+            it[id] = AppConf.rules.concreteStockView
+            it[name] = "Concrete stock view"
+            it[description] = "Ability to see concrete stock"
+            it[needStock] = true
+        }
+        RuleModel.insert {
+            it[id] = AppConf.rules.viewProductsList
+            it[name] = "View products list"
+            it[description] = "Ability to create a product"
+            it[needStock] = false
+        }
 
     }
 
@@ -316,6 +328,7 @@ object DatabaseInitializer {
             AppConf.rules.categoryManaging,
             AppConf.rules.productsManaging,
             AppConf.rules.stockManaging,
+            AppConf.rules.viewProductsList,
         )
 
         val linkedRules = rules.map {

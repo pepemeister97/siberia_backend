@@ -60,6 +60,8 @@ fun Application.configureSecurity() {
         loadRule("category-managing", rules.categoryManaging)
         loadRule("products-managing", rules.productsManaging)
         loadRule("stock-managing", rules.stockManaging)
+        loadRule("view-products-list", rules.viewProductsList)
+        loadRule("concrete-stock-view", rules.concreteStockView)
 
         loadRule("create-income-request", rules.createIncomeRequest)
         loadRule("approve-income-request", rules.approveIncomeRequest)

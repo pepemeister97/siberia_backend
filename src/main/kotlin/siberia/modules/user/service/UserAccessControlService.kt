@@ -1,5 +1,6 @@
 package siberia.modules.user.service
 
+import org.jetbrains.exposed.sql.Query
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.and
@@ -8,6 +9,7 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import org.kodein.di.instance
+import siberia.conf.AppConf
 import siberia.modules.rbac.data.dto.LinkedRuleInputDto
 import siberia.modules.rbac.data.dto.LinkedRuleOutputDto
 import siberia.modules.rbac.data.dto.RoleOutputDto
@@ -122,11 +124,9 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
     }
 
     // Return Map <StockID, List<Rules>>
-    fun getAvailableStocks(userId: Int): Map<Int, List<Int>> = transaction {
+    private fun translateRbacModelsToStockRulesMap(models: Query): Map<Int, List<Int>> = transaction {
         val result = mutableMapOf<Int, MutableList<Int>>()
-        RbacModel.select {
-            (RbacModel.user eq userId) and (RbacModel.stock.isNotNull()) and (RbacModel.rule.isNotNull())
-        }.forEach {
+        models.forEach {
             val ruleId = it[RbacModel.rule]!!.value
             val stockId = it[RbacModel.stock]!!.value
             if (result[stockId] != null)
@@ -135,6 +135,29 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
                 result[stockId] = mutableListOf(ruleId)
         }
         result
+    }
+
+    // Return Map <StockID, List<Rules>>
+    // Returns stocks which can be used by user in operations
+    fun getAvailableStocksByOperations(userId: Int): Map<Int, List<Int>> = transaction {
+        val models = RbacModel.select {
+            (RbacModel.user eq userId) and
+            (RbacModel.stock.isNotNull()) and
+            (RbacModel.rule.isNotNull()) and
+            (RbacModel.rule notInList listOf(
+                AppConf.rules.concreteStockView
+            ))
+        }
+        translateRbacModelsToStockRulesMap(models)
+    }
+
+    fun getAvailableStocks(userId: Int): Map<Int, List<Int>> = transaction {
+        val models = RbacModel.select {
+            (RbacModel.user eq userId) and
+            (RbacModel.stock.isNotNull()) and
+            (RbacModel.rule.isNotNull())
+        }
+        translateRbacModelsToStockRulesMap(models)
     }
 
     fun filterAvailable(userId: Int, stocks: List<Int>): List<Int> = transaction {

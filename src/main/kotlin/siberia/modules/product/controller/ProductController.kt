@@ -26,6 +26,8 @@ class ProductController(override val di: DI) : KodeinController() {
 
                     call.respond(productService.getByFilter(searchFilterDto))
                 }
+            }
+            authenticate ("view-products-list") {
                 get("{productId}") {
                     val productId = call.parameters.getInt("productId", "Product id must be INT")
 

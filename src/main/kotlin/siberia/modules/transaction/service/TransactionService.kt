@@ -433,7 +433,7 @@ class TransactionService(di: DI) : KodeinService(di) {
     }
 
     fun getAvailableTransactions(authorizedUser: AuthorizedUser, transactionSearchFilter: TransactionSearchFilter): List<TransactionListItemOutputDto> = transaction {
-        val availableStocksWithRules = userAccessControlService.getAvailableStocks(authorizedUser.id)
+        val availableStocksWithRules = userAccessControlService.getAvailableStocksByOperations(authorizedUser.id)
         val availableStocks = availableStocksWithRules.map { it.key }
         //If status is OPEN it means that managers from all other stocks can see that request
         val processQuery = if (authorizedUser.rules.map { rule -> rule.ruleId }.contains(AppConf.rules.manageTransferRequest))
