@@ -1,6 +1,7 @@
 package siberia.modules.user.service
 
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
@@ -98,7 +99,7 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
 
     fun removeRules(authorizedUser: AuthorizedUser, targetId: Int, linkedRules: List<LinkedRuleInputDto>) = transaction {
         val targetDao = UserDao[targetId]
-        RbacModel.unlinkRules(RbacModel.user eq targetDao.idValue, linkedRules)
+        RbacModel.unlinkRules((RbacModel.user eq targetDao.idValue) and RbacModel.simplifiedBy.isNull(), linkedRules)
         logUpdate(authorizedUser, targetDao.login, "Some rules were removed")
         commit()
         if (authorizedUser.id != targetDao.idValue)

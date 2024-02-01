@@ -4,19 +4,25 @@ import io.ktor.util.date.*
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
+import org.kodein.di.instance
 import siberia.exceptions.ForbiddenException
 import siberia.exceptions.UnauthorizedException
 import siberia.modules.auth.data.dto.AuthInputDto
+import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.auth.data.dto.RefreshTokenDto
 import siberia.modules.auth.data.dto.TokenOutputDto
+import siberia.modules.rbac.data.models.RbacModel
 import siberia.modules.user.data.dao.UserDao
+import siberia.modules.user.data.dto.UserOutputDto
 import siberia.modules.user.data.models.UserModel
+import siberia.modules.user.service.UserService
 import siberia.plugins.Logger
 import siberia.utils.kodein.KodeinService
 import siberia.utils.security.bcrypt.CryptoUtil
 import siberia.utils.security.jwt.JwtUtil
 
 class AuthService(override val di: DI) : KodeinService(di) {
+    private val userService: UserService by instance()
     private fun generateTokenPair(userDao: UserDao, refreshTime: Long): TokenOutputDto {
         val accessToken = JwtUtil.createToken(userDao)
         val refreshToken = JwtUtil.createToken(userDao, lastLogin = refreshTime)
@@ -73,5 +79,13 @@ class AuthService(override val di: DI) : KodeinService(di) {
         commit()
 
         generateTokenPair(userDao, lastLogin)
+    }
+
+    fun getAuthorized(authorizedUser: AuthorizedUser): UserOutputDto {
+        val userDto = userService.getOne(authorizedUser.id)
+        userDto.rules = RbacModel.userToRuleLinks(
+            userDto.id, expanded = true
+        )
+        return userDto
     }
 }

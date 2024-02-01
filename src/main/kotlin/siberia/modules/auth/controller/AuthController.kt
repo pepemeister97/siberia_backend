@@ -9,12 +9,10 @@ import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.modules.auth.data.dto.AuthInputDto
 import siberia.modules.auth.service.AuthService
-import siberia.modules.user.service.UserService
 import siberia.utils.kodein.KodeinController
 
 class AuthController(override val di: DI) : KodeinController() {
     private val authService: AuthService by instance()
-    private val userService: UserService by instance()
     override fun Routing.registerRoutes() {
         route("auth") {
             post {
@@ -32,9 +30,7 @@ class AuthController(override val di: DI) : KodeinController() {
             authenticate("default") {
                 route("authorized") {
                     get {
-                        val userDto = userService.getOne(call.getAuthorized().id)
-                        userDto.rules = call.getAuthorized().rules
-                        call.respond(userDto)
+                        call.respond(authService.getAuthorized(call.getAuthorized()))
                     }
                 }
             }
