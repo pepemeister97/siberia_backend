@@ -15,6 +15,15 @@ import siberia.exceptions.NotFoundException
 import org.jetbrains.exposed.sql.transactions.transaction
 import io.ktor.server.plugins.BadRequestException as BadRequestExceptionKtor
 
+fun rollbackAndClose() {
+    try {
+        transaction {
+            rollback()
+            close()
+        }
+    } catch (_: Exception) {}
+}
+
 fun Application.configureExceptionFilter() {
 
     install(StatusPages) {
@@ -23,10 +32,7 @@ fun Application.configureExceptionFilter() {
         exception<Throwable> {
             call, cause ->
                 Logger.callFailed(call, cause)
-                transaction {
-                    rollback()
-                    close()
-                }
+                rollbackAndClose()
                 call.respond<InternalServerException>(
                     HttpStatusCode.InternalServerError,
                     InternalServerException(cause.getClientMessage())
@@ -36,10 +42,7 @@ fun Application.configureExceptionFilter() {
         exception<ExposedSQLException> {
             call, exposedSqlException ->
                 Logger.callFailed(call, exposedSqlException, "Database")
-            transaction {
-                rollback()
-                close()
-            }
+                rollbackAndClose()
                 call.respond<InternalServerException>(
                     HttpStatusCode.InternalServerError,
                     InternalServerException(exposedSqlException.getClientMessage())
@@ -51,10 +54,7 @@ fun Application.configureExceptionFilter() {
         exception<EntityNotFoundException> {
             call, exposedException ->
                 Logger.callFailed(call, exposedException, "Database")
-                transaction {
-                    rollback()
-                    close()
-                }
+                rollbackAndClose()
                 call.respond<NotFoundException>(
                     HttpStatusCode.NotFound,
                     NotFoundException(exposedException.getClientMessage())
@@ -64,10 +64,7 @@ fun Application.configureExceptionFilter() {
         exception<NoTransformationFoundException> {
             call, requestValidationException ->
                 Logger.callFailed(call, requestValidationException)
-                transaction {
-                    rollback()
-                    close()
-                }
+                rollbackAndClose()
                 call.respond(
                     status = HttpStatusCode.InternalServerError,
                     message = InternalServerException(requestValidationException.getClientMessage())
@@ -77,10 +74,7 @@ fun Application.configureExceptionFilter() {
         exception<BadRequestExceptionKtor> {
             call, requestValidationException ->
                 Logger.callFailed(call, requestValidationException)
-                transaction {
-                    rollback()
-                    close()
-                }
+                rollbackAndClose()
                 call.respond(
                     status = HttpStatusCode.UnsupportedMediaType,
                     message = BadRequestException(requestValidationException.getClientMessage())
@@ -90,10 +84,7 @@ fun Application.configureExceptionFilter() {
         exception<BaseException> {
             call, cause ->
                 Logger.callFailed(call, cause)
-                transaction {
-                    rollback()
-                    close()
-                }
+                rollbackAndClose()
                 call.respond(
                     status = HttpStatusCode(cause.httpStatusCode, cause.httpStatusText),
                     cause
