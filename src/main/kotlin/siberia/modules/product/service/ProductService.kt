@@ -71,18 +71,18 @@ class ProductService(di: DI) : KodeinService(di) {
     fun update(authorizedUser: AuthorizedUser, productId: Int, productUpdateDto: ProductUpdateDto): ProductFullOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
         val productDao = ProductDao[productId]
-        val photoName = if (productUpdateDto.photoName != null)
+        val photoName = if (productUpdateDto.photoName != null && productUpdateDto.photoName != "")
             FilesUtil.buildName(productUpdateDto.photoName!!)
-        else null
+        else ""
 
         productUpdateDto.photoName = photoName
         productDao.loadUpdateDto(productUpdateDto)
         productDao.flush()
         val event = ProductUpdateEvent(userDao.login, productDao.name, productDao.vendorCode)
         SystemEventModel.logEvent(event)
-        if (photoName != null && productUpdateDto.photoBase64 != null)
+        if (photoName != "" && productUpdateDto.photoBase64 != null)
             FilesUtil.upload(productUpdateDto.photoBase64, photoName)
-        else if (photoName != null && productUpdateDto.photoBase64 == null)
+        else if (photoName != "")
             throw BadRequestException("Photo base 64 must be provided")
 
         commit()
