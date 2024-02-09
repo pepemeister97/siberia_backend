@@ -13,7 +13,6 @@ import siberia.exceptions.BadRequestException
 import siberia.exceptions.ForbiddenException
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.logger.data.models.SystemEventModel
-import siberia.modules.notifications.service.NotificationService
 import siberia.modules.product.service.ProductService
 import siberia.modules.rbac.data.dao.RuleDao.Companion.createListCond
 import siberia.modules.rbac.data.dao.RuleDao.Companion.createNullableListCond
@@ -39,7 +38,6 @@ import siberia.utils.kodein.KodeinService
 
 class TransactionService(di: DI) : KodeinService(di) {
     private val userAccessControlService: UserAccessControlService by instance()
-    private val notificationService: NotificationService by instance()
     private val productService: ProductService by instance()
 
     fun getAllTypes() = transaction { TransactionTypeModel.selectAll().map { TransactionTypeOutputDto(id = it[TransactionTypeModel.id].value, name = it[TransactionTypeModel.name]) } }
@@ -245,7 +243,6 @@ class TransactionService(di: DI) : KodeinService(di) {
         val products = TransactionModel.getFullProductList(transactionId)
         productService.updateLastPurchaseData(products, approvedTransaction.updatedAt ?: approvedTransaction.createdAt)
         StockModel.appendProducts(targetStock.idValue, products.map { TransactionInputDto.TransactionProductInputDto(it.product.id, it.amount) })
-        notificationService.notifyTransactionStatusChange(transactionId, approvedTransaction.statusId)
         commit()
         approvedTransaction.toOutputDto()
     }
@@ -255,7 +252,6 @@ class TransactionService(di: DI) : KodeinService(di) {
         if (transactionDao.typeId != AppConf.requestTypes.income)
             throw ForbiddenException()
         val cancelledTransaction = cancelIncomeOutcomeTransaction(authorizedUser, transactionId)
-        notificationService.notifyTransactionStatusChange(transactionId, cancelledTransaction.statusId)
         commit()
         cancelledTransaction.toOutputDto()
     }
@@ -287,7 +283,6 @@ class TransactionService(di: DI) : KodeinService(di) {
             throw ForbiddenException()
 
         val approvedTransaction = approveIncomeOutcomeTransaction(authorizedUser, transactionId)
-        notificationService.notifyTransactionStatusChange(transactionId, approvedTransaction.statusId)
         commit()
         approvedTransaction.toOutputDto()
     }
@@ -300,7 +295,6 @@ class TransactionService(di: DI) : KodeinService(di) {
         val cancelledTransaction = cancelIncomeOutcomeTransaction(authorizedUser, transactionId)
         val targetStock = StockDao[getTargetStock(cancelledTransaction.toInputDto())]
         StockModel.removeProducts(targetStock.idValue, cancelledTransaction.inputProductsList)
-        notificationService.notifyTransactionStatusChange(transactionId, cancelledTransaction.statusId)
         commit()
         cancelledTransaction.toOutputDto()
     }
@@ -324,7 +318,6 @@ class TransactionService(di: DI) : KodeinService(di) {
             throw ForbiddenException()
 
         val transactionOutputDto = changeTransactionStatus(UserDao[authorizedUser.id], transactionId, AppConf.requestStatus.open).toOutputDto()
-        notificationService.notifyTransactionStatusChange(transactionId, transactionOutputDto.status)
         commit()
         transactionOutputDto
     }
@@ -335,7 +328,6 @@ class TransactionService(di: DI) : KodeinService(di) {
             throw ForbiddenException()
 
         val transactionOutputDto = changeTransactionStatus(UserDao[authorizedUser.id], transactionId, AppConf.requestStatus.creationCancelled).toOutputDto()
-        notificationService.notifyTransactionStatusChange(transactionId, transactionOutputDto.status)
         commit()
         transactionOutputDto
     }
@@ -356,7 +348,6 @@ class TransactionService(di: DI) : KodeinService(di) {
 
         StockModel.removeProducts(stockDao.idValue, transactionDao.inputProductsList)
         transactionDao.flush()
-        notificationService.notifyTransactionStatusChange(transactionId, transactionDao.statusId)
         commit()
 
         transactionDao.toOutputDto()
@@ -370,7 +361,6 @@ class TransactionService(di: DI) : KodeinService(di) {
             throw ForbiddenException()
 
         StockModel.appendProducts(transactionDao.fromId!!, transactionDao.inputProductsList)
-        notificationService.notifyTransactionStatusChange(transactionId, transactionDao.statusId)
         commit()
 
         transactionDao.toOutputDto()
@@ -384,7 +374,6 @@ class TransactionService(di: DI) : KodeinService(di) {
             throw ForbiddenException()
 
         StockModel.appendProducts(transactionDao.toId!!, transactionDao.inputProductsList)
-        notificationService.notifyTransactionStatusChange(transactionId, transactionDao.statusId)
         commit()
 
         transactionDao.toOutputDto()
@@ -393,7 +382,6 @@ class TransactionService(di: DI) : KodeinService(di) {
     fun markAsNotDelivered(authorizedUser: AuthorizedUser, transactionId: Int): TransactionOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
         val transactionOutputDto = changeTransactionStatus(userDao, transactionId, AppConf.requestStatus.notDelivered).toOutputDto()
-        notificationService.notifyTransactionStatusChange(transactionId, transactionOutputDto.status)
         commit()
         transactionOutputDto
     }
@@ -418,7 +406,6 @@ class TransactionService(di: DI) : KodeinService(di) {
             }
             else -> throw ForbiddenException()
         }
-        notificationService.notifyTransactionStatusChange(transactionId, transactionDao.statusId)
         commit()
 
         transactionDao.toOutputDto()

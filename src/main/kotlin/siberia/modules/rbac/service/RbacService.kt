@@ -9,9 +9,9 @@ import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.exceptions.ValidateException
 import siberia.modules.auth.data.dto.AuthorizedUser
+import siberia.modules.auth.service.AuthSocketService
 import siberia.modules.logger.data.dto.SystemEventCreateDto
 import siberia.modules.logger.data.models.SystemEventModel
-import siberia.modules.notifications.service.NotificationService
 import siberia.modules.rbac.data.dao.RoleDao
 import siberia.modules.rbac.data.dao.RuleCategoryDao
 import siberia.modules.rbac.data.dao.RuleDao
@@ -30,7 +30,7 @@ import siberia.utils.database.idValue
 import siberia.utils.kodein.KodeinService
 
 class RbacService(di: DI) : KodeinService(di) {
-    private val notificationService: NotificationService by instance()
+    private val authSocketService: AuthSocketService by instance()
     private fun logEvent(event: SystemEventCreateDto) {
         SystemEventModel.logEvent(event)
     }
@@ -118,7 +118,7 @@ class RbacService(di: DI) : KodeinService(di) {
         commit()
 
         val relatedUsers = RbacModel.getRelatedUsers(roleId).map { it[UserModel.id].value }.filter { it != authorizedUser.id }
-        notificationService.emitUpdateRules(relatedUsers)
+        authSocketService.updateRules(relatedUsers)
 
         appendedRules
     }
@@ -132,7 +132,7 @@ class RbacService(di: DI) : KodeinService(di) {
         commit()
 
         val relatedUsers = RbacModel.getRelatedUsers(roleId).map { it[UserModel.id].value }.filter { it != authorizedUser.id }
-        notificationService.emitUpdateRules(relatedUsers)
+        authSocketService.updateRules(relatedUsers)
     }
 
     fun updateRole(authorizedUser: AuthorizedUser, roleId: Int, roleUpdateDto: RoleUpdateDto): RoleOutputDto = transaction {

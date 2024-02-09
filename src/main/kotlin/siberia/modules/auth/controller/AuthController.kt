@@ -13,6 +13,10 @@ import siberia.utils.kodein.KodeinController
 
 class AuthController(override val di: DI) : KodeinController() {
     private val authService: AuthService by instance()
+    init {
+
+    }
+
     override fun Routing.registerRoutes() {
         route("auth") {
             post {

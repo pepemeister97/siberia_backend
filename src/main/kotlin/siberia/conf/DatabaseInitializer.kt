@@ -11,8 +11,6 @@ import siberia.modules.category.data.models.CategoryToCategoryModel
 import siberia.modules.collection.data.models.CollectionModel
 import siberia.modules.logger.data.models.SystemEventObjectTypeModel
 import siberia.modules.logger.data.models.SystemEventTypeModel
-import siberia.modules.notifications.data.models.NotificationDomainModel
-import siberia.modules.notifications.data.models.NotificationTypeModel
 import siberia.modules.product.data.models.ProductModel
 import siberia.modules.rbac.data.dto.LinkedRuleOutputDto
 import siberia.modules.rbac.data.models.RbacModel
@@ -257,32 +255,6 @@ object DatabaseInitializer {
         }
     }
 
-    fun initNotificationTypes() {
-        if (!NotificationTypeModel.selectAll().empty())
-            return
-        NotificationTypeModel.insert {
-            it[id] = AppConf.notificationTypes.info
-            it[name] = "Info"
-        }
-        NotificationTypeModel.insert {
-            it[id] = AppConf.notificationTypes.warn
-            it[name] = "Warn"
-        }
-        NotificationTypeModel.insert {
-            it[id] = AppConf.notificationTypes.critical
-            it[name] = "Critical"
-        }
-    }
-
-    fun initNotificationDomains() {
-        if (!NotificationDomainModel.selectAll().empty())
-            return
-        NotificationDomainModel.insert {
-            it[id] = AppConf.notificationDomains.transactions
-            it[name] = "Transaction"
-        }
-    }
-
     fun initCategory() {
         if (!CategoryModel.selectAll().empty())
             return
@@ -344,26 +316,28 @@ object DatabaseInitializer {
     }
 
     fun initTestData() = transaction {
-        val items = listOf<Int>(2, 3, 4)
+        val count = 10000
+        val items = mutableListOf<Int>()
+        val categoryItems = mutableListOf<Int>()
+        repeat(count) { index -> items.add(index + 1) }
+        repeat(100) { index -> categoryItems.add(index + 1) }
         var createProducts = true
         if (BrandModel.selectAll().empty()) {
-            BrandModel.batchInsert(items) {
-                this[BrandModel.id] = it
+            BrandModel.batchInsert(categoryItems) {
                 this[BrandModel.name] = "Brand #$it"
             }
         }
         else
             createProducts = false
         if (CollectionModel.selectAll().empty()) {
-            CollectionModel.batchInsert(items) {
-                this[CollectionModel.id] = it
+            CollectionModel.batchInsert(categoryItems) {
                 this[CollectionModel.name] = "Collection #$it"
             }
         }
         else
             createProducts = false
         if (CategoryModel.selectAll().count() <= 1) {
-            val item = 0
+            val item = 1
             CategoryModel.insert {
                 it[id] = items[0] + item
                 it[name] = "Category #${items[0] + item}"
@@ -388,31 +362,31 @@ object DatabaseInitializer {
                 it[parent] = items[1] + item
                 it[child] = items[2] + item
             }
-            items.forEach {
-                item -> run {
+            categoryItems.forEach {
+                category -> run {
                     CategoryModel.insert {
-                        it[id] = items[0] + item * 100
-                        it[name] = "Category #${items[0] + item* 100}"
+                        it[id] = items[0] + category * 100
+                        it[name] = "Category #${items[0] + category* 100}"
                     }
                     CategoryModel.insert {
-                        it[id] = items[1] + item* 100
-                        it[name] = "Sub Category #${items[1] + item* 100}"
+                        it[id] = items[1] + category* 100
+                        it[name] = "Sub Category #${items[1] + category* 100}"
                     }
                     CategoryModel.insert {
-                        it[id] = items[2] + item* 100
-                        it[name] = "Sub Sub Category #${items[2] + item* 100}"
+                        it[id] = items[2] + category* 100
+                        it[name] = "Sub Sub Category #${items[2] + category* 100}"
                     }
                     CategoryToCategoryModel.insert {
                         it[parent] = 1
-                        it[child] = items[0] + item* 100
+                        it[child] = items[0] + category* 100
                     }
                     CategoryToCategoryModel.insert {
-                        it[parent] = items[0] + item* 100
-                        it[child] = items[1] + item* 100
+                        it[parent] = items[0] + category* 100
+                        it[child] = items[1] + category* 100
                     }
                     CategoryToCategoryModel.insert {
-                        it[parent] = items[1] + item* 100
-                        it[child] = items[2] + item* 100
+                        it[parent] = items[1] + category* 100
+                        it[child] = items[2] + category* 100
                     }
                 }
             }
@@ -422,20 +396,20 @@ object DatabaseInitializer {
         commit()
 
         if (ProductModel.selectAll().empty() && createProducts) {
+            val categoryBrandCollection = 2
             ProductModel.batchInsert(items) {
-                this[ProductModel.id] = it
                 this[ProductModel.photo] = "$it.png"
                 this[ProductModel.vendorCode] = getTimeMillis().toString()
                 this[ProductModel.barcode] = getTimeMillis().toString()
-                this[ProductModel.brand] = it
+                this[ProductModel.brand] = categoryBrandCollection
                 this[ProductModel.name] = "Product #$it"
                 this[ProductModel.description] = "Description for product #$it"
                 this[ProductModel.lastPurchasePrice] = (it * 8).toDouble()
                 this[ProductModel.distributorPrice] = (it * 16).toDouble()
                 this[ProductModel.professionalPrice] = (it * 24).toDouble()
                 this[ProductModel.commonPrice] = (it * 32).toDouble()
-                this[ProductModel.category] = it
-                this[ProductModel.collection] = it
+                this[ProductModel.category] = categoryBrandCollection
+                this[ProductModel.collection] = categoryBrandCollection
                 this[ProductModel.color] = "New ultra color #$it"
                 this[ProductModel.amountInBox] = it
                 this[ProductModel.expirationDate] = it * 50000000L
@@ -444,7 +418,6 @@ object DatabaseInitializer {
         }
         if (StockModel.selectAll().empty()) {
             StockModel.batchInsert(items) {
-                this[StockModel.id] = it
                 this[StockModel.name] = "Description for auto-generated stock #$it"
                 this[StockModel.address] = "$it Podrochitte ave."
             }

@@ -18,14 +18,14 @@ import siberia.modules.logger.data.models.SystemEventModel
 import siberia.modules.rbac.service.RbacService
 import siberia.modules.user.data.dao.UserDao
 import siberia.modules.auth.data.dto.AuthorizedUser
-import siberia.modules.notifications.service.NotificationService
+import siberia.modules.auth.service.AuthSocketService
 import siberia.modules.user.data.dto.systemevents.useraccess.UserRightsUpdated
 import siberia.utils.database.idValue
 import siberia.utils.kodein.KodeinService
 
 class UserAccessControlService(di: DI) : KodeinService(di) {
+    private val authSocketService: AuthSocketService by instance()
     private val rbacService: RbacService by instance()
-    private val notificationService: NotificationService by instance()
 
     private fun logUpdate(author: AuthorizedUser, target: String, description: String) = transaction {
         val authorName: String = UserDao[author.id].login
@@ -70,7 +70,7 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
         logUpdate(authorizedUser, userDao.login, "New rules added")
         val addedRules = addRules(userDao, newRules)
         if (userDao.idValue != authorizedUser.id)
-            notificationService.emitUpdateRules(userDao.idValue)
+            authSocketService.updateRules(userDao.idValue)
         addedRules
     }
 
@@ -87,7 +87,7 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
         logUpdate(authorizedUser, userDao.login, "New roles added")
         val addedRoles = addRoles(userDao, newRoles)
         if (userDao.idValue != authorizedUser.id)
-            notificationService.emitUpdateRules(userDao.idValue)
+            authSocketService.updateRules(userDao.idValue)
         addedRoles
     }
 
@@ -105,7 +105,7 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
         logUpdate(authorizedUser, targetDao.login, "Some rules were removed")
         commit()
         if (authorizedUser.id != targetDao.idValue)
-            notificationService.emitUpdateRules(targetDao.idValue)
+            authSocketService.updateRules(targetDao.idValue)
     }
 
     fun removeRoles(authorizedUser: AuthorizedUser, targetId: Int, linkedRoles: List<Int>) = transaction {
@@ -114,7 +114,7 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
         logUpdate(authorizedUser, targetDao.login, "Some roles were removed")
         commit()
         if (authorizedUser.id != targetDao.idValue)
-            notificationService.emitUpdateRules(targetDao.idValue)
+            authSocketService.updateRules(targetDao.idValue)
     }
 
     fun checkAccessToStock(userId: Int, ruleId: Int, stockId: Int): Boolean = transaction {

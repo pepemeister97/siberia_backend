@@ -10,6 +10,7 @@ import siberia.modules.rbac.data.models.role.RoleModel
 import siberia.modules.rbac.data.models.rule.RuleCategoryModel
 import siberia.modules.rbac.data.models.rule.RuleModel
 import siberia.modules.auth.service.AuthService
+import siberia.modules.auth.service.AuthSocketService
 import siberia.modules.brand.controller.BrandController
 import siberia.modules.brand.data.models.BrandModel
 import siberia.modules.brand.service.BrandService
@@ -26,11 +27,6 @@ import siberia.modules.logger.data.models.SystemEventModel
 import siberia.modules.logger.data.models.SystemEventObjectTypeModel
 import siberia.modules.logger.data.models.SystemEventTypeModel
 import siberia.modules.logger.service.SystemEventService
-import siberia.modules.notifications.controller.NotificationsController
-import siberia.modules.notifications.controller.NotificationsWebSocketController
-import siberia.modules.notifications.data.models.NotificationModel
-import siberia.modules.notifications.data.models.NotificationTypeModel
-import siberia.modules.notifications.service.NotificationService
 import siberia.modules.product.controller.ProductController
 import siberia.modules.product.data.models.ProductModel
 import siberia.modules.product.service.ProductService
@@ -52,6 +48,7 @@ import siberia.plugins.*
 import siberia.utils.database.DatabaseConnector
 import siberia.utils.kodein.bindSingleton
 import siberia.utils.kodein.kodeinApplication
+import siberia.utils.websockets.WebSocketRegister
 
 fun main() {
     embeddedServer(Netty, port = AppConf.server.port, host = AppConf.server.host, module = Application::module)
@@ -78,7 +75,8 @@ fun Application.module() {
         bindSingleton { ProductService(it) }
         bindSingleton { StockService(it) }
         bindSingleton { TransactionService(it) }
-        bindSingleton { NotificationService(it) }
+        bindSingleton { WebSocketRegister(it) }
+        bindSingleton { AuthSocketService(it) }
 
         bindSingleton { AuthController(it) }
         bindSingleton { UserController(it) }
@@ -90,8 +88,6 @@ fun Application.module() {
         bindSingleton { ProductController(it) }
         bindSingleton { StockController(it) }
         bindSingleton { TransactionController(it) }
-        bindSingleton { NotificationsWebSocketController(it) }
-        bindSingleton { NotificationsController(it) }
         bindSingleton { FilesController(it) }
     }
 
@@ -104,15 +100,12 @@ fun Application.module() {
         ProductModel,
         SystemEventModel, SystemEventTypeModel, SystemEventObjectTypeModel,
         TransactionModel, TransactionToProductModel, TransactionRelatedUserModel, TransactionStatusModel, TransactionTypeModel,
-        NotificationModel, NotificationTypeModel, NotificationTypeModel
     ) {
         DatabaseInitializer.initRules()
         DatabaseInitializer.initEventTypes()
         DatabaseInitializer.initObjectTypes()
         DatabaseInitializer.initRequestTypes()
         DatabaseInitializer.initRequestStatuses()
-        DatabaseInitializer.initNotificationTypes()
-        DatabaseInitializer.initNotificationDomains()
         DatabaseInitializer.initUsers()
         DatabaseInitializer.initCategory()
         DatabaseInitializer.initTestData()
