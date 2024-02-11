@@ -1,5 +1,8 @@
 package siberia.utils.database
 
+import kotlinx.serialization.InternalSerializationApi
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
 import org.jetbrains.exposed.dao.EntityChangeType
 import org.jetbrains.exposed.dao.EntityHook
 import org.jetbrains.exposed.dao.IntEntityClass
@@ -8,7 +11,10 @@ import org.jetbrains.exposed.dao.toEntity
 import org.jetbrains.exposed.sql.*
 import java.time.LocalDateTime
 
-abstract class BaseIntEntityClass<Output, E : BaseIntEntity<Output>>(table: BaseIntIdTable) : IntEntityClass<E>(table) {
+abstract class BaseIntEntityClass<Output : SerializableAny, E : BaseIntEntity<Output>>(table: BaseIntIdTable) : IntEntityClass<E>(table) {
+
+    val json = Json { ignoreUnknownKeys = true }
+
     init {
         EntityHook.subscribe { action ->
             if (action.changeType == EntityChangeType.Updated) {
@@ -88,4 +94,8 @@ abstract class BaseIntEntityClass<Output, E : BaseIntEntity<Output>>(table: Base
                 field neq filter
             else
                 field eq filter
+
+    @OptIn(InternalSerializationApi::class)
+    inline fun <reified T : SerializableAny> parseRollbackInstance(json: String): T =
+        this.json.decodeFromString(T::class.serializer(), json)
 }

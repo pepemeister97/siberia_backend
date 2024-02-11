@@ -12,6 +12,10 @@ data class SystemEventOutputDto (
     val eventObjectTypeId: Int,
     val eventObjectName: String,
     val eventDescription: String,
+    val eventObjectId: Int? = null,
+    val canBeReset: Boolean,
+    val rollbackInstance: String? = null,
+    val rollbackRoute: String,
 
     //Next iterations
 //    val eventObject: Int? = null,
