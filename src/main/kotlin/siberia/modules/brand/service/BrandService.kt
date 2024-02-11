@@ -7,6 +7,7 @@ import siberia.modules.brand.data.dao.BrandDao
 import siberia.modules.brand.data.dto.BrandOutputDto
 import siberia.modules.brand.data.dto.BrandInputDto
 import siberia.modules.brand.data.dto.BrandRemoveResultDto
+import siberia.modules.brand.data.dto.BrandUpdateDto
 import siberia.modules.user.data.dao.UserDao
 import siberia.utils.kodein.KodeinService
 
@@ -21,11 +22,10 @@ class BrandService(di: DI) : KodeinService(di) {
         brandDao
     }
 
-    fun update(authorizedUser: AuthorizedUser, brandId: Int, brandInputDto: BrandInputDto): BrandOutputDto = transaction {
+    fun update(authorizedUser: AuthorizedUser, brandId: Int, brandUpdateDto: BrandUpdateDto): BrandOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
         val brandDao = BrandDao[brandId]
-        brandDao.name = brandInputDto.name
-        brandDao.flush(userDao.login)
+        brandDao.loadAndFlush(userDao.login, brandUpdateDto)
         commit()
 
         brandDao.toOutputDto()

@@ -17,6 +17,7 @@ import siberia.utils.security.bcrypt.CryptoUtil
 
 class UserService(di: DI) : KodeinService(di) {
     private val userAccessControlService: UserAccessControlService by instance()
+
     fun createUser(authorizedUser: AuthorizedUser, createUserDto: CreateUserDto): UserOutputDto = transaction {
 
         UserDao.checkUnique(createUserDto.params.login)
@@ -60,13 +61,14 @@ class UserService(di: DI) : KodeinService(di) {
         UserRemoveOutputDto(userId, "success")
     }
 
-    fun updateUser(authorizedUser: AuthorizedUser, userId: Int, userPatchDto: UserPatchDto): UserOutputDto = transaction {
+    fun updateUser(authorizedUser: AuthorizedUser, userId: Int, userUpdateDto: UserUpdateDto): UserOutputDto = transaction {
         val authorName = UserDao[authorizedUser.id].login
         val userDao = UserDao[userId]
-        val oldLogin = userDao.login
 
-        userDao.loadPatch(userPatchDto)
-        userDao.flush(authorName, oldLogin)
+        if (userUpdateDto.hash != null)
+            throw BadRequestException("Bad request")
+
+        userDao.loadAndFlush(authorName, userUpdateDto)
         commit()
 
         userDao.toOutputDto()

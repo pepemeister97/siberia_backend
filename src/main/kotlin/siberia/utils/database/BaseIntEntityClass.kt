@@ -1,8 +1,6 @@
 package siberia.utils.database
 
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.serializer
 import org.jetbrains.exposed.dao.EntityChangeType
 import org.jetbrains.exposed.dao.EntityHook
 import org.jetbrains.exposed.dao.IntEntityClass
@@ -95,7 +93,6 @@ abstract class BaseIntEntityClass<Output : SerializableAny, E : BaseIntEntity<Ou
             else
                 field eq filter
 
-    @OptIn(InternalSerializationApi::class)
-    inline fun <reified T : SerializableAny> parseRollbackInstance(json: String): T =
-        this.json.decodeFromString(T::class.serializer(), json)
+    companion object {
+    }
 }

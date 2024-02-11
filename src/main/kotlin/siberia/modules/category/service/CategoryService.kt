@@ -5,12 +5,8 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.category.data.dao.CategoryDao
-import siberia.modules.category.data.dto.CategoryInputDto
-import siberia.modules.category.data.dto.CategoryOnRemoveDto
-import siberia.modules.category.data.dto.CategoryOutputDto
-import siberia.modules.category.data.dto.CategoryRemoveResultDto
+import siberia.modules.category.data.dto.*
 import siberia.modules.category.data.dto.systemevents.CategoryCreateEvent
-import siberia.modules.category.data.dto.systemevents.CategoryRemoveEvent
 import siberia.modules.category.data.models.CategoryModel
 import siberia.modules.logger.data.models.SystemEventModel
 import siberia.modules.user.data.dao.UserDao
@@ -39,18 +35,8 @@ class CategoryService(di: DI) : KodeinService(di) {
         if (categoryDao.idValue == 1)
             throw BadRequestException("You cant remove root category")
 
-        if (categoryOnRemoveDto.transferChildrenTo != null) {
-            val transferTo = CategoryDao[categoryOnRemoveDto.transferChildrenTo]
-            categoryDao.getWithChildren().children.forEach {
-                val category = CategoryDao[it.id]
-                CategoryModel.moveToNewParent(category, transferTo)
-            }
-        }
+        categoryDao.delete(userDao.login, categoryOnRemoveDto)
 
-        CategoryModel.remove(categoryDao, categoryOnRemoveDto)
-
-        val event = CategoryRemoveEvent(userDao.login, categoryDao.name)
-        SystemEventModel.logEvent(event)
         commit()
 
         CategoryRemoveResultDto(
@@ -59,20 +45,11 @@ class CategoryService(di: DI) : KodeinService(di) {
         )
     }
 
-    fun update(authorizedUser: AuthorizedUser, categoryId: Int, categoryInputDto: CategoryInputDto): CategoryOutputDto = transaction {
+    fun update(authorizedUser: AuthorizedUser, categoryId: Int, categoryUpdateDto: CategoryUpdateDto): CategoryOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
         val categoryDao = CategoryDao[categoryId]
-        categoryDao.name = categoryInputDto.name
-        if (categoryInputDto.parent == categoryDao.idValue)
-            throw BadRequestException("Bad parent ID")
-        if (categoryInputDto.parent != null && categoryInputDto.parent != 0) {
-            val newParent = CategoryDao[categoryInputDto.parent]
-            CategoryModel.moveToNewParent(categoryDao, newParent)
-        } else if (categoryInputDto.parent == 0) {
-            val newParent = CategoryDao[1]
-            CategoryModel.moveToNewParent(categoryDao, newParent)
-        }
-        categoryDao.flush(userDao.login)
+
+        categoryDao.loadAndFlush(userDao.login, categoryUpdateDto)
         commit()
 
         categoryDao.toOutputDto()

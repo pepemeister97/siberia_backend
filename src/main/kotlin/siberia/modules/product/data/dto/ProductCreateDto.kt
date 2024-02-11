@@ -19,8 +19,9 @@ data class ProductCreateDto (
     val color: String,
     val amountInBox: Int,
     val expirationDate: Long,
-    val link: String
-
+    val link: String,
+    //We need it to easily rollback remove events without re-upload files
+    val fileAlreadyUploaded: Boolean = false,
 //    Future iterations
 //    val size: Double,
 //    val volume: Double,

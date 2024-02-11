@@ -4,6 +4,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class StockUpdateDto (
-    val name: String? = null,
-    val address: String? = null
+    var name: String? = null,
+    var address: String? = null
 )

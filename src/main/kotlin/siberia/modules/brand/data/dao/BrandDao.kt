@@ -3,6 +3,7 @@ package siberia.modules.brand.data.dao
 import org.jetbrains.exposed.dao.EntityBatchUpdate
 import org.jetbrains.exposed.dao.id.EntityID
 import siberia.modules.brand.data.dto.BrandOutputDto
+import siberia.modules.brand.data.dto.BrandUpdateDto
 import siberia.modules.brand.data.dto.systemevents.BrandCreateEvent
 import siberia.modules.brand.data.dto.systemevents.BrandRemoveEvent
 import siberia.modules.brand.data.dto.systemevents.BrandUpdateEvent
@@ -29,15 +30,27 @@ class BrandDao(id: EntityID<Int>) : BaseIntEntity<BrandOutputDto>(id, BrandModel
     override fun toOutputDto(): BrandOutputDto =
         BrandOutputDto(idValue, name)
 
-    fun flush(authorName: String, batch: EntityBatchUpdate? = null): Boolean {
-        val event = BrandUpdateEvent(authorName, name)
-        SystemEventModel.logEvent(event)
+    fun loadAndFlush(authorName: String, brandUpdateDto: BrandUpdateDto, batch: EntityBatchUpdate? = null): Boolean {
+        val nameOnUpdate = brandUpdateDto.name ?: return true
+        val event = BrandUpdateEvent(
+            authorName,
+            nameOnUpdate,
+            createRollbackUpdateDto<BrandOutputDto, BrandUpdateDto>(brandUpdateDto),
+            idValue
+        )
+        SystemEventModel.logResettableEvent(event)
+        name = nameOnUpdate
         return super.flush(batch)
     }
 
     fun delete(authorName: String) {
-        val event = BrandRemoveEvent(authorName, name)
-        SystemEventModel.logEvent(event)
+        val event = BrandRemoveEvent(
+            authorName,
+            name,
+            createRollbackRemoveDto<BrandOutputDto>(),
+            idValue
+        )
+        SystemEventModel.logResettableEvent(event)
         super.delete()
     }
 }

@@ -14,14 +14,16 @@ import siberia.modules.rbac.data.dto.RoleOutputDto
 import siberia.modules.user.data.dto.CreateUserDto
 import siberia.modules.user.data.dto.UserFilterDto
 import siberia.modules.user.data.dto.UserOutputDto
-import siberia.modules.user.data.dto.UserPatchDto
+import siberia.modules.user.data.dto.UserUpdateDto
 import siberia.modules.user.service.UserAccessControlService
+import siberia.modules.user.service.UserEventService
 import siberia.modules.user.service.UserService
 import siberia.utils.kodein.KodeinController
 
 class UserController(override val di: DI) : KodeinController() {
     private val userAccessControlService: UserAccessControlService by instance()
     private val userService: UserService by instance()
+    private val userEventService: UserEventService by instance()
 
     override fun Routing.registerRoutes() {
         authenticate("default") {
@@ -55,6 +57,12 @@ class UserController(override val di: DI) : KodeinController() {
 
                     call.respond(userService.createUser(authorizedUser, createUserDto))
                 }
+                post("rollback/{eventId}") {
+                    val authorizedUser = call.getAuthorized()
+                    val eventId = call.parameters.getInt("eventId", "Event id must be INT")
+
+                    call.respond(userEventService.rollback(authorizedUser, eventId))
+                }
                 route("{userId}") {
                     get {
                         val userId = call.parameters.getInt("userId", "User id must be INT")
@@ -69,11 +77,11 @@ class UserController(override val di: DI) : KodeinController() {
                         call.respond(userService.removeUser(authorizedUser, userId))
                     }
                     patch {
-                        val userPatchDto = call.receive<UserPatchDto>()
+                        val userUpdateDto = call.receive<UserUpdateDto>()
                         val authorizedUser = call.getAuthorized()
                         val userId = call.parameters.getInt("userId", "User id must be INT")
 
-                        call.respond<UserOutputDto>(userService.updateUser(authorizedUser, userId, userPatchDto))
+                        call.respond<UserOutputDto>(userService.updateUser(authorizedUser, userId, userUpdateDto))
                     }
                     route("rules") {
                         get {

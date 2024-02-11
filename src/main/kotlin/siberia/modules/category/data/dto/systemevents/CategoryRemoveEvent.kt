@@ -3,7 +3,9 @@ package siberia.modules.category.data.dto.systemevents
 import siberia.conf.AppConf
 
 data class CategoryRemoveEvent(
-    override val author: String, val removedCategoryName: String
+    override val author: String, val removedCategoryName: String,
+    override val eventObjectId: Int,
+    override val rollbackInstance: String
 ) : CategoryEvent() {
     override val eventType: Int
         get() = AppConf.eventTypes.removeEvent

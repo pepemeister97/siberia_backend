@@ -64,7 +64,7 @@ object RbacModel: BaseIntIdTable() {
         }
     }
 
-    fun getRolesLinks(query: Op<Boolean>, withRules: Boolean, withStock: Boolean): List<RoleOutputDto> = transaction {
+    private fun getRolesLinks(query: Op<Boolean>, withRules: Boolean, withStock: Boolean): List<RoleOutputDto> = transaction {
         RbacModel
             .leftJoin(RoleModel)
             .slice(role, RoleModel.name, RoleModel.description)

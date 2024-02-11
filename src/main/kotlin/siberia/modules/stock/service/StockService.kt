@@ -14,8 +14,6 @@ import siberia.modules.stock.data.dao.StockDao
 import siberia.modules.stock.data.dao.StockDao.Companion.createLikeCond
 import siberia.modules.stock.data.dto.*
 import siberia.modules.stock.data.dto.systemevents.StockCreateEvent
-import siberia.modules.stock.data.dto.systemevents.StockRemoveEvent
-import siberia.modules.stock.data.dto.systemevents.StockUpdateEvent
 import siberia.modules.stock.data.models.StockModel
 import siberia.modules.user.data.dao.UserDao
 import siberia.modules.user.service.UserAccessControlService
@@ -43,11 +41,8 @@ class StockService(di: DI) : KodeinService(di) {
     fun update(authorizedUser: AuthorizedUser, stockId: Int, stockUpdateDto: StockUpdateDto): StockOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
         val stockDao = StockDao[stockId]
+        stockDao.loadAndFlush(userDao.login, stockUpdateDto)
 
-        stockDao.loadUpdateDto(stockUpdateDto)
-        stockDao.flush()
-        val event = StockUpdateEvent(userDao.login, stockDao.name)
-        SystemEventModel.logEvent(event)
         commit()
 
         stockDao.toOutputDto()
@@ -57,10 +52,8 @@ class StockService(di: DI) : KodeinService(di) {
         val userDao = UserDao[authorizedUser.id]
         val stockDao = StockDao[stockId]
         val stockName = stockDao.name
+        stockDao.delete(userDao.login)
 
-        val event = StockRemoveEvent(userDao.login, stockName)
-        stockDao.delete()
-        SystemEventModel.logEvent(event)
         commit()
 
         StockRemoveResultDto(

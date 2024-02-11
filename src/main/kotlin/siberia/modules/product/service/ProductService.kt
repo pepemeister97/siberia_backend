@@ -15,8 +15,6 @@ import siberia.modules.logger.data.models.SystemEventModel
 import siberia.modules.product.data.dao.ProductDao
 import siberia.modules.product.data.dto.*
 import siberia.modules.product.data.dto.systemevents.ProductCreateEvent
-import siberia.modules.product.data.dto.systemevents.ProductRemoveEvent
-import siberia.modules.product.data.dto.systemevents.ProductUpdateEvent
 import siberia.modules.product.data.models.ProductModel
 import siberia.modules.rbac.data.dao.RoleDao.Companion.createNullableRangeCond
 import siberia.modules.rbac.data.dao.RuleCategoryDao.Companion.createNullableListCond
@@ -34,8 +32,9 @@ class ProductService(di: DI) : KodeinService(di) {
         val event = ProductCreateEvent(userDao.login, productCreateDto.name, productCreateDto.vendorCode)
 
         val photoName
-        = if (productCreateDto.photoName != "")
+        = if (productCreateDto.photoName != "" && !productCreateDto.fileAlreadyUploaded)
             FilesUtil.buildName(productCreateDto.photoName)
+        else if (productCreateDto.fileAlreadyUploaded) productCreateDto.photoName
         else ""
 
         val productDao = ProductDao.new {
@@ -61,7 +60,7 @@ class ProductService(di: DI) : KodeinService(di) {
         }
 
         SystemEventModel.logEvent(event)
-        if (photoName != "")
+        if (photoName != "" && !productCreateDto.fileAlreadyUploaded)
             FilesUtil.upload(productCreateDto.photoBase64, photoName)
         commit()
 
@@ -71,19 +70,27 @@ class ProductService(di: DI) : KodeinService(di) {
     fun update(authorizedUser: AuthorizedUser, productId: Int, productUpdateDto: ProductUpdateDto): ProductFullOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
         val productDao = ProductDao[productId]
-        val photoName = if (productUpdateDto.photoName != null && productUpdateDto.photoName != "")
-            FilesUtil.buildName(productUpdateDto.photoName!!)
-        else ""
+        val photoName =
+            if (productUpdateDto.photoName != null &&
+                productUpdateDto.photoName != "" &&
+                productUpdateDto.fileAlreadyUploaded
+            )
+                FilesUtil.buildName(productUpdateDto.photoName!!)
+            else if (
+                productUpdateDto.photoName != null &&
+                productUpdateDto.fileAlreadyUploaded
+            )
+                productUpdateDto.photoName!!
+            else ""
 
         productUpdateDto.photoName = photoName
-        productDao.loadUpdateDto(productUpdateDto)
-        productDao.flush()
-        val event = ProductUpdateEvent(userDao.login, productDao.name, productDao.vendorCode)
-        SystemEventModel.logEvent(event)
-        if (photoName != "" && productUpdateDto.photoBase64 != null)
-            FilesUtil.upload(productUpdateDto.photoBase64, photoName)
+        productDao.loadAndFlush(userDao.login, productUpdateDto)
+
+        if (photoName != "" && productUpdateDto.photoBase64 != null && !productUpdateDto.fileAlreadyUploaded)
+            FilesUtil.upload(productUpdateDto.photoBase64!!, photoName)
         else if (photoName != "")
             throw BadRequestException("Photo base 64 must be provided")
+
 
         commit()
 
@@ -94,9 +101,7 @@ class ProductService(di: DI) : KodeinService(di) {
         val userDao = UserDao[authorizedUser.id]
         val productDao = ProductDao[productId]
 
-        productDao.delete()
-        val event = ProductRemoveEvent(userDao.login, productDao.name, productDao.vendorCode)
-        SystemEventModel.logEvent(event)
+        productDao.delete(userDao.login)
         commit()
 
         ProductRemoveResultDto(

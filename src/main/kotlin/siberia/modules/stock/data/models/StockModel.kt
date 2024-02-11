@@ -8,12 +8,14 @@ import siberia.modules.transaction.data.dto.TransactionInputDto
 import siberia.utils.database.BaseIntIdTable
 import org.jetbrains.exposed.sql.transactions.transaction
 
+typealias StockProductsListMapped = MutableMap<Int, Pair<Double, Double>>
+
 object StockModel: BaseIntIdTable() {
     val name = text("name")
     val address = text("address")
 
-    private fun getProductsMapped(products: List<TransactionInputDto.TransactionProductInputDto>): Pair<MutableMap<Int, Double>, List<Int>> =
-        Pair(products.associate { Pair(it.productId, it.amount) }.toMutableMap(), products.map { it.productId })
+    private fun getProductsMapped(products: List<TransactionInputDto.TransactionProductInputDto>): Pair<StockProductsListMapped, List<Int>> =
+        Pair(products.associate { Pair(it.productId, Pair(it.amount, it.price ?: 0.0)) }.toMutableMap(), products.map { it.productId })
 
     fun appendProducts(stockId: Int, products: List<TransactionInputDto.TransactionProductInputDto>) = transaction {
         val productsMapped = getProductsMapped(products)
@@ -24,7 +26,8 @@ object StockModel: BaseIntIdTable() {
         StockToProductModel.batchInsert(exist) {
             this[StockToProductModel.product] = it[StockToProductModel.product]
             this[StockToProductModel.stock] = it[StockToProductModel.stock]
-            this[StockToProductModel.amount] = (it[StockToProductModel.amount] + (productsMapped.first[it[StockToProductModel.product].value] ?: 0.0))
+            this[StockToProductModel.amount] = (it[StockToProductModel.amount] + (productsMapped.first[it[StockToProductModel.product].value]?.first ?: 0.0))
+            this[StockToProductModel.price] = (productsMapped.first[it[StockToProductModel.product].value]?.second ?: 0.0)
             productsMapped.first.remove(it[StockToProductModel.product].value)
         }
 
@@ -32,7 +35,7 @@ object StockModel: BaseIntIdTable() {
             StockToProductModel.id inList exist.map { it[StockToProductModel.id] }
         }
 
-        StockToProductModel.batchInsert(productsMapped.first.map { Pair(it.key, it.value) }) {
+        StockToProductModel.batchInsert(productsMapped.first.map { Pair(it.key, it.value.first) }) {
             this[StockToProductModel.stock] = stockId
             this[StockToProductModel.product] = it.first
             this[StockToProductModel.amount] = it.second
@@ -44,7 +47,7 @@ object StockModel: BaseIntIdTable() {
         val exist = StockToProductModel.select {
             (StockToProductModel.product inList products.map { it.productId }) and (StockToProductModel.stock eq stockId)
         }.map {
-            if (it[StockToProductModel.amount] - (productsMapped[it[StockToProductModel.product].value] ?: 0.0) < 0.0)
+            if (it[StockToProductModel.amount] - (productsMapped[it[StockToProductModel.product].value]?.first ?: 0.0) < 0.0)
                 throw Exception("Not enough")
             it
         }
@@ -70,7 +73,7 @@ object StockModel: BaseIntIdTable() {
         StockToProductModel.batchInsert(exist) {
             this[StockToProductModel.product] = it[StockToProductModel.product]
             this[StockToProductModel.stock] = it[StockToProductModel.stock]
-            val resultAmount = (it[StockToProductModel.amount] - (productsMapped.first[it[StockToProductModel.product].value] ?: 0.0))
+            val resultAmount = (it[StockToProductModel.amount] - (productsMapped.first[it[StockToProductModel.product].value]?.first ?: 0.0))
 
             if (resultAmount < 0)
                 throw BadRequestException("Not enough products in stock")

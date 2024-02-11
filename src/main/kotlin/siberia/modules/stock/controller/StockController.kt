@@ -10,14 +10,14 @@ import org.kodein.di.instance
 import siberia.modules.stock.data.dto.StockCreateDto
 import siberia.modules.stock.data.dto.StockSearchDto
 import siberia.modules.stock.data.dto.StockUpdateDto
+import siberia.modules.stock.service.StockEventService
 import siberia.modules.stock.service.StockService
 import siberia.utils.kodein.KodeinController
 
 class StockController(override val di: DI) : KodeinController() {
     private val stockService: StockService by instance()
-    /**
-     * Method that subtypes must override to register the handled [Routing] routes.
-     */
+    private val stockEventService: StockEventService by instance()
+
     override fun Routing.registerRoutes() {
         route("stock") {
             authenticate ("default") {
@@ -43,6 +43,12 @@ class StockController(override val di: DI) : KodeinController() {
                     val authorizedUser = call.getAuthorized()
 
                     call.respond(stockService.create(authorizedUser, stockCreateDto))
+                }
+                post ("rollback/{event}") {
+                    val authorizedUser = call.getAuthorized()
+                    val eventId = call.parameters.getInt("eventId", "Event id must be int")
+
+                    call.respond(stockEventService.rollback(authorizedUser, eventId))
                 }
                 route("{stockId}") {
                     delete {

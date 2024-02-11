@@ -5,10 +5,10 @@ import org.jetbrains.exposed.sql.select
 import siberia.modules.brand.data.dao.BrandDao
 import siberia.modules.category.data.dao.CategoryDao
 import siberia.modules.collection.data.dao.CollectionDao
-import siberia.modules.product.data.dto.ProductFullOutputDto
-import siberia.modules.product.data.dto.ProductListItemOutputDto
-import siberia.modules.product.data.dto.ProductOutputDto
-import siberia.modules.product.data.dto.ProductUpdateDto
+import siberia.modules.logger.data.models.SystemEventModel
+import siberia.modules.product.data.dto.*
+import siberia.modules.product.data.dto.systemevents.ProductRemoveEvent
+import siberia.modules.product.data.dto.systemevents.ProductUpdateEvent
 import siberia.modules.product.data.models.ProductModel
 import siberia.modules.stock.data.models.StockToProductModel
 import siberia.utils.database.BaseIntEntity
@@ -30,8 +30,8 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
     var name by ProductModel.name
     var description by ProductModel.description
     var lastPurchasePrice by ProductModel.lastPurchasePrice
-    val cost by ProductModel.cost
-    val lastPurchaseDate by ProductModel.lastPurchaseDate
+    var cost by ProductModel.cost
+    var lastPurchaseDate by ProductModel.lastPurchaseDate
     var distributorPrice by ProductModel.distributorPrice
     var professionalPrice by ProductModel.professionalPrice
     var commonPrice by ProductModel.commonPrice
@@ -78,6 +78,25 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
         )
     }
 
+    fun rollbackOutput(): ProductRollbackDto {
+        val stocksRelations = StockToProductModel.select {
+            StockToProductModel.product eq this@ProductDao.id
+        }.associate {
+            Pair(it[StockToProductModel.stock].value, mutableMapOf(
+                it[StockToProductModel.product].value
+                        to Pair(it[StockToProductModel.amount], it[StockToProductModel.price])
+            ))
+        }.toMutableMap()
+        return ProductRollbackDto(
+            idValue, photo, vendorCode, barcode,
+            brand?.toOutputDto(), name, description, lastPurchasePrice,
+            cost, lastPurchaseDate, distributorPrice,
+            professionalPrice, commonPrice, category?.toOutputDto(),
+            collection?.toOutputDto(), color, amountInBox,
+            expirationDate, link, 0.0, stocksRelations
+        )
+    }
+
     val listItemDto: ProductListItemOutputDto get() = ProductListItemOutputDto(
         id = idValue, name = name, vendorCode = vendorCode, price = distributorPrice
     )
@@ -87,7 +106,7 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
         vendorCode = productUpdateDto.vendorCode ?: vendorCode
         barcode = productUpdateDto.barcode ?: barcode
 
-        brand = if (productUpdateDto.brand != 0 && productUpdateDto.brand != null) BrandDao[productUpdateDto.brand]
+        brand = if (productUpdateDto.brand != 0 && productUpdateDto.brand != null) BrandDao[productUpdateDto.brand!!]
                 else if (productUpdateDto.brand == 0) null
                 else brand
 
@@ -96,9 +115,9 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
         distributorPrice = productUpdateDto.distributorPrice ?: distributorPrice
         professionalPrice = productUpdateDto.professionalPrice ?: professionalPrice
         commonPrice = productUpdateDto.commonPrice ?: commonPrice
-        category = if (productUpdateDto.category != null) CategoryDao[productUpdateDto.category] else category
+        category = if (productUpdateDto.category != null) CategoryDao[productUpdateDto.category!!] else category
 
-        collection = if (productUpdateDto.collection != 0 && productUpdateDto.collection != null) CollectionDao[productUpdateDto.collection]
+        collection = if (productUpdateDto.collection != 0 && productUpdateDto.collection != null) CollectionDao[productUpdateDto.collection!!]
                     else if (productUpdateDto.collection == 0) null
                     else collection
 
@@ -106,5 +125,31 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
         amountInBox = productUpdateDto.amountInBox ?: amountInBox
         expirationDate = productUpdateDto.expirationDate ?: expirationDate
         link = productUpdateDto.description ?: description
+    }
+
+    fun loadAndFlush(authorName: String, productUpdateDto: ProductUpdateDto) {
+        val event = ProductUpdateEvent(
+            authorName,
+            name,
+            vendorCode,
+            idValue,
+            createRollbackUpdateDto<ProductOutputDto, ProductUpdateDto>(productUpdateDto)
+        )
+        SystemEventModel.logResettableEvent(event)
+        loadUpdateDto(productUpdateDto)
+        flush()
+    }
+
+    fun delete(authorName: String) {
+        val event = ProductRemoveEvent(
+            authorName,
+            name,
+            vendorCode,
+            idValue,
+            createRollbackRemoveDto(rollbackOutput())
+        )
+        SystemEventModel.logResettableEvent(event)
+
+        super.delete()
     }
 }

@@ -9,11 +9,14 @@ import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.modules.category.data.dto.CategoryInputDto
 import siberia.modules.category.data.dto.CategoryOnRemoveDto
+import siberia.modules.category.data.dto.CategoryUpdateDto
+import siberia.modules.category.service.CategoryEventService
 import siberia.modules.category.service.CategoryService
 import siberia.utils.kodein.KodeinController
 
 class CategoryController(override val di: DI) : KodeinController() {
     private val categoryService: CategoryService by instance()
+    private val categoryEventService: CategoryEventService by instance()
     /**
      * Method that subtypes must override to register the handled [Routing] routes.
      */
@@ -36,13 +39,19 @@ class CategoryController(override val di: DI) : KodeinController() {
 
                     call.respond(categoryService.create(authorizedUser, categoryInputDto))
                 }
+                post ("rollback/{eventId}") {
+                    val authorizedUser = call.getAuthorized()
+                    val eventId = call.parameters.getInt("eventId", "Event id must be INT")
+
+                    call.respond(categoryEventService.rollback(authorizedUser, eventId))
+                }
                 route("{categoryId}") {
                     patch {
                         val categoryId: Int = call.parameters.getInt("categoryId", "Category id must be INT")
-                        val categoryInputDto = call.receive<CategoryInputDto>()
+                        val categoryUpdateDto = call.receive<CategoryUpdateDto>()
                         val authorizedUser = call.getAuthorized()
 
-                        call.respond(categoryService.update(authorizedUser, categoryId, categoryInputDto))
+                        call.respond(categoryService.update(authorizedUser, categoryId, categoryUpdateDto))
                     }
                     delete {
                         val categoryId: Int = call.parameters.getInt("categoryId", "Category id must be INT")

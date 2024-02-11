@@ -1,8 +1,12 @@
 package siberia.modules.rbac.data.dao
 
+import org.jetbrains.exposed.dao.EntityBatchUpdate
 import org.jetbrains.exposed.dao.id.EntityID
+import siberia.modules.logger.data.models.SystemEventModel
 import siberia.modules.rbac.data.dto.RoleOutputDto
 import siberia.modules.rbac.data.dto.RoleUpdateDto
+import siberia.modules.rbac.data.dto.systemevents.RoleRemoveEvent
+import siberia.modules.rbac.data.dto.systemevents.RoleUpdateEvent
 import siberia.modules.rbac.data.models.RbacModel
 import siberia.modules.rbac.data.models.role.RoleModel
 import siberia.modules.user.data.models.UserModel
@@ -34,11 +38,35 @@ class RoleDao(id: EntityID<Int>): BaseIntEntity<RoleOutputDto>(id, RoleModel) {
         )
     }
 
-    fun loadUpdateDto(roleUpdateDto: RoleUpdateDto) {
+    fun loadAndFlush(authorName: String, roleUpdateDto: RoleUpdateDto, batch: EntityBatchUpdate? = null): Boolean {
+        val event = RoleUpdateEvent(
+            authorName,
+            name,
+            roleUpdateDto.name ?: name,
+            createRollbackUpdateDto<RoleOutputDto, RoleUpdateDto>(roleUpdateDto),
+            idValue
+        )
+        SystemEventModel.logResettableEvent(event)
+
         if (roleUpdateDto.name != null)
-            name = roleUpdateDto.name
+            name = roleUpdateDto.name!!
 
         if (roleUpdateDto.description != null)
             description = roleUpdateDto.description
+
+        return super.flush(batch)
+    }
+
+    fun delete(authorName: String) {
+        val event = RoleRemoveEvent(
+            authorName,
+            name,
+            createRollbackRemoveDto<RoleOutputDto>(outputWithChildren),
+            idValue
+        )
+
+        SystemEventModel.logResettableEvent(event)
+
+        super.delete()
     }
 }

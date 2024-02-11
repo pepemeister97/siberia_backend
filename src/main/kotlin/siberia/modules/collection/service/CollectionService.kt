@@ -7,6 +7,7 @@ import siberia.modules.collection.data.dao.CollectionDao
 import siberia.modules.collection.data.dto.CollectionInputDto
 import siberia.modules.collection.data.dto.CollectionOutputDto
 import siberia.modules.collection.data.dto.CollectionRemoveResultDto
+import siberia.modules.collection.data.dto.CollectionUpdateDto
 import siberia.modules.user.data.dao.UserDao
 import siberia.utils.kodein.KodeinService
 
@@ -21,11 +22,10 @@ class CollectionService(di: DI) : KodeinService(di) {
         collectionDao
     }
 
-    fun update(authorizedUser: AuthorizedUser, collectionId: Int, collectionInputDto: CollectionInputDto): CollectionOutputDto = transaction {
+    fun update(authorizedUser: AuthorizedUser, collectionId: Int, collectionUpdateDto: CollectionUpdateDto): CollectionOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
         val collectionDao = CollectionDao[collectionId]
-        collectionDao.name = collectionInputDto.name
-        collectionDao.flush(userDao.login)
+        collectionDao.loadAndFlush(userDao.login, collectionUpdateDto)
         commit()
 
         collectionDao.toOutputDto()

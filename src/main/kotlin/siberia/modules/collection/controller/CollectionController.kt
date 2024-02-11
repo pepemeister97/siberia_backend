@@ -8,11 +8,14 @@ import io.ktor.server.routing.*
 import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.modules.collection.data.dto.CollectionInputDto
+import siberia.modules.collection.data.dto.CollectionUpdateDto
+import siberia.modules.collection.service.CollectionEventService
 import siberia.modules.collection.service.CollectionService
 import siberia.utils.kodein.KodeinController
 
 class CollectionController(override val di: DI) : KodeinController() {
     private val collectionService: CollectionService by instance()
+    private val collectionEventService: CollectionEventService by instance()
     /**
      * Method that subtypes must override to register the handled [Routing] routes.
      */
@@ -25,13 +28,19 @@ class CollectionController(override val di: DI) : KodeinController() {
 
                     call.respond(collectionService.create(authorizedUser, collectionInputDto))
                 }
+                post("rollback/{eventId}") {
+                    val authorizedUser = call.getAuthorized()
+                    val eventId = call.parameters.getInt("eventId", "Event id must be INT")
+
+                    call.respond(collectionEventService.rollback(authorizedUser, eventId))
+                }
                 route("{collectionId}") {
                     patch {
-                        val collectionInputDto = call.receive<CollectionInputDto>()
+                        val collectionUpdateDto = call.receive<CollectionUpdateDto>()
                         val authorizedUser = call.getAuthorized()
                         val collectionId = call.parameters.getInt("collectionId", "Collection id must be INT")
 
-                        call.respond(collectionService.update(authorizedUser, collectionId, collectionInputDto))
+                        call.respond(collectionService.update(authorizedUser, collectionId, collectionUpdateDto))
                     }
 
                     delete {

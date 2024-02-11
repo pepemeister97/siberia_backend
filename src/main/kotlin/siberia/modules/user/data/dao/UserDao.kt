@@ -1,6 +1,5 @@
 package siberia.modules.user.data.dao
 
-import org.jetbrains.exposed.dao.EntityBatchUpdate
 import org.jetbrains.exposed.dao.id.EntityID
 import siberia.exceptions.BadRequestException
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -8,8 +7,10 @@ import siberia.modules.rbac.data.dto.LinkedRuleOutputDto
 import siberia.modules.rbac.data.dto.RoleOutputDto
 import siberia.modules.rbac.data.models.RbacModel
 import siberia.modules.logger.data.models.SystemEventModel
+import siberia.modules.rbac.data.dto.LinkedRuleInputDto
 import siberia.modules.user.data.dto.UserOutputDto
-import siberia.modules.user.data.dto.UserPatchDto
+import siberia.modules.user.data.dto.UserRollbackOutput
+import siberia.modules.user.data.dto.UserUpdateDto
 import siberia.modules.user.data.dto.systemevents.user.UserCreateEvent
 import siberia.modules.user.data.dto.systemevents.user.UserRemoveEvent
 import siberia.modules.user.data.dto.systemevents.user.UserUpdateEvent
@@ -51,26 +52,52 @@ class UserDao(id: EntityID<Int>): BaseIntEntity<UserOutputDto>(id, UserModel) {
     override fun toOutputDto(): UserOutputDto =
         UserOutputDto(idValue, name, login, null, lastLogin)
 
-    fun loadPatch(userPatchDto: UserPatchDto) = transaction {
-        if (userPatchDto.login != null && userPatchDto.login != login) {
-            checkUnique(userPatchDto.login)
-            login = userPatchDto.login
-        }
-        if (userPatchDto.name != null)
-            name = userPatchDto.name
-        if (userPatchDto.password != null)
-            hash = CryptoUtil.hash(userPatchDto.password)
+    private fun toOutputWithHash(): UserOutputDto =
+        UserOutputDto(idValue, name, login, hash, lastLogin)
+
+    private fun outputForRollback(): UserRollbackOutput {
+        val rules = RbacModel.userToRuleLinks(idValue, withStock = true, expanded = false).map { LinkedRuleInputDto(it.ruleId, it.stockId) }
+        val roles = RbacModel.userToRoleLinks(idValue, withRules = false).map { it.id }
+        return UserRollbackOutput(name, login, hash, rules, roles)
     }
 
-    fun flush(authorName: String, oldLogin: String, batch: EntityBatchUpdate? = null): Boolean {
-        val userUpdateEvent = UserUpdateEvent(authorName, oldLogin, login)
-        SystemEventModel.logEvent(userUpdateEvent)
-        return super.flush(batch)
+    private fun loadPatch(userUpdateDto: UserUpdateDto) = transaction {
+        if (userUpdateDto.login != null && userUpdateDto.login != login) {
+            checkUnique(userUpdateDto.login!!)
+            login = userUpdateDto.login!!
+        }
+        if (userUpdateDto.name != null)
+            name = userUpdateDto.name!!
+        if (userUpdateDto.password != null)
+            hash = CryptoUtil.hash(userUpdateDto.password!!)
+        if (userUpdateDto.hash != null)
+            hash = CryptoUtil.hash(userUpdateDto.hash!!)
+    }
+
+    fun loadAndFlush(authorName: String, userUpdateDto: UserUpdateDto): Boolean {
+        val event = UserUpdateEvent(
+            authorName,
+            login,
+            userUpdateDto.login ?: login,
+            idValue,
+            createRollbackUpdateDto<UserOutputDto, UserUpdateDto>(userUpdateDto, toOutputWithHash())
+        )
+        SystemEventModel.logResettableEvent(event)
+
+        loadPatch(userUpdateDto)
+
+        return flush()
     }
 
     fun delete(authorName: String) {
-        val userRemoveEvent = UserRemoveEvent(authorName, login)
-        SystemEventModel.logEvent(userRemoveEvent)
+        val event = UserRemoveEvent(
+            authorName,
+            login,
+            idValue,
+            createRollbackRemoveDto(outputForRollback())
+        )
+        SystemEventModel.logResettableEvent(event)
+
         super.delete()
     }
 }

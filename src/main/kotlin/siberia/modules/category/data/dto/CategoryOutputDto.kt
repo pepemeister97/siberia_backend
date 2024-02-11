@@ -6,5 +6,9 @@ import kotlinx.serialization.Serializable
 data class CategoryOutputDto (
     val id: Int,
     val name: String,
-    var children: List<CategoryOutputDto> = listOf()
-)
+    var children: List<CategoryOutputDto> = listOf(),
+    var childrenRemoved: Boolean = false,
+    var parent: Int = 0,
+) {
+    val createDto: CategoryInputDto get() = CategoryInputDto(parent, name)
+}

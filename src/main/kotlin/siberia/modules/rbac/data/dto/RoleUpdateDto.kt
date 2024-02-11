@@ -4,6 +4,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class RoleUpdateDto (
-    val name: String? = null,
-    val description: String? = null
+    var name: String? = null,
+    var description: String? = null
 )

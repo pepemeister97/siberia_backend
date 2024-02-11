@@ -9,4 +9,6 @@ data class StockFullOutputDto (
     val name: String,
     val address: String,
     val products: List<ProductListItemOutputDto>
-)
+) {
+    val createDto: StockCreateDto get() = StockCreateDto(name, address)
+}

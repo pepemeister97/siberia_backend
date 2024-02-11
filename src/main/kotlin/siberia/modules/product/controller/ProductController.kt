@@ -10,11 +10,13 @@ import org.kodein.di.instance
 import siberia.modules.product.data.dto.ProductCreateDto
 import siberia.modules.product.data.dto.ProductSearchDto
 import siberia.modules.product.data.dto.ProductUpdateDto
+import siberia.modules.product.service.ProductEventService
 import siberia.modules.product.service.ProductService
 import siberia.utils.kodein.KodeinController
 
 class ProductController(override val di: DI) : KodeinController() {
     private val productService: ProductService by instance()
+    private val productEventService: ProductEventService by instance()
     /**
      * Method that subtypes must override to register the handled [Routing] routes.
      */
@@ -40,6 +42,12 @@ class ProductController(override val di: DI) : KodeinController() {
                     val authorizedUser = call.getAuthorized()
 
                     call.respond(productService.create(authorizedUser, productCreateDto))
+                }
+                post ("rollback/{eventId}") {
+                    val authorizedUser = call.getAuthorized()
+                    val eventId = call.parameters.getInt("eventId", "Event id must be INT")
+
+                    call.respond(productEventService.rollback(authorizedUser, eventId))
                 }
                 route("{productId}") {
                     delete {

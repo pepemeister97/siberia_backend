@@ -5,6 +5,10 @@ import siberia.conf.AppConf
 data class UserCreateEvent(
     override val author: String, val createdUserLogin: String
 ) : UserEvent() {
+    override val eventObjectId: Int
+        get() = 0
+    override val rollbackInstance: String
+        get() = ""
     override val eventType: Int
         get() = AppConf.eventTypes.createEvent
     override val eventDescription: String

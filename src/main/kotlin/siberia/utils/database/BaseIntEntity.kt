@@ -25,7 +25,7 @@ abstract class BaseIntEntity<OutputDto : SerializableAny>(id: EntityID<Int>, tab
     }
 
     @OptIn(InternalSerializationApi::class)
-    protected inline fun <reified Output : OutputDto, reified Update : SerializableAny> createRollbackUpdateDto(onUpdate: Update): String {
+    protected inline fun <reified Output : OutputDto, reified Update : SerializableAny> createRollbackUpdateDto(onUpdate: Update, output: OutputDto = toOutputDto()): String {
         val updateDtoKlass = Update::class
         val outputDtoKlass = Output::class
         val rollbackInstance = createRollbackInstanceTemplate(updateDtoKlass)
@@ -33,7 +33,7 @@ abstract class BaseIntEntity<OutputDto : SerializableAny>(id: EntityID<Int>, tab
             val prop = updateDtoKlass.memberProperties.first { it.name == param.name }
             val currentProp = try { outputDtoKlass.memberProperties.first { it.name == param.name } } catch (_: Exception) { null }
                 ?: return@forEach
-            val currentValue = currentProp.call(toOutputDto())
+            val currentValue = currentProp.call(output)
             val onUpdateValue = prop.call(rollbackInstance)
             val defaultValue = prop.call(onUpdate)
             if (onUpdateValue != defaultValue) {
@@ -51,6 +51,13 @@ abstract class BaseIntEntity<OutputDto : SerializableAny>(id: EntityID<Int>, tab
         val outputDto = toOutputDto()
 
         return json.encodeToString(outputDtoKlass.serializer(), outputDto as Output)
+    }
+
+    @OptIn(InternalSerializationApi::class)
+    protected inline fun <reified Output : SerializableAny> createRollbackRemoveDto(dto: Output): String {
+        val outputDtoKlass = Output::class
+
+        return json.encodeToString(outputDtoKlass.serializer(), dto)
     }
 
 }

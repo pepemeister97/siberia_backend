@@ -18,7 +18,6 @@ import siberia.modules.rbac.data.dao.RuleDao
 import siberia.modules.rbac.data.models.RbacModel
 import siberia.modules.rbac.data.dto.*
 import siberia.modules.rbac.data.dto.systemevents.RoleCreateEvent
-import siberia.modules.rbac.data.dto.systemevents.RoleRemoveEvent
 import siberia.modules.rbac.data.dto.systemevents.RoleUpdateEvent
 import siberia.modules.rbac.data.models.role.RoleModel
 import siberia.modules.rbac.data.models.rule.RuleModel
@@ -136,13 +135,10 @@ class RbacService(di: DI) : KodeinService(di) {
     }
 
     fun updateRole(authorizedUser: AuthorizedUser, roleId: Int, roleUpdateDto: RoleUpdateDto): RoleOutputDto = transaction {
+        val userDao = UserDao[authorizedUser.id]
         val roleDao = RoleDao[roleId]
-        val oldName = roleDao.name
-        roleDao.loadUpdateDto(roleUpdateDto)
+        roleDao.loadAndFlush(userDao.login, roleUpdateDto)
 
-        roleDao.flush()
-
-        logUpdateEvent(authorizedUser, oldName, roleDao.name)
         commit()
 
         roleDao.toOutputDto()
@@ -154,9 +150,7 @@ class RbacService(di: DI) : KodeinService(di) {
         val userDao = UserDao[authorizedUser.id]
         val roleDao = RoleDao[roleId]
         val roleName = roleDao.name
-        val event = RoleRemoveEvent(userDao.login, roleName)
-        roleDao.delete()
-        SystemEventModel.logEvent(event)
+        roleDao.delete(userDao.login)
         commit()
 
         RoleRemoveResultDto(true, "Role $roleName successfully removed")

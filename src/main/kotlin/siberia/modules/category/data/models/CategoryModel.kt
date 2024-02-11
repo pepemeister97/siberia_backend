@@ -41,6 +41,9 @@ object CategoryModel: BaseIntIdTable() {
             }
     }
 
+    fun getParent(categoryId: Int): Int =
+        try { CategoryToCategoryModel.select { CategoryToCategoryModel.child eq categoryId }.first()[CategoryToCategoryModel.parent].value } catch (_: Exception) { 0 }
+
     private fun getIdsFromTree(categoryOutputDto: CategoryOutputDto, ids: MutableList<Int>) {
         ids.add(categoryOutputDto.id)
         categoryOutputDto.children.forEach { getIdsFromTree(it, ids) }

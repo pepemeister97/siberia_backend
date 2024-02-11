@@ -5,27 +5,28 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ProductUpdateDto (
     var photoName: String? = null,
-    val photoBase64: String? = null,
-    val vendorCode: String? = null,
-    val barcode: String? = null,
+    var photoBase64: String? = null,
+    var vendorCode: String? = null,
+    var barcode: String? = null,
     //If null -> dont update
     //If 0 -> set null
     //if not zero and not null -> update to what set
-    val brand: Int? = null,
-    val name: String? = null,
-    val description: String? = null,
-    val distributorPrice: Double? = null,
-    val professionalPrice: Double? = null,
-    val commonPrice: Double? = null,
-    val category: Int? = null,
+    var brand: Int? = null,
+    var name: String? = null,
+    var description: String? = null,
+    var distributorPrice: Double? = null,
+    var professionalPrice: Double? = null,
+    var commonPrice: Double? = null,
+    var category: Int? = null,
     //If null -> dont update
     //If 0 -> set null
     //if not zero and not null -> update to what set
-    val collection: Int? = null,
-    val color: String? = null,
-    val amountInBox: Int? = null,
-    val expirationDate: Long? = null,
-    val link: String? = null
+    var collection: Int? = null,
+    var color: String? = null,
+    var amountInBox: Int? = null,
+    var expirationDate: Long? = null,
+    var link: String? = null,
+    var fileAlreadyUploaded: Boolean = false
 
 //    Future iterations
 //    val size: Double? = null,

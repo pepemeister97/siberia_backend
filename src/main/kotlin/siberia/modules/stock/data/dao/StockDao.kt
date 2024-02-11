@@ -2,12 +2,15 @@ package siberia.modules.stock.data.dao
 
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.select
+import siberia.modules.logger.data.models.SystemEventModel
 import siberia.modules.product.data.dao.ProductDao
 import siberia.modules.product.data.dto.ProductListItemOutputDto
 import siberia.modules.product.data.models.ProductModel
 import siberia.modules.stock.data.dto.StockFullOutputDto
 import siberia.modules.stock.data.dto.StockOutputDto
 import siberia.modules.stock.data.dto.StockUpdateDto
+import siberia.modules.stock.data.dto.systemevents.StockRemoveEvent
+import siberia.modules.stock.data.dto.systemevents.StockUpdateEvent
 import siberia.modules.stock.data.models.StockModel
 import siberia.modules.stock.data.models.StockToProductModel
 import siberia.utils.database.BaseIntEntity
@@ -26,7 +29,7 @@ class StockDao(id: EntityID<Int>): BaseIntEntity<StockOutputDto>(id, StockModel)
     override fun toOutputDto(): StockOutputDto
         = StockOutputDto(idValue, name, address)
 
-    fun loadUpdateDto(stockUpdateDto: StockUpdateDto) {
+    private fun loadUpdateDto(stockUpdateDto: StockUpdateDto) {
         name = stockUpdateDto.name ?: name
         address = stockUpdateDto.address ?: address
     }
@@ -42,10 +45,35 @@ class StockDao(id: EntityID<Int>): BaseIntEntity<StockOutputDto>(id, StockModel)
                 name = it[ProductModel.name],
                 vendorCode = it[ProductModel.vendorCode],
                 quantity = it[StockToProductModel.amount],
-                price = it[ProductModel.commonPrice]
+                price = it[StockToProductModel.price]
             )
         }
 
         return StockFullOutputDto(idValue, name, address, products)
+    }
+
+    fun loadAndFlush(authorName: String, stockUpdateDto: StockUpdateDto): Boolean {
+        val event = StockUpdateEvent(
+            authorName,
+            stockUpdateDto.name ?: name,
+            idValue,
+            createRollbackUpdateDto<StockOutputDto, StockUpdateDto>(stockUpdateDto)
+        )
+        SystemEventModel.logResettableEvent(event)
+        loadUpdateDto(stockUpdateDto)
+
+        return flush()
+    }
+
+    fun delete(authorName: String) {
+        val event = StockRemoveEvent(
+            authorName,
+            name,
+            idValue,
+            createRollbackRemoveDto<StockFullOutputDto>(fullOutput())
+        )
+        SystemEventModel.logResettableEvent(event)
+
+        super.delete()
     }
 }

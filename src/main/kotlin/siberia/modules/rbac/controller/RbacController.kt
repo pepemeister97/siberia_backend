@@ -12,10 +12,12 @@ import siberia.modules.rbac.data.dto.RoleFilterDto
 import siberia.modules.rbac.data.dto.RoleInputDto
 import siberia.modules.rbac.data.dto.RoleUpdateDto
 import siberia.modules.rbac.service.RbacService
+import siberia.modules.rbac.service.RoleEventService
 import siberia.utils.kodein.KodeinController
 
 class RbacController(override val di: DI) : KodeinController() {
     private val rbacService: RbacService by instance()
+    private val roleEventService: RoleEventService by instance()
     /**
      * Method that subtypes must override to register the handled [Routing] routes.
      */
@@ -33,6 +35,12 @@ class RbacController(override val di: DI) : KodeinController() {
                         val authorizedUser = call.getAuthorized()
 
                         call.respond(rbacService.createRole(authorizedUser, roleInputDto))
+                    }
+                    post("rollback/{eventId}") {
+                        val authorizedUser = call.getAuthorized()
+                        val eventId = call.parameters.getInt("eventId", "Event id must be INT")
+
+                        call.respond(roleEventService.rollback(authorizedUser, eventId))
                     }
                     route("{roleId}") {
                         get {

@@ -4,6 +4,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class CategoryInputDto (
-    val parent: Int? = null,
+    var parent: Int? = null,
     val name: String,
 )
