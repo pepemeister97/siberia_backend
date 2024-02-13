@@ -26,6 +26,9 @@ object ProductModel: BaseIntIdTable() {
     val expirationDate = long("expiration_date")
     val link = text("link")
 
+    val distributorPercent = double("distributor_percent").default(1.0)
+    val professionalPercent = double("professional_percent").default(1.0)
+    val eanCode = text("ean_code")
     //Future iterations
 //    val size = double("size").default(1.0)
 //    val volume = double("volume").default(1.0)

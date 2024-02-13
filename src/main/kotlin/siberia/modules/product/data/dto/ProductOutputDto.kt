@@ -23,7 +23,9 @@ data class ProductOutputDto(
     val amountInBox: Int,
     val expirationDate: Long,
     val link: String,
-
+    val distributorPercent: Double,
+    val professionalPercent: Double,
+    val eanCode: String
 //    Future iterations
 //    val size: Double,
 //    val volume: Double,

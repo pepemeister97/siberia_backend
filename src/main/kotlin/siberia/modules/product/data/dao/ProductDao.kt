@@ -21,6 +21,7 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
 
     var photo by ProductModel.photo
     var vendorCode by ProductModel.vendorCode
+    var eanCode by ProductModel.eanCode
     var barcode by ProductModel.barcode
 
     private val _brandId by ProductModel.brand
@@ -49,6 +50,9 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
     var expirationDate by ProductModel.expirationDate
     var link by ProductModel.link
 
+    var distributorPercent by ProductModel.distributorPercent
+    var professionalPercent by ProductModel.professionalPercent
+
 //    Future iterations
 //    var size by ProductModel.size
 //    var volume by ProductModel.volume
@@ -60,7 +64,8 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
             cost, lastPurchaseDate, distributorPrice,
             professionalPrice, commonPrice, categoryId,
             collectionId, color, amountInBox,
-            expirationDate, link, // size, volume,
+            expirationDate, link,
+            distributorPercent, professionalPercent, eanCode // size, volume,
         )
 
     fun fullOutput(): ProductFullOutputDto {
@@ -104,6 +109,7 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
     fun loadUpdateDto(productUpdateDto: ProductUpdateDto) {
         photo = productUpdateDto.photoName ?: photo
         vendorCode = productUpdateDto.vendorCode ?: vendorCode
+        eanCode = productUpdateDto.eanCode ?: eanCode
         barcode = productUpdateDto.barcode ?: barcode
 
         brand = if (productUpdateDto.brand != 0 && productUpdateDto.brand != null) BrandDao[productUpdateDto.brand!!]
@@ -112,8 +118,8 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
 
         name = productUpdateDto.name ?: name
         description = productUpdateDto.description ?: description
-        distributorPrice = productUpdateDto.distributorPrice ?: distributorPrice
-        professionalPrice = productUpdateDto.professionalPrice ?: professionalPrice
+//        distributorPrice = productUpdateDto.distributorPrice ?: distributorPrice
+//        professionalPrice = productUpdateDto.professionalPrice ?: professionalPrice
         commonPrice = productUpdateDto.commonPrice ?: commonPrice
         category = if (productUpdateDto.category != null) CategoryDao[productUpdateDto.category!!] else category
 
@@ -125,6 +131,8 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
         amountInBox = productUpdateDto.amountInBox ?: amountInBox
         expirationDate = productUpdateDto.expirationDate ?: expirationDate
         link = productUpdateDto.description ?: description
+        distributorPercent = productUpdateDto.distributorPercent ?: distributorPercent
+        professionalPercent = productUpdateDto.professionalPercent ?: professionalPercent
     }
 
     fun loadAndFlush(authorName: String, productUpdateDto: ProductUpdateDto) {

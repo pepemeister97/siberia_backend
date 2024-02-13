@@ -14,8 +14,8 @@ data class ProductUpdateDto (
     var brand: Int? = null,
     var name: String? = null,
     var description: String? = null,
-    var distributorPrice: Double? = null,
-    var professionalPrice: Double? = null,
+//    var distributorPrice: Double? = null,
+//    var professionalPrice: Double? = null,
     var commonPrice: Double? = null,
     var category: Int? = null,
     //If null -> dont update
@@ -26,7 +26,10 @@ data class ProductUpdateDto (
     var amountInBox: Int? = null,
     var expirationDate: Long? = null,
     var link: String? = null,
-    var fileAlreadyUploaded: Boolean = false
+    var fileAlreadyUploaded: Boolean = false,
+    val distributorPercent: Double? = null,
+    val professionalPercent: Double? = null,
+    val eanCode: String? = null
 
 //    Future iterations
 //    val size: Double? = null,
