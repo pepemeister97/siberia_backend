@@ -87,14 +87,14 @@ class RbacService(di: DI) : KodeinService(di) {
         )
     }
 
-    fun createRole(authorizedUser: AuthorizedUser, roleInputDto: RoleInputDto): RoleOutputDto = transaction {
+    fun createRole(authorizedUser: AuthorizedUser, roleCreateDto: RoleInputDto): RoleOutputDto = transaction {
         val roleDao = RoleDao.new {
-            name = roleInputDto.name
-            description = roleInputDto.description
+            name = roleCreateDto.name
+            description = roleCreateDto.description
         }
 
-        val linkedRules = if (roleInputDto.rules.isNotEmpty())
-            appendRulesToRole(authorizedUser, roleDao.idValue, roleInputDto.rules, false)
+        val linkedRules = if (roleCreateDto.rules.isNotEmpty())
+            appendRulesToRole(authorizedUser, roleDao.idValue, roleCreateDto.rules, false)
         else listOf()
 
         val author = UserDao[authorizedUser.id]

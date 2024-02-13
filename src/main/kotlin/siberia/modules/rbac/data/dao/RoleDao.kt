@@ -20,9 +20,11 @@ class RoleDao(id: EntityID<Int>): BaseIntEntity<RoleOutputDto>(id, RoleModel) {
     var name by RoleModel.name
     var description by RoleModel.description
 
+    val relatedUsers: List<Pair<Int, String>> get()
+    = RbacModel.getRelatedUsers(idValue).map { Pair(it[UserModel.id].value, it[UserModel.name]) }
+
     val outputWithChildren: RoleOutputDto
         get() {
-            val relatedUsers = RbacModel.getRelatedUsers(idValue).map { Pair(it[UserModel.id].value, it[UserModel.name]) }
             return RoleOutputDto(
                 idValue, name, description, RbacModel.roleToRuleLinks(idValue), relatedUsers.size.toLong(), relatedUsers
             )
@@ -32,9 +34,8 @@ class RoleDao(id: EntityID<Int>): BaseIntEntity<RoleOutputDto>(id, RoleModel) {
         = RoleOutputDto(idValue, name, description)
 
     val withRelatedUsers: RoleOutputDto get() {
-        val relatedUsers = RbacModel.getRelatedUsers(idValue).count()
         return RoleOutputDto(
-            idValue, name, description, relatedUsersCount = relatedUsers
+            idValue, name, description, relatedUsersCount = relatedUsers.size.toLong()
         )
     }
 

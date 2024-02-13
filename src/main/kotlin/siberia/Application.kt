@@ -38,7 +38,6 @@ import siberia.modules.stock.data.models.StockModel
 import siberia.modules.stock.data.models.StockToProductModel
 import siberia.modules.rbac.controller.RbacController
 import siberia.modules.rbac.data.models.RbacModel
-import siberia.modules.rbac.service.RbacEventService
 import siberia.modules.user.controller.UserController
 import siberia.modules.user.data.models.UserModel
 import siberia.modules.rbac.service.RbacService
@@ -76,11 +75,8 @@ fun Application.module() {
         bindSingleton { UserService(it) }
         bindSingleton { UserEventService(it) }
         bindSingleton { UserAccessControlService(it) }
-        //TODO: Rollback for user access events
         bindSingleton { RbacService(it) }
         bindSingleton { RoleEventService(it) }
-        //TODO: Rollback for rbac relations events
-        bindSingleton { RbacEventService(it) }
         bindSingleton { SystemEventService(it) }
         bindSingleton { BrandService(it) }
         bindSingleton { BrandEventService(it) }
@@ -93,7 +89,6 @@ fun Application.module() {
         bindSingleton { StockService(it) }
         bindSingleton { StockEventService(it) }
         bindSingleton { TransactionService(it) }
-        //TODO: Rollback for transaction events
         bindSingleton { WebSocketRegister(it) }
         bindSingleton { AuthSocketService(it) }
 

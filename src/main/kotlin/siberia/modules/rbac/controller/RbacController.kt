@@ -9,7 +9,7 @@ import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.modules.rbac.data.dto.LinkedRuleInputDto
 import siberia.modules.rbac.data.dto.RoleFilterDto
-import siberia.modules.rbac.data.dto.RoleInputDto
+import siberia.modules.rbac.data.dto.RoleCreateDto
 import siberia.modules.rbac.data.dto.RoleUpdateDto
 import siberia.modules.rbac.service.RbacService
 import siberia.modules.rbac.service.RoleEventService
@@ -31,10 +31,10 @@ class RbacController(override val di: DI) : KodeinController() {
                         call.respond(rbacService.getFiltered(roleFilterDto))
                     }
                     post {
-                        val roleInputDto = call.receive<RoleInputDto>()
+                        val roleCreateDto = call.receive<RoleCreateDto>()
                         val authorizedUser = call.getAuthorized()
 
-                        call.respond(rbacService.createRole(authorizedUser, roleInputDto))
+                        call.respond(rbacService.createRole(authorizedUser, roleCreateDto))
                     }
                     post("rollback/{eventId}") {
                         val authorizedUser = call.getAuthorized()
