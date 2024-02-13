@@ -69,5 +69,8 @@ fun Application.configureSecurity() {
         loadRule("approve-outcome-request", rules.approveOutcomeRequest)
         loadRule("create-transfer-request", rules.createTransferRequest)
         loadRule("solve-not-delivered-problem", rules.solveNotDeliveredProblem)
+
+        loadRule("mobile-access", rules.mobileAccess)
+        loadRule("mobile-auth", rules.mobileAuth)
     }
 }

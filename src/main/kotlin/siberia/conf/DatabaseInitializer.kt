@@ -400,6 +400,7 @@ object DatabaseInitializer {
             ProductModel.batchInsert(items) {
                 this[ProductModel.photo] = "$it.png"
                 this[ProductModel.vendorCode] = getTimeMillis().toString()
+                this[ProductModel.eanCode] = getTimeMillis().toString()
                 this[ProductModel.barcode] = getTimeMillis().toString()
                 this[ProductModel.brand] = categoryBrandCollection
                 this[ProductModel.name] = "Product #$it"

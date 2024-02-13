@@ -1,11 +1,10 @@
 package siberia.modules.transaction.data.dto.systemevents
 
 import siberia.conf.AppConf
-import siberia.modules.stock.data.dto.systemevents.StockEvent
 
 data class TransactionRemoveEvent(
     override val author: String, val removedTransactionStockName: String, val removedTransactionId: Int
-) : StockEvent() {
+) : TransactionEvent() {
     override val eventType: Int
         get() = AppConf.eventTypes.removeEvent
     override val eventDescription: String

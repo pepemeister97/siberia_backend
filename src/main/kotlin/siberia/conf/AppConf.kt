@@ -9,8 +9,6 @@ object AppConf {
     private val databaseConfig: ApplicationConfig = mainConfig.config("database")
     private val serverConfig: ApplicationConfig = mainConfig.config("server")
     private val rulesConf: ApplicationConfig = mainConfig.config("rules")
-    private val notificationTypesConf: ApplicationConfig = mainConfig.config("notificationTypes")
-    private val notificationDomainsConf: ApplicationConfig = mainConfig.config("notificationDomains")
     private val eventTypesConf: ApplicationConfig = mainConfig.config("eventTypes")
     private val objectTypesConf: ApplicationConfig = mainConfig.config("objectTypes")
     private val requestTypeConf: ApplicationConfig = mainConfig.config("requestTypes")
@@ -31,7 +29,9 @@ object AppConf {
         domain = jwtConfig.getString("domain"),
         secret = jwtConfig.getString("secret"),
         expirationTime = jwtConfig.config("expiration").getInt("seconds"),
-        refreshExpirationTime = jwtConfig.config("refreshExpiration").getInt("seconds")
+        refreshExpirationTime = jwtConfig.config("refreshExpiration").getInt("seconds"),
+        mobileExpirationTime = jwtConfig.config("mobile").config("accessExpiration").getInt("seconds"),
+        mobileAuthExpirationTime = jwtConfig.config("mobile").config("authExpiration").getInt("seconds")
     )
 
     val database = DatabaseConf(
@@ -45,16 +45,6 @@ object AppConf {
         host = serverConfig.getString("host"),
         port = serverConfig.getInt("port"),
         fileLocation = serverConfig.getString("file-location")
-    )
-
-    val notificationTypes = NotificationTypesConf(
-        info = notificationTypesConf.getInt("info"),
-        warn = notificationTypesConf.getInt("warn"),
-        critical = notificationTypesConf.getInt("critical"),
-    )
-
-    val notificationDomains = NotificationDomainsConf(
-        transactions = notificationDomainsConf.getInt("transactions"),
     )
 
     val rules = RulesConf(
@@ -81,6 +71,9 @@ object AppConf {
         manageTransferRequest = rulesConf.getInt("manage-transfer-request"),
         approveTransferDelivery = rulesConf.getInt("approve-transfer-delivery"),
         solveNotDeliveredProblem = rulesConf.getInt("solve-not-delivered-problem"),
+
+        mobileAuth = rulesConf.getInt("mobile-auth"),
+        mobileAccess = rulesConf.getInt("mobile-access")
     )
 
     val eventTypes = EventTypesConf(

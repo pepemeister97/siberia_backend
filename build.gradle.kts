@@ -77,4 +77,7 @@ dependencies {
     //Tests
     testImplementation(ktorServer("tests"))
     testImplementation(kotlin("test-junit"))
+
+    //QR-generation
+    implementation("io.github.g0dkar:qrcode-kotlin:4.1.1")
 }

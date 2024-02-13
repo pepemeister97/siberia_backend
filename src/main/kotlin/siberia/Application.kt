@@ -6,6 +6,7 @@ import io.ktor.server.netty.*
 import siberia.conf.AppConf
 import siberia.conf.DatabaseInitializer
 import siberia.modules.auth.controller.AuthController
+import siberia.modules.auth.service.AuthQrService
 import siberia.modules.rbac.data.models.role.RoleModel
 import siberia.modules.rbac.data.models.rule.RuleCategoryModel
 import siberia.modules.rbac.data.models.rule.RuleModel
@@ -72,6 +73,7 @@ fun Application.module() {
 
     kodeinApplication {
         bindSingleton { AuthService(it) }
+        bindSingleton { AuthQrService(it) }
         bindSingleton { UserService(it) }
         bindSingleton { UserEventService(it) }
         bindSingleton { UserAccessControlService(it) }

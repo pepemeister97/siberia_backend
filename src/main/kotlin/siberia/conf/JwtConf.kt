@@ -5,4 +5,6 @@ data class JwtConf (
     val secret: String,
     val expirationTime: Int,
     val refreshExpirationTime: Int,
+    val mobileExpirationTime: Int,
+    val mobileAuthExpirationTime: Int
 )

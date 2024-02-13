@@ -8,14 +8,13 @@ import io.ktor.server.routing.*
 import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.modules.auth.data.dto.AuthInputDto
+import siberia.modules.auth.service.AuthQrService
 import siberia.modules.auth.service.AuthService
 import siberia.utils.kodein.KodeinController
 
 class AuthController(override val di: DI) : KodeinController() {
     private val authService: AuthService by instance()
-    init {
-
-    }
+    private val authQrService: AuthQrService by instance()
 
     override fun Routing.registerRoutes() {
         route("auth") {
@@ -23,6 +22,27 @@ class AuthController(override val di: DI) : KodeinController() {
                 val authInput = call.receive<AuthInputDto>()
 
                 call.respond(authService.auth(authInput))
+            }
+            authenticate ("default") {
+                route("qr") {
+                    post("stock/{stockId}") {
+                        val authorizedUser = call.getAuthorized()
+                        val stockId = call.parameters.getInt("stockId", "Stock id must be INT")
+
+                        call.respondBytes(authQrService.createStockQr(authorizedUser, stockId))
+                    }
+                    post("transaction/{transactionId}") {
+                        val authorizedUser = call.getAuthorized()
+                        val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")
+
+                        call.respondBytes(authQrService.createTransactionQr(authorizedUser, transactionId))
+                    }
+                    authenticate ("mobile-access") {
+                        get {
+                            call.respond(call.getAuthorized())
+                        }
+                    }
+                }
             }
             authenticate("refresh") {
                 post("refresh") {

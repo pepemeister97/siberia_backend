@@ -12,6 +12,7 @@ import siberia.modules.auth.data.dto.RefreshTokenDto
 import siberia.modules.rbac.data.models.RbacModel
 import siberia.modules.user.data.dao.UserDao
 import siberia.modules.auth.data.dto.AuthorizedUser
+import siberia.modules.auth.data.dto.QrTokenDto
 import siberia.plugins.Logger
 import siberia.utils.database.idValue
 import java.util.*
@@ -24,7 +25,7 @@ object JwtUtil {
             .withExpiresAt(
                 Date(
                 System.currentTimeMillis() +
-                        if (lastLogin != null) AppConf.jwt.refreshExpirationTime else AppConf.jwt.expirationTime
+                        (if (lastLogin != null) AppConf.jwt.refreshExpirationTime else AppConf.jwt.expirationTime) * 1000
                 )
             )
             .apply {
@@ -41,8 +42,30 @@ object JwtUtil {
             }.sign(Algorithm.HMAC256(AppConf.jwt.secret))
     }
 
+    fun createMobileAccessToken(qrTokenDto: QrTokenDto): String {
+        return JWT.create()
+            .withIssuer(AppConf.jwt.domain)
+            .withIssuedAt(Date(System.currentTimeMillis()))
+            .withExpiresAt(
+                Date(System.currentTimeMillis() + AppConf.jwt.mobileExpirationTime * 1000)
+            )
+            .apply {
+                withClaim("id", qrTokenDto.userId)
+                if (qrTokenDto.transactionId != null)
+                    withClaim("transactionId", qrTokenDto.transactionId)
+                if (qrTokenDto.stockId != null)
+                    withClaim("stockId", qrTokenDto.stockId)
+                val rules = RbacModel.userToRuleLinks(
+                    qrTokenDto.userId, expanded = true
+                ).toMutableList().apply { add(LinkedRuleOutputDto(ruleId = AppConf.rules.mobileAccess)) }
+                withClaim("rules", rules.map { Json.encodeToString(LinkedRuleOutputDto.serializer(), it) }.toString())
+            }.sign(Algorithm.HMAC256(AppConf.jwt.secret))
+    }
+
     fun decodeAccessToken(principal: JWTPrincipal): AuthorizedUser = AuthorizedUser(
         id = principal.getClaim("id", Int::class)!!,
+        stockId = principal.getClaim("stockId", Int::class),
+        transactionId = principal.getClaim("transactionId", Int::class),
         rules = Json.decodeFromString<List<LinkedRuleOutputDto>>(principal.getClaim("rules", String::class) ?: "[]")
     )
 

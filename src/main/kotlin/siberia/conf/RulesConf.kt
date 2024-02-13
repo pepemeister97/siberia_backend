@@ -24,4 +24,9 @@ data class RulesConf (
     val manageTransferRequest: Int,
     val approveTransferDelivery: Int,
     val solveNotDeliveredProblem: Int,
+
+    //Specific rules for mobile app authorization
+    //ONLY for token verifying
+    val mobileAuth: Int,
+    val mobileAccess: Int
 )
