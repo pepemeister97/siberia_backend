@@ -34,6 +34,29 @@ class TransactionController(override val di: DI) : KodeinController() {
 
                     call.respond(transactionService.getAvailableTransactions(authorizedUser, transactionSearchFilter))
                 }
+                authenticate("mobile-access") {
+                    route("assembly") {
+                        get {
+                            val authorizedUser = call.getAuthorized()
+
+                            call.respond(transactionService.getTransactionOnAssembly(authorizedUser))
+                        }
+                        route("products") {
+                            post("sorted") {
+                                val authorizedUser = call.getAuthorized()
+                                val transactions = call.receive<List<Int>>()
+
+                                call.respond(transactionService.getTransactions(authorizedUser, transactions))
+                            }
+                            post("list") {
+                                val authorizedUser = call.getAuthorized()
+                                val transactions = call.receive<List<Int>>()
+
+                                call.respond(transactionService.getProductsFromTransactions(authorizedUser, transactions))
+                            }
+                        }
+                    }
+                }
                 route("{transactionId}") {
                     get {
                         val authorizedUser = call.getAuthorized()

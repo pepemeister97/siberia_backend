@@ -25,15 +25,13 @@ import siberia.modules.transaction.data.dto.status.TransactionStatusOutputDto
 import siberia.modules.transaction.data.dto.systemevents.TransactionCreateEvent
 import siberia.modules.transaction.data.dto.systemevents.TransactionUpdateStatusEvent
 import siberia.modules.transaction.data.dto.type.TransactionTypeOutputDto
-import siberia.modules.transaction.data.models.TransactionModel
-import siberia.modules.transaction.data.models.TransactionRelatedUserModel
-import siberia.modules.transaction.data.models.TransactionStatusModel
-import siberia.modules.transaction.data.models.TransactionTypeModel
 import siberia.modules.user.data.dao.UserDao
 import siberia.modules.user.service.UserAccessControlService
 import siberia.plugins.Logger
 import siberia.utils.database.idValue
 import org.jetbrains.exposed.sql.transactions.transaction
+import siberia.modules.product.data.dao.ProductDao
+import siberia.modules.transaction.data.models.*
 import siberia.utils.kodein.KodeinService
 
 class TransactionService(di: DI) : KodeinService(di) {
@@ -68,6 +66,9 @@ class TransactionService(di: DI) : KodeinService(di) {
             AppConf.requestTypes.outcome -> {
                 when (statusId) {
                     AppConf.requestStatus.created -> {
+                        AppConf.rules.createOutcomeRequest
+                    }
+                    AppConf.requestStatus.open -> {
                         AppConf.rules.createOutcomeRequest
                     }
                     AppConf.requestStatus.creationCancelled -> {
@@ -271,7 +272,7 @@ class TransactionService(di: DI) : KodeinService(di) {
         commit()
 
         try {
-            approveOutcomeTransaction(authorizedUser, outcomeTransaction.idValue)
+            changeTransactionStatus(UserDao[authorizedUser.id], outcomeTransaction.idValue, AppConf.requestStatus.open).toOutputDto()
         } catch (e: ForbiddenException) {
             outcomeTransaction.toOutputDto()
         }
@@ -463,5 +464,48 @@ class TransactionService(di: DI) : KodeinService(di) {
             transactionDao.fullOutput()
         else
             throw ForbiddenException()
+    }
+
+    fun getTransactionOnAssembly(authorizedUser: AuthorizedUser): List<TransactionListItemOutputDto> = transaction {
+        val availableStocksWithRules = userAccessControlService.getAvailableStocksByOperations(authorizedUser.id)
+        val availableStocks = availableStocksWithRules.map { it.key }
+        TransactionModel.select {
+            (
+                (TransactionModel.from inList availableStocks) or
+                (TransactionModel.to inList availableStocks)
+            ) and (TransactionModel.status eq AppConf.requestStatus.open) and (TransactionModel.type eq AppConf.requestTypes.outcome)
+        }.sortedBy { TransactionModel.updatedAt }.map {
+            TransactionDao.wrapRow(it).listItemOutputDto
+        }
+    }
+
+    fun getProductsFromTransactions(authorizedUser: AuthorizedUser, transactionsList: List<Int>): List<TransactionFullOutputDto.TransactionProductDto> {
+        val checkAccess = transactionsList.all { checkAccessToTransaction(authorizedUser, it) }
+        if (!checkAccess)
+            throw ForbiddenException()
+
+        val productsMap: MutableMap<Int, TransactionFullOutputDto.TransactionProductDto> = mutableMapOf()
+
+        TransactionToProductModel.select {
+            TransactionToProductModel.transaction inList transactionsList
+        }.map {
+            val productId = it[TransactionToProductModel.product].value
+            val productDao = ProductDao[productId]
+            val transactionProductDto = TransactionFullOutputDto.TransactionProductDto(productDao.toOutputDto(), it[TransactionToProductModel.amount], it[TransactionToProductModel.price])
+            if (productsMap.containsKey(productId))
+                productsMap[productId]!!.amount += transactionProductDto.amount
+            else
+                productsMap[productId] = transactionProductDto
+        }
+
+        return productsMap.values.toList()
+    }
+
+    fun getTransactions(authorizedUser: AuthorizedUser, transactionsList: List<Int>): List<TransactionFullOutputDto> {
+        val checkAccess = transactionsList.all { checkAccessToTransaction(authorizedUser, it) }
+        if (!checkAccess)
+            throw ForbiddenException()
+
+        return transactionsList.map { TransactionDao[it].fullOutput() }
     }
 }

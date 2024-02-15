@@ -142,6 +142,9 @@ object AppConf {
         ),
         requestTypes.outcome to mapOf(
             requestStatus.created to listOf(
+                requestStatus.open, requestStatus.creationCancelled
+            ),
+            requestStatus.open to listOf(
                 requestStatus.processed, requestStatus.creationCancelled
             )
         ),
