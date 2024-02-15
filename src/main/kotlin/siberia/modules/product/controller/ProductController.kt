@@ -29,13 +29,6 @@ class ProductController(override val di: DI) : KodeinController() {
                     call.respond(productService.getByFilter(searchFilterDto))
                 }
             }
-            authenticate ("view-products-list") {
-                get("{productId}") {
-                    val productId = call.parameters.getInt("productId", "Product id must be INT")
-
-                    call.respond(productService.getOne(productId))
-                }
-            }
             authenticate("products-managing") {
                 post {
                     val productCreateDto = call.receive<ProductCreateDto>()
@@ -49,7 +42,23 @@ class ProductController(override val di: DI) : KodeinController() {
 
                     call.respond(productEventService.rollback(authorizedUser, eventId))
                 }
-                route("{productId}") {
+            }
+            route("{productId}") {
+                authenticate("mobile-access") {
+                    get("availability") {
+                        val productId = call.parameters.getInt("productId", "Product id must be INT")
+
+                        call.respond(productService.getAvailability(productId))
+                    }
+                }
+                authenticate ("view-products-list") {
+                    get {
+                        val productId = call.parameters.getInt("productId", "Product id must be INT")
+
+                        call.respond(productService.getOne(productId))
+                    }
+                }
+                authenticate("products-managing") {
                     delete {
                         val productId = call.parameters.getInt("productId", "Product id must be INT")
                         val authorizedUser = call.getAuthorized()

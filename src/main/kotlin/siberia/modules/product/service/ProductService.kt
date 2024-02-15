@@ -2,6 +2,7 @@ package siberia.modules.product.service
 
 import io.ktor.server.plugins.*
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.update
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
@@ -18,7 +19,11 @@ import siberia.modules.product.data.dto.systemevents.ProductCreateEvent
 import siberia.modules.product.data.models.ProductModel
 import siberia.modules.rbac.data.dao.RoleDao.Companion.createNullableRangeCond
 import siberia.modules.rbac.data.dao.RuleCategoryDao.Companion.createNullableListCond
+import siberia.modules.stock.data.dao.StockDao
 import siberia.modules.stock.data.dao.StockDao.Companion.createLikeCond
+import siberia.modules.stock.data.dto.StockOutputDto
+import siberia.modules.stock.data.models.StockModel
+import siberia.modules.stock.data.models.StockToProductModel
 import siberia.modules.transaction.data.dto.TransactionFullOutputDto
 import siberia.modules.user.data.dao.UserDao
 import siberia.utils.files.FilesUtil
@@ -150,5 +155,14 @@ class ProductService(di: DI) : KodeinService(di) {
                 it[lastPurchaseDate] = timestampLong
             }
         }
+    }
+
+    fun getAvailability(productId: Int): List<StockOutputDto> {
+         val stocks = StockToProductModel
+            .slice(StockToProductModel.stock)
+            .select { StockToProductModel.product eq productId }
+            .map { it[StockToProductModel.stock] }
+
+        return StockDao.find { StockModel.id inList stocks }.map { it.toOutputDto() }
     }
 }
