@@ -318,19 +318,19 @@ object DatabaseInitializer {
     fun initTestData() = transaction {
         val count = 10000
         val items = mutableListOf<Int>()
-        val categoryItems = mutableListOf<Int>()
+        val smallItems = mutableListOf<Int>()
         repeat(count) { index -> items.add(index + 1) }
-        repeat(100) { index -> categoryItems.add(index + 1) }
+        repeat(100) { index -> smallItems.add(index + 1) }
         var createProducts = true
         if (BrandModel.selectAll().empty()) {
-            BrandModel.batchInsert(categoryItems) {
+            BrandModel.batchInsert(smallItems) {
                 this[BrandModel.name] = "Brand #$it"
             }
         }
         else
             createProducts = false
         if (CollectionModel.selectAll().empty()) {
-            CollectionModel.batchInsert(categoryItems) {
+            CollectionModel.batchInsert(smallItems) {
                 this[CollectionModel.name] = "Collection #$it"
             }
         }
@@ -362,7 +362,7 @@ object DatabaseInitializer {
                 it[parent] = items[1] + item
                 it[child] = items[2] + item
             }
-            categoryItems.forEach {
+            smallItems.forEach {
                 category -> run {
                     CategoryModel.insert {
                         it[id] = items[0] + category * 100
@@ -418,7 +418,7 @@ object DatabaseInitializer {
             }
         }
         if (StockModel.selectAll().empty()) {
-            StockModel.batchInsert(items) {
+            StockModel.batchInsert(smallItems) {
                 this[StockModel.name] = "Description for auto-generated stock #$it"
                 this[StockModel.address] = "$it Podrochitte ave."
             }

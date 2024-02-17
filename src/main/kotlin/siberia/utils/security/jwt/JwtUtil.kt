@@ -4,6 +4,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.server.auth.jwt.*
 import io.ktor.util.date.*
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import siberia.conf.AppConf
 import siberia.exceptions.ForbiddenException
@@ -17,7 +18,37 @@ import siberia.plugins.Logger
 import siberia.utils.database.idValue
 import java.util.*
 
+typealias EncodedRules = MutableMap<Int, MutableList<Int>>
+
 object JwtUtil {
+    private fun encodeRules(linkedRules: List<LinkedRuleOutputDto>): EncodedRules {
+        val encoded = mutableMapOf<Int, MutableList<Int>>()
+        linkedRules.forEach {
+            if (it.needStock == true) {
+                if (encoded.containsKey(it.ruleId))
+                    encoded[it.ruleId]!!.add(it.stockId ?: 0)
+                else
+                    encoded[it.ruleId] = mutableListOf(it.stockId ?: 0)
+            } else {
+                encoded[it.ruleId] = mutableListOf()
+            }
+        }
+
+        return encoded
+    }
+
+    private fun decodeRules(encoded: EncodedRules): List<LinkedRuleOutputDto> {
+        val decoded = mutableListOf<LinkedRuleOutputDto>()
+        encoded.forEach { (key, value) ->
+            if (value.isEmpty())
+                decoded.add(LinkedRuleOutputDto(ruleId = key))
+            else
+                value.forEach { decoded.add(LinkedRuleOutputDto(ruleId = key, stockId = it, needStock = true)) }
+        }
+
+        return decoded
+    }
+
     fun createToken(userDao: UserDao, lastLogin: Long? = null): String {
         return JWT.create()
             .withIssuer(AppConf.jwt.domain)
@@ -36,7 +67,7 @@ object JwtUtil {
                 if (lastLogin != null) {
                     withClaim("lastLogin", lastLogin)
                 } else {
-                    withClaim("rules", rules.map { Json.encodeToString(LinkedRuleOutputDto.serializer(), it) }.toString())
+                    withClaim("rules", Json.encodeToString(encodeRules(rules)))
                 }
 
             }.sign(Algorithm.HMAC256(AppConf.jwt.secret))
@@ -58,7 +89,7 @@ object JwtUtil {
                 val rules = RbacModel.userToRuleLinks(
                     qrTokenDto.userId, expanded = true
                 ).toMutableList().apply { add(LinkedRuleOutputDto(ruleId = AppConf.rules.mobileAccess)) }
-                withClaim("rules", rules.map { Json.encodeToString(LinkedRuleOutputDto.serializer(), it) }.toString())
+                withClaim("rules", Json.encodeToString(encodeRules(rules)))
             }.sign(Algorithm.HMAC256(AppConf.jwt.secret))
     }
 
@@ -66,7 +97,7 @@ object JwtUtil {
         id = principal.getClaim("id", Int::class)!!,
         stockId = principal.getClaim("stockId", Int::class),
         transactionId = principal.getClaim("transactionId", Int::class),
-        rules = Json.decodeFromString<List<LinkedRuleOutputDto>>(principal.getClaim("rules", String::class) ?: "[]")
+        rules = decodeRules(Json.decodeFromString(principal.getClaim("rules", String::class) ?: "{}"))
     )
 
     fun decodeRefreshToken(principal: JWTPrincipal): RefreshTokenDto = RefreshTokenDto(
@@ -99,7 +130,7 @@ object JwtUtil {
             else {
                 AuthorizedUser(
                     id = claims["id"]?.asInt() ?: throw ForbiddenException(),
-                    rules = Json.decodeFromString<List<LinkedRuleOutputDto>>(claims["rules"]?.asString() ?: "[]")
+                    rules = decodeRules(Json.decodeFromString(claims["rules"]?.asString() ?: "{}"))
                 )
             }
         } else {
