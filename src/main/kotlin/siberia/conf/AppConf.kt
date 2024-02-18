@@ -194,6 +194,7 @@ object AppConf {
         ),
         requestTypes.outcome to mapOf(
             requestStatus.created to StockPair.FROM,
+            requestStatus.open to StockPair.FROM,
             requestStatus.processed to StockPair.FROM,
             requestStatus.creationCancelled to StockPair.FROM,
         ),

@@ -80,6 +80,7 @@ object StockModel: BaseIntIdTable() {
                 throw BadRequestException("Not enough products in stock")
 
             this[StockToProductModel.amount] = resultAmount
+            this[StockToProductModel.price] = productsMapped.first[it[StockToProductModel.product].value]?.second ?: 0.0
         }
 
         StockToProductModel.deleteWhere {

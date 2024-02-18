@@ -292,7 +292,7 @@ class TransactionService(di: DI) : KodeinService(di) {
 
         val cancelledTransaction = cancelIncomeOutcomeTransaction(authorizedUser, transactionId)
         val targetStock = StockDao[getTargetStock(cancelledTransaction.toInputDto())]
-        StockModel.removeProducts(targetStock.idValue, cancelledTransaction.inputProductsList)
+        StockModel.appendProducts(targetStock.idValue, cancelledTransaction.inputProductsList)
         commit()
         cancelledTransaction.toOutputDto()
     }
@@ -435,7 +435,7 @@ class TransactionService(di: DI) : KodeinService(di) {
             createNullableListCond(transactionSearchFilter.from, TransactionModel.id.isNotNull(), TransactionModel.from) and
             createListCond(transactionSearchFilter.status, TransactionModel.id.isNotNull(), TransactionModel.status) and
             createListCond(transactionSearchFilter.type, TransactionModel.id.isNotNull(), TransactionModel.type)
-        }.orderBy(Pair(TransactionModel.createdAt, SortOrder.DESC), Pair(TransactionModel.updatedAt, SortOrder.DESC)).map {
+        }.orderBy(Pair(TransactionModel.updatedAt, SortOrder.DESC_NULLS_FIRST), Pair(TransactionModel.status, SortOrder.ASC)).map {
             TransactionDao.wrapRow(it).listItemOutputDto
         }
     }
