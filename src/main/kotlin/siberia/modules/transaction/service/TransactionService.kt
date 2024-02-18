@@ -1,11 +1,8 @@
 package siberia.modules.transaction.service
 
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.or
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.selectAll
 import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.conf.AppConf
@@ -438,7 +435,7 @@ class TransactionService(di: DI) : KodeinService(di) {
             createNullableListCond(transactionSearchFilter.from, TransactionModel.id.isNotNull(), TransactionModel.from) and
             createListCond(transactionSearchFilter.status, TransactionModel.id.isNotNull(), TransactionModel.status) and
             createListCond(transactionSearchFilter.type, TransactionModel.id.isNotNull(), TransactionModel.type)
-        }.sortedBy { TransactionModel.updatedAt }.map {
+        }.orderBy(Pair(TransactionModel.createdAt, SortOrder.DESC), Pair(TransactionModel.updatedAt, SortOrder.DESC)).map {
             TransactionDao.wrapRow(it).listItemOutputDto
         }
     }
