@@ -8,6 +8,7 @@ import io.ktor.server.routing.*
 import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.modules.product.data.dto.ProductCreateDto
+import siberia.modules.product.data.dto.ProductListItemOutputDto
 import siberia.modules.product.data.dto.ProductSearchDto
 import siberia.modules.product.data.dto.ProductUpdateDto
 import siberia.modules.product.service.ProductEventService
@@ -41,6 +42,14 @@ class ProductController(override val di: DI) : KodeinController() {
                     val eventId = call.parameters.getInt("eventId", "Event id must be INT")
 
                     call.respond(productEventService.rollback(authorizedUser, eventId))
+                }
+            }
+            authenticate ("mobile-access") {
+                post("search") {
+                    val authorizedUser = call.getAuthorized()
+                    val searchFilterDto = call.receive<ProductSearchDto>()
+
+                    call.respond<List<ProductListItemOutputDto>>(productService.getAvailableByFilter(authorizedUser, searchFilterDto))
                 }
             }
             route("{productId}") {

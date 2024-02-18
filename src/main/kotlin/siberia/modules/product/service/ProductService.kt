@@ -1,9 +1,8 @@
 package siberia.modules.product.service
 
 import io.ktor.server.plugins.*
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.update
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNotNull
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import siberia.conf.AppConf
@@ -115,11 +114,11 @@ class ProductService(di: DI) : KodeinService(di) {
         )
     }
 
-    fun getByFilter(productSearchDto: ProductSearchDto): List<ProductListItemOutputDto> = transaction {
+    private fun SqlExpressionBuilder.convertToOperator(productSearchDto: ProductSearchDto): Op<Boolean> {
+
         val searchFilterDto = productSearchDto.filters
-        val paginationOutputDto = productSearchDto.pagination
-        ProductDao.find {
-            createRangeCond(searchFilterDto?.amountInBox, (ProductModel.id neq 0), ProductModel.amountInBox, -1, Int.MAX_VALUE) and
+
+        return createRangeCond(searchFilterDto?.amountInBox, (ProductModel.id neq 0), ProductModel.amountInBox, -1, Int.MAX_VALUE) and
             createRangeCond(searchFilterDto?.commonPrice, (ProductModel.id neq 0), ProductModel.commonPrice, -1.0, Double.MAX_VALUE) and
             createNullableRangeCond(searchFilterDto?.purchasePrice, (ProductModel.id neq 0), ProductModel.lastPurchasePrice, -1.0, Double.MAX_VALUE) and
             createRangeCond(searchFilterDto?.distributorPrice, (ProductModel.id neq 0), ProductModel.distributorPrice, -1.0, Double.MAX_VALUE) and
@@ -135,12 +134,24 @@ class ProductService(di: DI) : KodeinService(di) {
 //            Future iterations
 //            createRangeCond(searchFilterDto.size, (ProductModel.id neq 0), ProductModel.size, -1.0, Double.MAX_VALUE) and
 //            createRangeCond(searchFilterDto.volume, (ProductModel.id neq 0), ProductModel.volume, -1.0, Double.MAX_VALUE) and
+    }
+
+    private fun getByFilter(productSearchDto: ProductSearchDto, additionalFilters: Op<Boolean>): SizedIterable<ProductDao> = transaction {
+        val paginationOutputDto = productSearchDto.pagination
+
+        ProductDao.find {
+            convertToOperator(productSearchDto) and
+            additionalFilters
         }.let {
             if (paginationOutputDto == null)
                 it
             else
                 it.limit(paginationOutputDto.n, paginationOutputDto.offset)
-        }.map { it.listItemDto }
+        }
+    }
+
+    fun getByFilter(productSearchDto: ProductSearchDto): List<ProductListItemOutputDto> {
+        return getByFilter(productSearchDto, ProductModel.id.isNotNull()).map { it.listItemDto }
     }
 
     fun getOne(productId: Int): ProductFullOutputDto = transaction {
@@ -157,12 +168,38 @@ class ProductService(di: DI) : KodeinService(di) {
         }
     }
 
-    fun getAvailability(productId: Int): List<StockOutputDto> {
+    fun getAvailability(productId: Int): List<StockOutputDto> = transaction {
+        //Check it exists
+        ProductDao[productId]
          val stocks = StockToProductModel
             .slice(StockToProductModel.stock)
             .select { StockToProductModel.product eq productId }
             .map { it[StockToProductModel.stock] }
 
-        return StockDao.find { StockModel.id inList stocks }.map { it.toOutputDto() }
+        StockDao.find { StockModel.id inList stocks }.map { it.toOutputDto() }
+    }
+
+    fun getAvailableByFilter(
+        authorizedUser: AuthorizedUser,
+        searchFilterDto: ProductSearchDto
+    ): List<ProductListItemOutputDto> = transaction {
+        ProductModel
+            .join(StockToProductModel, JoinType.LEFT, additionalConstraint = { (StockToProductModel.product eq ProductModel.id) and (StockToProductModel.stock eq authorizedUser.stockId) })
+            .slice(ProductModel.id, ProductModel.name, ProductModel.vendorCode, StockToProductModel.amount)
+            .select {
+                convertToOperator(searchFilterDto)
+            }
+            .orderBy(ProductModel.id, SortOrder.ASC)
+            .map {
+                //If join returns nothing (no such product in stock) amount = 0
+                val amount = try { it[StockToProductModel.amount] } catch (_: Exception) { 0.0 }
+                ProductListItemOutputDto(
+                    id = it[ProductModel.id].value,
+                    name = it[ProductModel.name],
+                    vendorCode = it[ProductModel.vendorCode],
+                    quantity = amount,
+                    price = 0.0
+                )
+            }
     }
 }

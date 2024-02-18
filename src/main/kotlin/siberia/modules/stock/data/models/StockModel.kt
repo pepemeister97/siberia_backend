@@ -35,10 +35,11 @@ object StockModel: BaseIntIdTable() {
             StockToProductModel.id inList exist.map { it[StockToProductModel.id] }
         }
 
-        StockToProductModel.batchInsert(productsMapped.first.map { Pair(it.key, it.value.first) }) {
+        StockToProductModel.batchInsert(productsMapped.first.map { Pair(it.key, it.value) }) {
             this[StockToProductModel.stock] = stockId
             this[StockToProductModel.product] = it.first
-            this[StockToProductModel.amount] = it.second
+            this[StockToProductModel.amount] = it.second.first
+            this[StockToProductModel.price] = it.second.second
         }
     }
 
