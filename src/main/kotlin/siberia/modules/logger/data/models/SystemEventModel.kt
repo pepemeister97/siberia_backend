@@ -13,7 +13,7 @@ object SystemEventModel: BaseIntIdTable() {
     val eventObjectType = reference("event_object_type", SystemEventObjectTypeModel, ReferenceOption.RESTRICT, ReferenceOption.RESTRICT)
     val eventType = reference("event_type", SystemEventTypeModel, ReferenceOption.RESTRICT, ReferenceOption.RESTRICT)
     val eventDescription = text("event_description")
-    val rollbackRoute = text("rollback_route")
+    val rollbackRoute = text("rollback_route").nullable().default(null)
 
     //Updated object id
     val eventObjectId = integer("event_object").nullable().default(null)
