@@ -1,9 +1,11 @@
 package siberia.modules.product.data.models
 
 import org.jetbrains.exposed.sql.ReferenceOption
+import org.jetbrains.exposed.sql.update
 import siberia.modules.brand.data.models.BrandModel
 import siberia.modules.category.data.models.CategoryModel
 import siberia.modules.collection.data.models.CollectionModel
+import siberia.modules.product.data.dto.ProductMassiveUpdateDto
 import siberia.utils.database.BaseIntIdTable
 
 object ProductModel: BaseIntIdTable() {
@@ -32,4 +34,50 @@ object ProductModel: BaseIntIdTable() {
     //Future iterations
 //    val size = double("size").default(1.0)
 //    val volume = double("volume").default(1.0)
+
+    fun updateBatch(products: List<Int>, productMassiveUpdateDto: ProductMassiveUpdateDto) {
+        ProductModel.update({ ProductModel.id inList products }) {
+            if (productMassiveUpdateDto.brand != 0 && productMassiveUpdateDto.brand != null)
+                it[brand] = productMassiveUpdateDto.brand
+            else if (productMassiveUpdateDto.brand == 0)
+                it[brand] = null
+
+            if (productMassiveUpdateDto.collection != 0 && productMassiveUpdateDto.collection != null)
+                it[collection] = productMassiveUpdateDto.collection
+            else if (productMassiveUpdateDto.collection == 0)
+                it[collection] = null
+
+            if (productMassiveUpdateDto.category != 0 && productMassiveUpdateDto.category != null)
+                it[category] = productMassiveUpdateDto.category
+            else if (productMassiveUpdateDto.category == 0)
+                it[category] = null
+
+            if (productMassiveUpdateDto.name != null)
+                it[name] = productMassiveUpdateDto.name!!
+
+            if (productMassiveUpdateDto.description != null)
+                it[description] = productMassiveUpdateDto.description!!
+
+            if (productMassiveUpdateDto.commonPrice != null)
+                it[commonPrice] = productMassiveUpdateDto.commonPrice!!
+
+            if (productMassiveUpdateDto.color != null)
+                it[color] = productMassiveUpdateDto.color!!
+
+            if (productMassiveUpdateDto.amountInBox != null)
+                it[amountInBox] = productMassiveUpdateDto.amountInBox!!
+
+            if (productMassiveUpdateDto.expirationDate != null)
+                it[expirationDate] = productMassiveUpdateDto.expirationDate!!
+
+            if (productMassiveUpdateDto.link != null)
+                it[link] = productMassiveUpdateDto.link!!
+
+            if (productMassiveUpdateDto.distributorPercent != null)
+                it[distributorPercent] = productMassiveUpdateDto.distributorPercent
+
+            if (productMassiveUpdateDto.professionalPercent != null)
+                it[professionalPercent] = productMassiveUpdateDto.professionalPercent
+        }
+    }
 }

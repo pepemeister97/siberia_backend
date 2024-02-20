@@ -87,10 +87,12 @@ object AppConf {
         stockEvent = objectTypesConf.getInt("stock"),
         roleEvent = objectTypesConf.getInt("role"),
         productEvent = objectTypesConf.getInt("product"),
+        massiveProductUpdateEvent = objectTypesConf.getInt("massive-product-update"),
         brandEvent = objectTypesConf.getInt("brand"),
         collectionEvent = objectTypesConf.getInt("collection"),
         categoryEvent = objectTypesConf.getInt("category"),
-        transactionEvent = objectTypesConf.getInt("transaction")
+        transactionEvent = objectTypesConf.getInt("transaction"),
+        productGroupEvent = objectTypesConf.getInt("product-group")
     )
 
     val requestTypes = RequestTypeConf(

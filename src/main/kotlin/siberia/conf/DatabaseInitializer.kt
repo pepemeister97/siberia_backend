@@ -176,6 +176,10 @@ object DatabaseInitializer {
             it[name] = "Product event"
         }
         SystemEventObjectTypeModel.insert {
+            it[id] = AppConf.objectTypes.massiveProductUpdateEvent
+            it[name] = "Product massive update event"
+        }
+        SystemEventObjectTypeModel.insert {
             it[id] = AppConf.objectTypes.brandEvent
             it[name] = "Brand event"
         }
@@ -190,6 +194,10 @@ object DatabaseInitializer {
         SystemEventObjectTypeModel.insert {
             it[id] = AppConf.objectTypes.transactionEvent
             it[name] = "Transaction event"
+        }
+        SystemEventObjectTypeModel.insert {
+            it[id] = AppConf.objectTypes.productGroupEvent
+            it[name] = "Product group event"
         }
     }
 

@@ -32,8 +32,10 @@ import siberia.modules.logger.data.models.SystemEventObjectTypeModel
 import siberia.modules.logger.data.models.SystemEventTypeModel
 import siberia.modules.logger.service.SystemEventService
 import siberia.modules.product.controller.ProductController
+import siberia.modules.product.controller.ProductGroupController
 import siberia.modules.product.data.models.ProductModel
 import siberia.modules.product.service.ProductEventService
+import siberia.modules.product.service.ProductGroupService
 import siberia.modules.product.service.ProductService
 import siberia.modules.stock.data.models.StockModel
 import siberia.modules.stock.data.models.StockToProductModel
@@ -93,6 +95,7 @@ fun Application.module() {
         bindSingleton { TransactionService(it) }
         bindSingleton { WebSocketRegister(it) }
         bindSingleton { AuthSocketService(it) }
+        bindSingleton { ProductGroupService(it) }
 
         bindSingleton { AuthController(it) }
         bindSingleton { UserController(it) }
@@ -105,6 +108,7 @@ fun Application.module() {
         bindSingleton { StockController(it) }
         bindSingleton { TransactionController(it) }
         bindSingleton { FilesController(it) }
+        bindSingleton { ProductGroupController(it) }
     }
 
     DatabaseConnector(

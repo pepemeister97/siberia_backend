@@ -3,6 +3,7 @@ package siberia.modules.user.data.dao
 import org.jetbrains.exposed.dao.id.EntityID
 import siberia.exceptions.BadRequestException
 import org.jetbrains.exposed.sql.transactions.transaction
+import siberia.conf.AppConf
 import siberia.modules.rbac.data.dto.LinkedRuleOutputDto
 import siberia.modules.rbac.data.dto.RoleOutputDto
 import siberia.modules.rbac.data.models.RbacModel
@@ -48,6 +49,9 @@ class UserDao(id: EntityID<Int>): BaseIntEntity<UserOutputDto>(id, UserModel) {
 
     val rulesWithStocks: List<LinkedRuleOutputDto>
         get() = RbacModel.userToRuleLinks(userId = idValue, withStock = true)
+
+    val hasAccessToProcessTransfers: Boolean
+        get() = rulesWithStocks.any { it.ruleId == AppConf.rules.manageTransferRequest }
 
     override fun toOutputDto(): UserOutputDto =
         UserOutputDto(idValue, name, login, null, lastLogin)

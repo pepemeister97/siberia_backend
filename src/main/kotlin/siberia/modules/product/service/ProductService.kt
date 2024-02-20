@@ -150,8 +150,8 @@ class ProductService(di: DI) : KodeinService(di) {
         }
     }
 
-    fun getByFilter(productSearchDto: ProductSearchDto): List<ProductListItemOutputDto> {
-        return getByFilter(productSearchDto, ProductModel.id.isNotNull()).map { it.listItemDto }
+    fun getByFilter(productSearchDto: ProductSearchDto): List<ProductListItemOutputDto> = transaction {
+        getByFilter(productSearchDto, ProductModel.id.isNotNull()).map { it.listItemDto }
     }
 
     fun getOne(productId: Int): ProductFullOutputDto = transaction {

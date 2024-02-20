@@ -14,7 +14,6 @@ fun <T> transaction(statements: Transaction.() -> T): T {
         } catch (e: ExposedSQLException) {
             throw e
         }
-//        close()
 
         result
     }

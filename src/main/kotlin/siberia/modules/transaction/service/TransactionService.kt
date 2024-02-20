@@ -441,14 +441,25 @@ class TransactionService(di: DI) : KodeinService(di) {
     }
 
     fun getAvailableStatuses(authorizedUser: AuthorizedUser, transactionId: Int): List<TransactionStatusOutputDto> = transaction {
+        val userDao = UserDao[authorizedUser.id]
         val transactionDao = TransactionDao[transactionId]
         if (!checkAccessToTransaction(authorizedUser, transactionId))
             throw ForbiddenException()
+        val hasAccessToManageTransfers = userDao.hasAccessToProcessTransfers
+        Logger.debug("HAS ACCESS TO MANAGE", "main")
+        Logger.debug(hasAccessToManageTransfers, "main")
         availableStatuses(transactionDao).filter {
-            if (transactionDao.statusId == AppConf.requestStatus.open && transactionDao.typeId == AppConf.requestTypes.transfer)
+            if (
+                transactionDao.statusId == AppConf.requestStatus.open
+                && transactionDao.typeId == AppConf.requestTypes.transfer
+                && hasAccessToManageTransfers
+            )
                 true
+            else if (it == AppConf.requestStatus.inProgress && !hasAccessToManageTransfers)
+                false
             else {
                 val ruleId = mapTypeToRule(transactionDao.typeId, it)
+                Logger.debug(transactionDao.idValue, "main")
                 val targetStock = getTargetStock(transactionDao, it)
                 (userAccessControlService.checkAccessToStock(authorizedUser.id, ruleId, targetStock))
             }
