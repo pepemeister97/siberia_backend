@@ -17,6 +17,7 @@ import siberia.utils.security.bcrypt.CryptoUtil
 
 class UserService(di: DI) : KodeinService(di) {
     private val userAccessControlService: UserAccessControlService by instance()
+    private val userSocketService : UserSocketService by instance()
 
     fun createUser(authorizedUser: AuthorizedUser, createUserDto: CreateUserDto): UserOutputDto = transaction {
 
@@ -56,6 +57,16 @@ class UserService(di: DI) : KodeinService(di) {
         val userDao = UserDao[userId]
 
         userDao.delete(authorName)
+
+        try {
+
+            userSocketService.deleteConnection(userId)
+
+        } catch (e: Exception) {
+            rollback()
+            throw BadRequestException(e.stackTraceToString())
+        }
+
         commit()
 
         UserRemoveOutputDto(userId, "success")

@@ -10,7 +10,7 @@ import siberia.modules.rbac.data.models.RbacModel
 import siberia.modules.logger.data.models.SystemEventModel
 import siberia.modules.rbac.data.dto.LinkedRuleInputDto
 import siberia.modules.user.data.dto.UserOutputDto
-import siberia.modules.user.data.dto.UserRollbackOutput
+import siberia.modules.user.data.dto.UserRollbackOutputDto
 import siberia.modules.user.data.dto.UserUpdateDto
 import siberia.modules.user.data.dto.systemevents.user.UserCreateEvent
 import siberia.modules.user.data.dto.systemevents.user.UserRemoveEvent
@@ -59,10 +59,10 @@ class UserDao(id: EntityID<Int>): BaseIntEntity<UserOutputDto>(id, UserModel) {
     private fun toOutputWithHash(): UserOutputDto =
         UserOutputDto(idValue, name, login, hash, lastLogin)
 
-    private fun outputForRollback(): UserRollbackOutput {
+    private fun outputForRollback(): UserRollbackOutputDto {
         val rules = RbacModel.userToRuleLinks(idValue, withStock = true, expanded = false).map { LinkedRuleInputDto(it.ruleId, it.stockId) }
         val roles = RbacModel.userToRoleLinks(idValue, withRules = false).map { it.id }
-        return UserRollbackOutput(name, login, hash, rules, roles)
+        return UserRollbackOutputDto(name, login, hash, rules, roles)
     }
 
     private fun loadPatch(userUpdateDto: UserUpdateDto) = transaction {
