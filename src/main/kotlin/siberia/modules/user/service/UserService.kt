@@ -59,12 +59,10 @@ class UserService(di: DI) : KodeinService(di) {
         userDao.delete(authorName)
 
         try {
-
             userSocketService.deleteConnection(userId)
-
         } catch (e: Exception) {
             rollback()
-            throw BadRequestException(e.stackTraceToString())
+            throw BadRequestException("Bad request")
         }
 
         commit()
