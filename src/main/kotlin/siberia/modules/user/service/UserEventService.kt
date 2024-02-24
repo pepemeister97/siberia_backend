@@ -7,7 +7,7 @@ import siberia.exceptions.BadRequestException
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.logger.data.dto.SystemEventOutputDto
 import siberia.modules.user.data.dao.UserDao
-import siberia.modules.user.data.dto.UserRollbackOutput
+import siberia.modules.user.data.dto.UserRollbackOutputDto
 import siberia.modules.user.data.dto.UserUpdateDto
 import siberia.utils.database.transaction
 import siberia.utils.kodein.KodeinEventService
@@ -27,7 +27,7 @@ class UserEventService(di: DI) : KodeinEventService(di) {
     }
 
     override fun rollbackRemove(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) = transaction {
-        val createEventDto = event.getRollbackData<UserRollbackOutput>()
+        val createEventDto = event.getRollbackData<UserRollbackOutputDto>()
         val createUserDto = createEventDto.objectDto
         UserDao.checkUnique(createUserDto.login)
 
