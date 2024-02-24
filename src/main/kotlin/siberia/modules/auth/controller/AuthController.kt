@@ -44,6 +44,13 @@ class AuthController(override val di: DI) : KodeinController() {
                     }
                 }
             }
+            authenticate("mobile-auth") {
+                post("mobile") {
+                    val authorizedUser = call.getAuthorized()
+
+                    call.respond(authQrService.authorizeMobileApp(authorizedUser))
+                }
+            }
             authenticate("refresh") {
                 post("refresh") {
                     val refreshTokenDto = getRefresh(call)

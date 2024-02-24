@@ -93,6 +93,24 @@ object JwtUtil {
             }.sign(Algorithm.HMAC256(AppConf.jwt.secret))
     }
 
+    fun createMobileAuthToken(qrTokenDto: QrTokenDto): String {
+        return JWT.create()
+            .withIssuer(AppConf.jwt.domain)
+            .withIssuedAt(Date(System.currentTimeMillis()))
+            .withExpiresAt(
+                Date(System.currentTimeMillis() + AppConf.jwt.mobileAuthExpirationTime * 1000)
+            )
+            .apply {
+                withClaim("id", qrTokenDto.userId)
+                if (qrTokenDto.transactionId != null)
+                    withClaim("transactionId", qrTokenDto.transactionId)
+                if (qrTokenDto.stockId != null)
+                    withClaim("stockId", qrTokenDto.stockId)
+                val rules = listOf(LinkedRuleOutputDto(ruleId = AppConf.rules.mobileAuth))
+                withClaim("rules", Json.encodeToString(encodeRules(rules)))
+            }.sign(Algorithm.HMAC256(AppConf.jwt.secret))
+    }
+
     fun decodeAccessToken(principal: JWTPrincipal): AuthorizedUser = AuthorizedUser(
         id = principal.getClaim("id", Int::class)!!,
         stockId = principal.getClaim("stockId", Int::class),
