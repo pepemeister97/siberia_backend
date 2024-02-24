@@ -48,8 +48,8 @@ class AuthQrService(di: DI) : KodeinService(di) {
         }
     }
 
-    fun authorizeMobileApp(authorizedUser: AuthorizedUser): MobileAccessOutputDto {
-        return try {
+    fun authorizeMobileApp(authorizedUser: AuthorizedUser): MobileAccessOutputDto = transaction {
+        try {
             UserDao[authorizedUser.id]
             var type = "none"
             if (authorizedUser.stockId != null) {
