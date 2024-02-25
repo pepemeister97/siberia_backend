@@ -9,6 +9,7 @@ data class ProductRollbackDto (
     val id: Int,
     val photoName: String,
     val vendorCode: String,
+    val eanCode: String,
     val barcode: String?,
     val brand: BrandOutputDto?,
     val name: String,
@@ -30,7 +31,7 @@ data class ProductRollbackDto (
     val fileAlreadyUploaded: Boolean = true,
 ) {
     val createDto: ProductCreateDto get() = ProductCreateDto(
-        photoName, "", vendorCode, barcode,
+        photoName, "", vendorCode, eanCode, barcode,
         brand?.id, name, description, distributorPrice,
         professionalPrice, commonPrice, category?.id,
         collection?.id, color, amountInBox,

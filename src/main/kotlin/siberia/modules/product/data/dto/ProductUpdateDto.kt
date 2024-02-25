@@ -7,6 +7,7 @@ data class ProductUpdateDto (
     var photoName: String? = null,
     var photoBase64: String? = null,
     var vendorCode: String? = null,
+    val eanCode: String? = null,
     var barcode: String? = null,
     //If null -> dont update
     //If 0 -> set null
@@ -26,12 +27,13 @@ data class ProductUpdateDto (
     var amountInBox: Int? = null,
     var expirationDate: Long? = null,
     var link: String? = null,
-    var fileAlreadyUploaded: Boolean = false,
+    var isFileAlreadyUploaded: Boolean? = null,
     val distributorPercent: Double? = null,
     val professionalPercent: Double? = null,
-    val eanCode: String? = null
 
     //Future iterations
     //val size: Double? = null,
     //val volume: Double? = null,
-)
+) {
+    val fileAlreadyUploaded: Boolean get() = isFileAlreadyUploaded ?: false
+}

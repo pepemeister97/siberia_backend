@@ -44,6 +44,7 @@ class ProductService(di: DI) : KodeinService(di) {
         val productDao = ProductDao.new {
             photo = photoName
             vendorCode = productCreateDto.vendorCode
+            eanCode = productCreateDto.eanCode
             barcode = productCreateDto.barcode
             brand = if (productCreateDto.brand != null) BrandDao[productCreateDto.brand] else null
             name = productCreateDto.name

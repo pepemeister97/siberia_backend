@@ -7,6 +7,7 @@ data class ProductCreateDto (
     var photoName: String,
     var photoBase64: String,
     val vendorCode: String,
+    val eanCode: String,
     val barcode: String?,
     val brand: Int? = null,
     val name: String,

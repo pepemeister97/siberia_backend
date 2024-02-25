@@ -93,7 +93,7 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
             ))
         }.toMutableMap()
         return ProductRollbackDto(
-            idValue, photo, vendorCode, barcode,
+            idValue, photo, vendorCode, eanCode, barcode,
             brand?.toOutputDto(), name, description, lastPurchasePrice,
             cost, lastPurchaseDate, distributorPrice,
             professionalPrice, commonPrice, category?.toOutputDto(),
