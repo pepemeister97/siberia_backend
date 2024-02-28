@@ -33,31 +33,31 @@ import java.time.ZoneOffset
 class ProductService(di: DI) : KodeinService(di) {
     fun create(authorizedUser: AuthorizedUser, productCreateDto: ProductCreateDto): ProductFullOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
-        val event = ProductCreateEvent(userDao.login, productCreateDto.name, productCreateDto.vendorCode)
+        val event = ProductCreateEvent(userDao.login, productCreateDto.name!!, productCreateDto.vendorCode!!)
 
         val photoName
-        = if (productCreateDto.photoName != "" && !productCreateDto.fileAlreadyUploaded)
-            FilesUtil.buildName(productCreateDto.photoName)
-        else if (productCreateDto.fileAlreadyUploaded) productCreateDto.photoName
+        = if (!productCreateDto.fileAlreadyUploaded!! && !productCreateDto.photoName.isNullOrBlank())
+            FilesUtil.buildName(productCreateDto.photoName!!)
+        else if (productCreateDto.fileAlreadyUploaded!!) productCreateDto.photoName
         else ""
 
         val productDao = ProductDao.new {
-            photo = photoName
-            vendorCode = productCreateDto.vendorCode
-            eanCode = productCreateDto.eanCode
+            photo = photoName!!
+            vendorCode = productCreateDto.vendorCode!!
+            eanCode = productCreateDto.eanCode!!
             barcode = productCreateDto.barcode
-            brand = if (productCreateDto.brand != null) BrandDao[productCreateDto.brand] else null
-            name = productCreateDto.name
-            description = productCreateDto.description
-            distributorPrice = productCreateDto.distributorPrice
-            professionalPrice = productCreateDto.professionalPrice
-            commonPrice = productCreateDto.commonPrice
-            category = if (productCreateDto.category != null) CategoryDao[productCreateDto.category] else null
-            collection = if (productCreateDto.collection != null) CollectionDao[productCreateDto.collection] else null
-            color = productCreateDto.color
-            amountInBox = productCreateDto.amountInBox
-            expirationDate = productCreateDto.expirationDate
-            link = productCreateDto.link
+            brand = if (productCreateDto.brand != null) BrandDao[productCreateDto.brand!!] else null
+            name = productCreateDto.name!!
+            description = productCreateDto.description!!
+            distributorPrice = productCreateDto.distributorPrice!!
+            professionalPrice = productCreateDto.professionalPrice!!
+            commonPrice = productCreateDto.commonPrice!!
+            category = if (productCreateDto.category != null) CategoryDao[productCreateDto.category!!] else null
+            collection = if (productCreateDto.collection != null) CollectionDao[productCreateDto.collection!!] else null
+            color = productCreateDto.color!!
+            amountInBox = productCreateDto.amountInBox!!
+            expirationDate = productCreateDto.expirationDate!!
+            link = productCreateDto.link!!
 
 //            Future iterations
 //            size = productCreateDto.size
@@ -65,8 +65,8 @@ class ProductService(di: DI) : KodeinService(di) {
         }
 
         SystemEventModel.logEvent(event)
-        if (photoName != "" && !productCreateDto.fileAlreadyUploaded)
-            FilesUtil.upload(productCreateDto.photoBase64, photoName)
+        if (photoName != "" && !productCreateDto.fileAlreadyUploaded!!)
+            FilesUtil.upload(productCreateDto.photoBase64!!, photoName!!)
         commit()
 
         productDao.fullOutput()

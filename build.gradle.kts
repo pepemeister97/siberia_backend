@@ -80,4 +80,7 @@ dependencies {
 
     //QR-generation
     implementation("io.github.g0dkar:qrcode-kotlin:4.1.1")
+
+    //Parsing
+    implementation("com.github.doyaaaaaken:kotlin-csv-jvm:1.9.3")
 }
