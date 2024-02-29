@@ -96,4 +96,13 @@ class StockService(di: DI) : KodeinService(di) {
             throw ForbiddenException()
         StockDao[stockId].fullOutput()
     }
+
+    fun getStockForQr(authorizedUser: AuthorizedUser, stockId: Int): StockDao = transaction {
+        val stockDao = StockDao[stockId]
+
+        if (!userAccessControlService.checkAccessToStock(authorizedUser.id, stockId))
+            throw ForbiddenException()
+
+        stockDao
+    }
 }

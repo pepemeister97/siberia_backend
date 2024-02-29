@@ -123,6 +123,12 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
         }.count() > 0
     }
 
+    fun checkAccessToStock(userId: Int, stockId: Int): Boolean = transaction {
+        RbacModel.select {
+            (RbacModel.user eq userId) and (RbacModel.stock eq stockId)
+        }.count() > 0
+    }
+
     // Return Map <StockID, List<Rules>>
     private fun translateRbacModelsToStockRulesMap(models: Query): Map<Int, List<Int>> = transaction {
         val result = mutableMapOf<Int, MutableList<Int>>()

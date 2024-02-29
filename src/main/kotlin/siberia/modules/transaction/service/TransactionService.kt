@@ -20,6 +20,7 @@ import siberia.modules.user.service.UserAccessControlService
 import siberia.plugins.Logger
 import siberia.utils.database.idValue
 import org.jetbrains.exposed.sql.transactions.transaction
+import siberia.conf.AppConf.requestStatus
 import siberia.exceptions.BadRequestException
 import siberia.modules.product.data.dao.ProductDao
 import siberia.modules.transaction.data.models.*
@@ -63,7 +64,7 @@ class TransactionService(di: DI) : KodeinService(di) {
         val availableStocks = availableStocksWithRules.map { it.key }
         //If status is OPEN it means that managers from all other stocks can see that request
         val processQuery = if (authorizedUser.rules.map { rule -> rule.ruleId }.contains(AppConf.rules.manageTransferRequest))
-            TransactionModel.status eq AppConf.requestStatus.open
+            TransactionModel.status eq requestStatus.open
         else
             TransactionModel.to inList availableStocks
         TransactionModel.select {
@@ -91,12 +92,12 @@ class TransactionService(di: DI) : KodeinService(di) {
         Logger.debug(hasAccessToManageTransfers, "main")
         TransactionUtils.availableStatuses(transactionDao).filter {
             if (
-                transactionDao.statusId == AppConf.requestStatus.open
+                transactionDao.statusId == requestStatus.open
                 && transactionDao.typeId == AppConf.requestTypes.transfer
                 && hasAccessToManageTransfers
             )
                 true
-            else if (it == AppConf.requestStatus.inProgress && !hasAccessToManageTransfers)
+            else if (it == requestStatus.inProgress && !hasAccessToManageTransfers)
                 false
             else {
                 val ruleId = TransactionUtils.mapTypeToRule(transactionDao.typeId, it)
@@ -122,7 +123,7 @@ class TransactionService(di: DI) : KodeinService(di) {
             (
                 (TransactionModel.from inList availableStocks) or
                 (TransactionModel.to inList availableStocks)
-            ) and (TransactionModel.status eq AppConf.requestStatus.open) and (TransactionModel.type eq AppConf.requestTypes.outcome)
+            ) and (TransactionModel.status eq requestStatus.open) and (TransactionModel.type eq AppConf.requestTypes.outcome)
         }.sortedBy { TransactionModel.updatedAt }.map {
             TransactionDao.wrapRow(it).listItemOutputDto
         }
@@ -156,5 +157,18 @@ class TransactionService(di: DI) : KodeinService(di) {
             throw ForbiddenException()
 
         return transactionsList.map { TransactionDao[it].fullOutput() }
+    }
+
+    fun getTransactionForQr(authorizedUser: AuthorizedUser, transactionId: Int): TransactionDao = transaction {
+        val transactionDao = TransactionDao[transactionId]
+        if (!checkAccessToTransaction(authorizedUser, transactionId))
+            throw ForbiddenException()
+
+        if (!listOf(
+            requestStatus.inProgress
+        ).contains(transactionDao.statusId))
+            throw ForbiddenException()
+
+        transactionDao
     }
 }
