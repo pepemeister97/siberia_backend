@@ -84,7 +84,7 @@ class UserDao(id: EntityID<Int>): BaseIntEntity<UserOutputDto>(id, UserModel) {
             login,
             userUpdateDto.login ?: login,
             idValue,
-            createRollbackUpdateDto<UserOutputDto, UserUpdateDto>(userUpdateDto, toOutputWithHash())
+            createEncodedRollbackUpdateDto<UserOutputDto, UserUpdateDto>(userUpdateDto, toOutputWithHash())
         )
         SystemEventModel.logResettableEvent(event)
 

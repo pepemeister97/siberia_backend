@@ -1,6 +1,8 @@
-package siberia.modules.product.data.dto
+package siberia.modules.product.data.dto.groups
 
-data class ProductMassiveUpdateDto (
+import siberia.modules.product.data.dto.ProductUpdateDto
+
+data class MassiveUpdateDto (
     //If null -> dont update
     //If 0 -> set null
     //if not zero and not null -> update to what set
@@ -22,4 +24,15 @@ data class ProductMassiveUpdateDto (
     val distributorPercent: Double? = null,
     val professionalPercent: Double? = null,
     val eanCode: String? = null
-)
+) {
+    fun productUpdateDto(productId: Int): ProductUpdateDto =
+        ProductUpdateDto(
+            photoName = null,
+            photoBase64 = null,
+            vendorCode = null,
+            eanCode = null,
+            barcode = null,
+            brand, name, description, commonPrice, category, collection, color, amountInBox, expirationDate, link,
+            id = productId,
+        )
+}

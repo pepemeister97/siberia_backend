@@ -30,6 +30,7 @@ data class ProductUpdateDto (
     var isFileAlreadyUploaded: Boolean? = null,
     val distributorPercent: Double? = null,
     val professionalPercent: Double? = null,
+    val id: Int? = null
 
     //Future iterations
     //val size: Double? = null,

@@ -57,7 +57,7 @@ class StockDao(id: EntityID<Int>): BaseIntEntity<StockOutputDto>(id, StockModel)
             authorName,
             stockUpdateDto.name ?: name,
             idValue,
-            createRollbackUpdateDto<StockOutputDto, StockUpdateDto>(stockUpdateDto)
+            createEncodedRollbackUpdateDto<StockOutputDto, StockUpdateDto>(stockUpdateDto)
         )
         SystemEventModel.logResettableEvent(event)
         loadUpdateDto(stockUpdateDto)

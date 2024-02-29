@@ -35,7 +35,7 @@ class BrandDao(id: EntityID<Int>) : BaseIntEntity<BrandOutputDto>(id, BrandModel
         val event = BrandUpdateEvent(
             authorName,
             nameOnUpdate,
-            createRollbackUpdateDto<BrandOutputDto, BrandUpdateDto>(brandUpdateDto),
+            createEncodedRollbackUpdateDto<BrandOutputDto, BrandUpdateDto>(brandUpdateDto),
             idValue
         )
         SystemEventModel.logResettableEvent(event)

@@ -141,7 +141,7 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
             name,
             vendorCode,
             idValue,
-            createRollbackUpdateDto<ProductOutputDto, ProductUpdateDto>(productUpdateDto)
+            createEncodedRollbackUpdateDto<ProductOutputDto, ProductUpdateDto>(productUpdateDto)
         )
         SystemEventModel.logResettableEvent(event)
         loadUpdateDto(productUpdateDto)

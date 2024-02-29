@@ -1,11 +1,14 @@
 package siberia.modules.product.service
 
+import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import siberia.modules.auth.data.dto.AuthorizedUser
+import siberia.modules.logger.data.models.SystemEventModel
 import siberia.modules.product.data.dao.ProductGroupDao
-import siberia.modules.product.data.dto.ProductMassiveUpdateDto
+import siberia.modules.product.data.dto.groups.MassiveUpdateDto
 import siberia.modules.product.data.dto.groups.*
+import siberia.modules.product.data.dto.groups.systemevents.ProductMassiveUpdateEvent
 import siberia.modules.product.data.models.ProductModel
 import siberia.modules.product.data.models.ProductToGroupModel
 import siberia.modules.user.data.dao.UserDao
@@ -22,7 +25,6 @@ class ProductGroupService(di: DI) : KodeinService(di) {
     }
 
     fun create(
-        authorizedUser: AuthorizedUser,
         productGroupCreateDto: ProductGroupCreateDto
     ): ProductGroupFullOutputDto = transaction {
         val productGroupDao = ProductGroupDao.new {
@@ -34,13 +36,11 @@ class ProductGroupService(di: DI) : KodeinService(di) {
     }
 
     fun update(
-        authorizedUser: AuthorizedUser,
         groupId: Int,
         productGroupUpdateDto: ProductGroupUpdateDto
     ): ProductGroupOutputDto = transaction {
-        val author = UserDao[authorizedUser.id]
         val productGroupDao = ProductGroupDao[groupId]
-        productGroupDao.loadAndFlush(author.login, productGroupUpdateDto)
+        productGroupDao.loadAndFlush(productGroupUpdateDto)
 
         productGroupDao.toOutputDto()
     }
@@ -56,11 +56,19 @@ class ProductGroupService(di: DI) : KodeinService(di) {
     fun updateGroup(
         authorizedUser: AuthorizedUser,
         groupId: Int,
-        productUpdateDto: ProductMassiveUpdateDto
+        productUpdateDto: MassiveUpdateDto
     ): ProductGroupActionResultDto = transaction {
         val author = UserDao[authorizedUser.id]
         val productGroupDto = ProductGroupDao[groupId].toFullOutput()
-        ProductModel.updateBatch(productGroupDto.products.map { it.id }, productUpdateDto)
+        val rollbackList = ProductModel.updateBatch(productGroupDto.products.map { it.id }, productUpdateDto)
+
+        val event = ProductMassiveUpdateEvent(
+            author.login,
+            groupId,
+            productGroupDto.name,
+            Json.encodeToString(MassiveUpdateRollbackDto.serializer(), MassiveUpdateRollbackDto(rollbackList))
+        )
+        SystemEventModel.logResettableEvent(event)
 
         ProductGroupActionResultDto(true, "Group of products is updated successfully")
     }

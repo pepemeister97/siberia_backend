@@ -35,7 +35,7 @@ class CollectionDao(id: EntityID<Int>) : BaseIntEntity<CollectionOutputDto>(id, 
         val event = CollectionUpdateEvent(
             authorName,
             name,
-            createRollbackUpdateDto<CollectionOutputDto, CollectionUpdateDto>(collectionUpdateDto),
+            createEncodedRollbackUpdateDto<CollectionOutputDto, CollectionUpdateDto>(collectionUpdateDto),
             idValue
         )
         SystemEventModel.logResettableEvent(event)

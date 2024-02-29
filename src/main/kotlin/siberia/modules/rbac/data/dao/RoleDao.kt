@@ -44,7 +44,7 @@ class RoleDao(id: EntityID<Int>): BaseIntEntity<RoleOutputDto>(id, RoleModel) {
             authorName,
             name,
             roleUpdateDto.name ?: name,
-            createRollbackUpdateDto<RoleOutputDto, RoleUpdateDto>(roleUpdateDto),
+            createEncodedRollbackUpdateDto<RoleOutputDto, RoleUpdateDto>(roleUpdateDto),
             idValue
         )
         SystemEventModel.logResettableEvent(event)

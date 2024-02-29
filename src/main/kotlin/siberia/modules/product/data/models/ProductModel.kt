@@ -1,12 +1,17 @@
 package siberia.modules.product.data.models
 
 import org.jetbrains.exposed.sql.ReferenceOption
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import siberia.modules.brand.data.models.BrandModel
 import siberia.modules.category.data.models.CategoryModel
 import siberia.modules.collection.data.models.CollectionModel
-import siberia.modules.product.data.dto.ProductMassiveUpdateDto
+import siberia.modules.product.data.dao.ProductDao
+import siberia.modules.product.data.dto.groups.MassiveUpdateDto
+import siberia.modules.product.data.dto.ProductOutputDto
+import siberia.modules.product.data.dto.ProductUpdateDto
 import siberia.utils.database.BaseIntIdTable
+import siberia.utils.database.idValue
 
 object ProductModel: BaseIntIdTable() {
     val photo = text("photo")
@@ -35,49 +40,57 @@ object ProductModel: BaseIntIdTable() {
 //    val size = double("size").default(1.0)
 //    val volume = double("volume").default(1.0)
 
-    fun updateBatch(products: List<Int>, productMassiveUpdateDto: ProductMassiveUpdateDto) {
+    fun updateBatch(products: List<Int>, massiveUpdateDto: MassiveUpdateDto): List<ProductUpdateDto> = transaction {
+        val rollbackList = ProductDao.find {
+            ProductModel.id inList products
+        }.map {
+            it.getRollbackInstance<ProductOutputDto, ProductUpdateDto>(massiveUpdateDto.productUpdateDto(it.idValue))
+        }
+
         ProductModel.update({ ProductModel.id inList products }) {
-            if (productMassiveUpdateDto.brand != 0 && productMassiveUpdateDto.brand != null)
-                it[brand] = productMassiveUpdateDto.brand
-            else if (productMassiveUpdateDto.brand == 0)
+            if (massiveUpdateDto.brand != 0 && massiveUpdateDto.brand != null)
+                it[brand] = massiveUpdateDto.brand
+            else if (massiveUpdateDto.brand == 0)
                 it[brand] = null
 
-            if (productMassiveUpdateDto.collection != 0 && productMassiveUpdateDto.collection != null)
-                it[collection] = productMassiveUpdateDto.collection
-            else if (productMassiveUpdateDto.collection == 0)
+            if (massiveUpdateDto.collection != 0 && massiveUpdateDto.collection != null)
+                it[collection] = massiveUpdateDto.collection
+            else if (massiveUpdateDto.collection == 0)
                 it[collection] = null
 
-            if (productMassiveUpdateDto.category != 0 && productMassiveUpdateDto.category != null)
-                it[category] = productMassiveUpdateDto.category
-            else if (productMassiveUpdateDto.category == 0)
+            if (massiveUpdateDto.category != 0 && massiveUpdateDto.category != null)
+                it[category] = massiveUpdateDto.category
+            else if (massiveUpdateDto.category == 0)
                 it[category] = null
 
-            if (productMassiveUpdateDto.name != null)
-                it[name] = productMassiveUpdateDto.name!!
+            if (massiveUpdateDto.name != null)
+                it[name] = massiveUpdateDto.name!!
 
-            if (productMassiveUpdateDto.description != null)
-                it[description] = productMassiveUpdateDto.description!!
+            if (massiveUpdateDto.description != null)
+                it[description] = massiveUpdateDto.description!!
 
-            if (productMassiveUpdateDto.commonPrice != null)
-                it[commonPrice] = productMassiveUpdateDto.commonPrice!!
+            if (massiveUpdateDto.commonPrice != null)
+                it[commonPrice] = massiveUpdateDto.commonPrice!!
 
-            if (productMassiveUpdateDto.color != null)
-                it[color] = productMassiveUpdateDto.color!!
+            if (massiveUpdateDto.color != null)
+                it[color] = massiveUpdateDto.color!!
 
-            if (productMassiveUpdateDto.amountInBox != null)
-                it[amountInBox] = productMassiveUpdateDto.amountInBox!!
+            if (massiveUpdateDto.amountInBox != null)
+                it[amountInBox] = massiveUpdateDto.amountInBox!!
 
-            if (productMassiveUpdateDto.expirationDate != null)
-                it[expirationDate] = productMassiveUpdateDto.expirationDate!!
+            if (massiveUpdateDto.expirationDate != null)
+                it[expirationDate] = massiveUpdateDto.expirationDate!!
 
-            if (productMassiveUpdateDto.link != null)
-                it[link] = productMassiveUpdateDto.link!!
+            if (massiveUpdateDto.link != null)
+                it[link] = massiveUpdateDto.link!!
 
-            if (productMassiveUpdateDto.distributorPercent != null)
-                it[distributorPercent] = productMassiveUpdateDto.distributorPercent
+            if (massiveUpdateDto.distributorPercent != null)
+                it[distributorPercent] = massiveUpdateDto.distributorPercent
 
-            if (productMassiveUpdateDto.professionalPercent != null)
-                it[professionalPercent] = productMassiveUpdateDto.professionalPercent
+            if (massiveUpdateDto.professionalPercent != null)
+                it[professionalPercent] = massiveUpdateDto.professionalPercent
         }
+
+        rollbackList
     }
 }

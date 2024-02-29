@@ -29,7 +29,7 @@ class CategoryDao(id: EntityID<Int>) : BaseIntEntity<CategoryOutputDto>(id, Cate
             authorName,
             name,
             idValue,
-            createRollbackUpdateDto<CategoryOutputDto, CategoryUpdateDto>(categoryUpdateDto)
+            createEncodedRollbackUpdateDto<CategoryOutputDto, CategoryUpdateDto>(categoryUpdateDto)
         )
         SystemEventModel.logResettableEvent(event)
 

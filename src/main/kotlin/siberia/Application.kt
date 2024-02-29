@@ -34,10 +34,7 @@ import siberia.modules.logger.service.SystemEventService
 import siberia.modules.product.controller.ProductController
 import siberia.modules.product.controller.ProductGroupController
 import siberia.modules.product.data.models.ProductModel
-import siberia.modules.product.service.ProductEventService
-import siberia.modules.product.service.ProductGroupService
-import siberia.modules.product.service.ProductParseService
-import siberia.modules.product.service.ProductService
+import siberia.modules.product.service.*
 import siberia.modules.stock.data.models.StockModel
 import siberia.modules.stock.data.models.StockToProductModel
 import siberia.modules.rbac.controller.RbacController
@@ -104,6 +101,7 @@ fun Application.module() {
         bindSingleton { WebSocketRegister(it) }
         bindSingleton { AuthSocketService(it) }
         bindSingleton { ProductGroupService(it) }
+        bindSingleton { ProductGroupEventService(it) }
 
         bindSingleton { AuthController(it) }
         bindSingleton { UserController(it) }

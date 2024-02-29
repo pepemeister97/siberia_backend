@@ -18,14 +18,16 @@ abstract class BaseIntEntity<OutputDto : SerializableAny>(id: EntityID<Int>, tab
     var updatedAt by table.updatedAt
 
     abstract fun toOutputDto(): OutputDto
-    protected val json = Json { ignoreUnknownKeys = true }
-    protected inline fun <reified T: Any> createRollbackInstanceTemplate(instanceKlass: KClass<T>): T {
-        val args = List(instanceKlass.primaryConstructor?.parameters?.size ?: 0) { null }
-        return instanceKlass.primaryConstructor?.call(*args.toTypedArray()) ?: throw Exception("Failed build rollback instance")
+    val json = Json { ignoreUnknownKeys = true }
+
+    companion object {
+        inline fun <reified T: Any> createRollbackInstanceTemplate(instanceKlass: KClass<T>): T {
+            val args = List(instanceKlass.primaryConstructor?.parameters?.size ?: 0) { null }
+            return instanceKlass.primaryConstructor?.call(*args.toTypedArray()) ?: throw Exception("Failed build rollback instance")
+        }
     }
 
-    @OptIn(InternalSerializationApi::class)
-    protected inline fun <reified Output : OutputDto, reified Update : SerializableAny> createRollbackUpdateDto(onUpdate: Update, output: OutputDto = toOutputDto()): String {
+    inline fun <reified Output : OutputDto, reified Update : SerializableAny> initRollbackInstance(onUpdate: Update, output: OutputDto = toOutputDto()): Update {
         val updateDtoKlass = Update::class
         val outputDtoKlass = Output::class
         val rollbackInstance = createRollbackInstanceTemplate(updateDtoKlass)
@@ -42,8 +44,22 @@ abstract class BaseIntEntity<OutputDto : SerializableAny>(id: EntityID<Int>, tab
             }
         }
 
-        return json.encodeToString(updateDtoKlass.serializer(), rollbackInstance)
+        return rollbackInstance
     }
+
+
+    @OptIn(InternalSerializationApi::class)
+    inline fun <reified Output : OutputDto, reified Update : SerializableAny> createEncodedRollbackUpdateDto(onUpdate: Update, output: OutputDto = toOutputDto()): String {
+        val updateDtoKlass = Update::class
+        val rollbackDto = initRollbackInstance<Output, Update>(onUpdate, output)
+
+        return json.encodeToString(updateDtoKlass.serializer(), rollbackDto)
+    }
+
+    inline fun <reified Output : OutputDto, reified Update : SerializableAny> getRollbackInstance(
+        onUpdate: Update,
+        output: OutputDto = toOutputDto()
+    ): Update = initRollbackInstance<Output, Update>(onUpdate, output)
 
     @OptIn(InternalSerializationApi::class)
     protected inline fun <reified Output : OutputDto> createRollbackRemoveDto(): String {
