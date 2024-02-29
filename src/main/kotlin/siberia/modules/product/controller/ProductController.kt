@@ -47,8 +47,12 @@ class ProductController(override val di: DI) : KodeinController() {
                 }
                 post ("parse/csv") {
                     val bytes = call.receive<ByteArray>()
+                    call.respond(productParseService.parseCSVtoProductDto(bytes))
+                }
+                post("bulk"){
+                    val products = call.receive<List<ProductCreateDto>>()
                     val authorizedUser = call.getAuthorized()
-                    call.respond(productParseService.parseCSVtoProductDto(authorizedUser, bytes))
+                    call.respond(productService.bulkInsert(authorizedUser, products))
                 }
             }
             authenticate ("mobile-access") {

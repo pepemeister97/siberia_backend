@@ -72,6 +72,23 @@ class ProductService(di: DI) : KodeinService(di) {
         productDao.fullOutput()
     }
 
+    fun bulkInsert(authorizedUser: AuthorizedUser, list : List<ProductCreateDto>) : List<ProductListItemOutputDto> = transaction {
+        val returnList = mutableListOf<ProductListItemOutputDto>()
+        list.forEach {
+            val product = create(authorizedUser, it)
+            returnList.add(
+                ProductListItemOutputDto(
+                    product.id,
+                    product.name,
+                    product.vendorCode,
+                    0.0,
+                    product.commonPrice
+                )
+            )
+        }
+        returnList
+    }
+
     fun update(authorizedUser: AuthorizedUser, productId: Int, productUpdateDto: ProductUpdateDto): ProductFullOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
         val productDao = ProductDao[productId]
