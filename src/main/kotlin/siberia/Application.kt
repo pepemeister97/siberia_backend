@@ -49,15 +49,9 @@ import siberia.modules.rbac.service.RoleEventService
 import siberia.modules.stock.controller.StockController
 import siberia.modules.stock.service.StockEventService
 import siberia.modules.stock.service.StockService
-import siberia.modules.transaction.controller.IncomeTransactionController
-import siberia.modules.transaction.controller.OutcomeTransactionController
-import siberia.modules.transaction.controller.TransactionController
-import siberia.modules.transaction.controller.TransferTransactionController
+import siberia.modules.transaction.controller.*
 import siberia.modules.transaction.data.models.*
-import siberia.modules.transaction.service.IncomeTransactionService
-import siberia.modules.transaction.service.OutcomeTransactionService
-import siberia.modules.transaction.service.TransactionService
-import siberia.modules.transaction.service.TransferTransactionService
+import siberia.modules.transaction.service.*
 import siberia.modules.user.service.UserAccessControlService
 import siberia.modules.user.service.UserEventService
 import siberia.modules.user.service.UserService
@@ -106,6 +100,7 @@ fun Application.module() {
         bindSingleton { IncomeTransactionService(it) }
         bindSingleton { OutcomeTransactionService(it) }
         bindSingleton { TransferTransactionService(it) }
+        bindSingleton { WriteOffTransactionService(it) }
         bindSingleton { WebSocketRegister(it) }
         bindSingleton { AuthSocketService(it) }
         bindSingleton { ProductGroupService(it) }
@@ -123,6 +118,7 @@ fun Application.module() {
         bindSingleton { IncomeTransactionController(it) }
         bindSingleton { OutcomeTransactionController(it) }
         bindSingleton { TransferTransactionController(it) }
+        bindSingleton { WriteOffTransactionController(it) }
         bindSingleton { FilesController(it) }
         bindSingleton { ProductGroupController(it) }
     }

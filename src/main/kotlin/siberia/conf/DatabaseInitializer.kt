@@ -125,6 +125,18 @@ object DatabaseInitializer {
             it[needStock] = true
         }
         RuleModel.insert {
+            it[id] = AppConf.rules.createWriteOffRequest
+            it[name] = "Create write-off request"
+            it[description] = "Ability to create write-off requests for storehouse"
+            it[needStock] = true
+        }
+        RuleModel.insert {
+            it[id] = AppConf.rules.approveWriteOffRequest
+            it[name] = "View products list"
+            it[description] = "Ability to approve write-off requests creations"
+            it[needStock] = false
+        }
+        RuleModel.insert {
             it[id] = AppConf.rules.concreteStockView
             it[name] = "Concrete stock view"
             it[description] = "Ability to see concrete stock"
@@ -136,7 +148,6 @@ object DatabaseInitializer {
             it[description] = "Ability to create a product"
             it[needStock] = false
         }
-
     }
 
     fun initEventTypes() {
@@ -215,6 +226,10 @@ object DatabaseInitializer {
         TransactionTypeModel.insert {
             it[id] = AppConf.requestTypes.transfer
             it[name] = "Transfer"
+        }
+        TransactionTypeModel.insert {
+            it[id] = AppConf.requestTypes.writeOff
+            it[name] = "Write-off"
         }
     }
 

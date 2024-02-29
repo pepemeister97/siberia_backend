@@ -13,6 +13,9 @@ data class RulesConf (
 
     val concreteStockView: Int,
 
+    val createWriteOffRequest: Int,
+    val approveWriteOffRequest: Int,
+
     val createIncomeRequest: Int,
     val approveIncomeRequest: Int,
 

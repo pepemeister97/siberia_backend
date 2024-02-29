@@ -60,6 +60,9 @@ object AppConf {
 
         concreteStockView = rulesConf.getInt("concrete-stock-view"),
 
+        createWriteOffRequest = rulesConf.getInt("create-write-off"),
+        approveWriteOffRequest = rulesConf.getInt("approve-write-off"),
+
         createIncomeRequest = rulesConf.getInt("create-income-request"),
         approveIncomeRequest = rulesConf.getInt("approve-income-request"),
 
@@ -99,6 +102,7 @@ object AppConf {
         income = requestTypeConf.getInt("income"),
         outcome = requestTypeConf.getInt("outcome"),
         transfer = requestTypeConf.getInt("transfer"),
+        writeOff = requestTypeConf.getInt("write-off")
     )
 
     val requestStatus = RequestStatusConf(
