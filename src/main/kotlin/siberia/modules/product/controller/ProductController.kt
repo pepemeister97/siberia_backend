@@ -12,12 +12,14 @@ import siberia.modules.product.data.dto.ProductListItemOutputDto
 import siberia.modules.product.data.dto.ProductSearchDto
 import siberia.modules.product.data.dto.ProductUpdateDto
 import siberia.modules.product.service.ProductEventService
+import siberia.modules.product.service.ProductParseService
 import siberia.modules.product.service.ProductService
 import siberia.utils.kodein.KodeinController
 
 class ProductController(override val di: DI) : KodeinController() {
     private val productService: ProductService by instance()
     private val productEventService: ProductEventService by instance()
+    private val productParseService: ProductParseService by instance()
     /**
      * Method that subtypes must override to register the handled [Routing] routes.
      */
@@ -42,6 +44,15 @@ class ProductController(override val di: DI) : KodeinController() {
                     val eventId = call.parameters.getInt("eventId", "Event id must be INT")
 
                     call.respond(productEventService.rollback(authorizedUser, eventId))
+                }
+                post ("parse/csv") {
+                    val bytes = call.receive<ByteArray>()
+                    call.respond(productParseService.parseCSVtoProductDto(bytes))
+                }
+                post("bulk"){
+                    val products = call.receive<List<ProductCreateDto>>()
+                    val authorizedUser = call.getAuthorized()
+                    call.respond(productService.bulkInsert(authorizedUser, products))
                 }
             }
             authenticate ("mobile-access") {

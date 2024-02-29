@@ -36,6 +36,7 @@ import siberia.modules.product.controller.ProductGroupController
 import siberia.modules.product.data.models.ProductModel
 import siberia.modules.product.service.ProductEventService
 import siberia.modules.product.service.ProductGroupService
+import siberia.modules.product.service.ProductParseService
 import siberia.modules.product.service.ProductService
 import siberia.modules.stock.data.models.StockModel
 import siberia.modules.stock.data.models.StockToProductModel
@@ -98,6 +99,7 @@ fun Application.module() {
         bindSingleton { CategoryEventService(it) }
         bindSingleton { ProductService(it) }
         bindSingleton { ProductEventService(it) }
+        bindSingleton { ProductParseService(it) }
         bindSingleton { StockService(it) }
         bindSingleton { StockEventService(it) }
         bindSingleton { TransactionService(it) }
