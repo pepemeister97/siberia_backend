@@ -17,6 +17,7 @@ import siberia.modules.brand.data.models.BrandModel
 import siberia.modules.brand.service.BrandEventService
 import siberia.modules.brand.service.BrandService
 import siberia.modules.bug.controller.BugReportController
+import siberia.modules.bug.data.models.BugReportModel
 import siberia.modules.bug.service.BugReportService
 import siberia.modules.category.controller.CategoryController
 import siberia.modules.category.data.models.CategoryModel
@@ -135,6 +136,7 @@ fun Application.module() {
         ProductModel,
         SystemEventModel, SystemEventTypeModel, SystemEventObjectTypeModel,
         TransactionModel, TransactionToProductModel, TransactionRelatedUserModel, TransactionStatusModel, TransactionTypeModel,
+        BugReportModel
     ) {
         DatabaseInitializer.initRules()
         DatabaseInitializer.initEventTypes()
