@@ -8,5 +8,7 @@ data class ProductListItemOutputDto (
     val name: String,
     val vendorCode: String,
     val quantity: Double = 0.0,
-    val price: Double
+    val price: Double,
+    val fileName: String? = null,
+    val eanCode: String? = null
 )

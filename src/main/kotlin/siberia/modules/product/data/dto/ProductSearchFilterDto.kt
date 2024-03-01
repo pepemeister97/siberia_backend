@@ -5,7 +5,7 @@ import siberia.utils.database.FieldFilterWrapper
 
 @Serializable
 data class ProductSearchFilterDto (
-
+    val availability: Boolean? = null,
     val vendorCode: String? = null,
     val brand: List<Int>? = null,
     val name: String? = null,
@@ -17,7 +17,7 @@ data class ProductSearchFilterDto (
     val category: List<Int>? = null,
     val collection: List<Int>? = null,
     val color: String? = null,
-    val amountInBox: FieldFilterWrapper<Int>? = null,
+    val amountInBox: FieldFilterWrapper<Int>? = null
     
 //    Future iterations
 //    val size: FieldFilterWrapper<Double>? = null,

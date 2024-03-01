@@ -7,7 +7,9 @@ import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.toEntity
 import org.jetbrains.exposed.sql.*
+import siberia.conf.AppConf
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 abstract class BaseIntEntityClass<Output : SerializableAny, E : BaseIntEntity<Output>>(table: BaseIntIdTable) : IntEntityClass<E>(table) {
 
@@ -93,6 +95,30 @@ abstract class BaseIntEntityClass<Output : SerializableAny, E : BaseIntEntity<Ou
             else
                 field eq filter
 
-    companion object {
+    fun SqlExpressionBuilder.timeCond(range: Pair<Long?, Long?>?, createdAt: Column<LocalDateTime>): Op<Boolean> {
+        return if (range == null)
+            createdAt.isNotNull()
+        else {
+            val leftBound = range.first.let {
+                if (it == null)
+                    LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.ofHours(AppConf.zoneOffset))
+                else {
+                    val seconds: Long = it / 1000
+                    val nanos: Int = (it % 1000).toInt()
+                    LocalDateTime.ofEpochSecond(seconds, nanos, ZoneOffset.ofHours(AppConf.zoneOffset))
+                }
+            }
+            val rightBound = range.second.let {
+                if (it == null) //Use INT.MAX * 2 (2106 year) because Long.MAX_VALUE is too big for timestamp
+                    LocalDateTime.ofEpochSecond(Int.MAX_VALUE.toLong() * 2, 0, ZoneOffset.ofHours(AppConf.zoneOffset))
+                else {
+                    val seconds: Long = it / 1000
+                    val nanos: Int = (it % 1000).toInt()
+                    LocalDateTime.ofEpochSecond(seconds, nanos, ZoneOffset.ofHours(AppConf.zoneOffset))
+                }
+            }
+            (createdAt lessEq rightBound) and
+                    (createdAt greaterEq leftBound)
+        }
     }
 }
