@@ -25,6 +25,7 @@ import siberia.modules.stock.data.models.StockModel
 import siberia.modules.stock.data.models.StockToProductModel
 import siberia.modules.transaction.data.dto.TransactionFullOutputDto
 import siberia.modules.user.data.dao.UserDao
+import siberia.plugins.Logger
 import siberia.utils.files.FilesUtil
 import siberia.utils.kodein.KodeinService
 import java.time.LocalDateTime
@@ -203,20 +204,29 @@ class ProductService(di: DI) : KodeinService(di) {
     ): List<ProductListItemOutputDto> = transaction {
         ProductModel
             .join(StockToProductModel, JoinType.LEFT, additionalConstraint = { (StockToProductModel.product eq ProductModel.id) and (StockToProductModel.stock eq authorizedUser.stockId) })
-            .slice(ProductModel.id, ProductModel.name, ProductModel.vendorCode, StockToProductModel.amount)
+            .slice(ProductModel.id, ProductModel.name, ProductModel.vendorCode, StockToProductModel.amount, ProductModel.eanCode, ProductModel.photo)
             .select {
                 convertToOperator(searchFilterDto)
             }
-            .orderBy(ProductModel.id, SortOrder.ASC)
+            .orderBy(
+                if (searchFilterDto.filters?.availability != null && searchFilterDto.filters.availability){
+                    StockToProductModel.amount to SortOrder.DESC_NULLS_LAST
+                    ProductModel.id to SortOrder.ASC
+                }else{
+                    ProductModel.id to SortOrder.ASC
+                }
+            )
             .map {
                 //If join returns nothing (no such product in stock) amount = 0
-                val amount = try { it[StockToProductModel.amount] } catch (_: Exception) { 0.0 }
+                val amount = try { it[StockToProductModel.amount].toDouble() } catch (_: Exception) { 0.0 }
                 ProductListItemOutputDto(
                     id = it[ProductModel.id].value,
                     name = it[ProductModel.name],
                     vendorCode = it[ProductModel.vendorCode],
                     quantity = amount,
-                    price = 0.0
+                    price = 0.0,
+                    fileName = it[ProductModel.photo],
+                    eanCode = it[ProductModel.eanCode]
                 )
             }
     }
