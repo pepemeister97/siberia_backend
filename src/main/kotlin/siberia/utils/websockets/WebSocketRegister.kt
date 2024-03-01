@@ -13,40 +13,35 @@ import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.plugins.Logger
 import siberia.utils.kodein.KodeinController
 import siberia.utils.security.jwt.JwtUtil
+import siberia.utils.websockets.dto.RequestHandlerInput
 import siberia.utils.websockets.dto.WebSocketRequestDto
 import siberia.utils.websockets.dto.WebSocketResponseDto
 
+typealias WebSocketEmitter = suspend (connectionsRegister: ConnectionsRegister) -> Unit
 
-typealias WebSocketConnectionsRegister = MutableMap<Int, MutableList<DefaultWebSocketSession>>
-
-typealias WebSocketEmitter = suspend (connectionsRegister: WebSocketConnectionsRegister) -> Unit
-
-typealias WebSocketRequestHandler = (
-    request: WebSocketRequestDto,
-    authorizedUser: AuthorizedUser,
-    socketSession: DefaultWebSocketSession,
-    actualConnections: WebSocketConnectionsRegister
+typealias WebSocketRequestHandler = WebSocketRegister.(
+    requestHandlerInput: RequestHandlerInput
 ) -> Unit
 
 class WebSocketRegister(override val di: DI) : KodeinController() {
-    private val connections: WebSocketConnectionsRegister = mutableMapOf()
+    private val connections: ConnectionsRegister = ConnectionsRegister()
+    private val rooms: RoomsRegister = RoomsRegister()
     private val routes: MutableMap<String, MutableList<WebSocketRequestHandler>> = mutableMapOf()
     private val json = Json { ignoreUnknownKeys = true }
 
     init {
         registerRoutes("connect") {
-            _, authorizedUser: AuthorizedUser, socketSession: DefaultWebSocketSession, _ ->
-                val connectionsByUser = connections[authorizedUser.id]
-                if (connectionsByUser != null)
-                    connectionsByUser.add(socketSession)
-                else
-                    connections[authorizedUser.id] = mutableListOf(socketSession)
-
+            input ->
+                connections[input.authorizedUser.id] = input.socketSession
                 //After every new connection check for inactive ones
-                connections[authorizedUser.id] =
-                    connections[authorizedUser.id]?.filter {
-                        it.isActive
-                    }?.toMutableList() ?: mutableListOf()
+                connections clearInactiveBy input.authorizedUser.id
+        }
+        registerRoutes("connect-to-room") {
+            input ->
+                val roomName = input.request.body
+                rooms[roomName] = ConnectionsRegister(input.authorizedUser.id, input.socketSession)
+                //Clear participants of room who are inactive
+                rooms clearInactiveParticipantsOf roomName
         }
     }
 
@@ -62,6 +57,11 @@ class WebSocketRegister(override val di: DI) : KodeinController() {
         websocketChannel.trySend(newEmit)
     }
 
+    fun emit(roomName: String, emitter: WebSocketEmitter) {
+        val newEmit = WebSocketEvent.NewRoomEmit(roomName, emitter)
+        websocketChannel.trySend(newEmit)
+    }
+
     private open class WebSocketEvent {
         class NewRequest (
             val request: WebSocketRequestDto,
@@ -70,6 +70,11 @@ class WebSocketRegister(override val di: DI) : KodeinController() {
         ): WebSocketEvent()
 
         class NewEmit(
+            val emitter: WebSocketEmitter
+        ): WebSocketEvent()
+
+        class NewRoomEmit(
+            val roomName: String,
             val emitter: WebSocketEmitter
         ): WebSocketEvent()
     }
@@ -86,8 +91,12 @@ class WebSocketRegister(override val di: DI) : KodeinController() {
                 is WebSocketEvent.NewRequest -> with(event) {
                     val handler = routes[request.headers.uri] ?: return@with
                     handler.forEach {
-                        it(request, authorizedUser, socketSession, connections)
+                        it(RequestHandlerInput(request, authorizedUser, socketSession, connections, rooms))
                     }
+                }
+                is WebSocketEvent.NewRoomEmit -> with(event) {
+                    val room = rooms[roomName] ?: return@with
+                    emitter(room.subscribers)
                 }
             }
         }

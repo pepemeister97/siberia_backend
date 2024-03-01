@@ -1,7 +1,5 @@
 package siberia.modules.auth.service
 
-import io.ktor.websocket.*
-import kotlinx.coroutines.isActive
 import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.plugins.Logger
@@ -14,18 +12,17 @@ class AuthSocketService(di: DI) : KodeinService(di) {
     fun updateRules(
         users: List<Int>
     ) {
-        webSocketRegister.emit {
-            connectionsRegister ->
-                val connectionsByUser = connectionsRegister.filterKeys { users.contains(it) }
-                Logger.debug("Connections by user", "main")
-                Logger.debug(connectionsByUser.size, "main")
-                Logger.debug(connectionsByUser, "main")
-                connectionsByUser.forEach {
-                    it.value.forEach { connection ->
-                        if (connection.isActive)
-                            connection.send(WebSocketResponseDto.wrap("update-rules").json)
-                    }
+        webSocketRegister.emit { connectionsRegister ->
+            val connectionsByUser = connectionsRegister[users]
+            Logger.debug("Connections by user", "main")
+            Logger.debug(connectionsByUser.size, "main")
+            Logger.debug(connectionsByUser, "main")
+            connectionsByUser.forEach {
+                it.value.forEach { connection ->
+                    if (connection.isActive)
+                        connection.send(WebSocketResponseDto.wrap("update-rules"))
                 }
+            }
         }
     }
 

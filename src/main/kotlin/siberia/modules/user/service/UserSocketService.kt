@@ -14,17 +14,16 @@ class UserSocketService (di: DI) : KodeinService(di) {
     fun deleteConnections(
         users : List<Int>
     ) {
-        webSocketRegister.emit {
-                connectionsRegister ->
-            val connectionsByUser = connectionsRegister.filterKeys { users.contains(it) }
+        webSocketRegister.emit { connectionsRegister ->
+            val connectionsByUser = connectionsRegister[users]
             Logger.debug("Users on delete", "main")
             Logger.debug(connectionsByUser, "main")
             Logger.debug("IDs:", "main")
             Logger.debug(users, "main")
             connectionsByUser.forEach {
                 it.value.forEach { connection ->
-                    connection.send(WebSocketResponseDto.wrap("logout").json)
-                    connection.close(CloseReason(CloseReason.Codes.CANNOT_ACCEPT, ""))
+                    connection.send(WebSocketResponseDto.wrap("logout"))
+                    connection.close(CloseReason.Codes.CANNOT_ACCEPT, "")
                 }
             }
         }
