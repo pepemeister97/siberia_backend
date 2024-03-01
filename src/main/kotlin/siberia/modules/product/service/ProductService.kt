@@ -25,7 +25,6 @@ import siberia.modules.stock.data.models.StockModel
 import siberia.modules.stock.data.models.StockToProductModel
 import siberia.modules.transaction.data.dto.TransactionFullOutputDto
 import siberia.modules.user.data.dao.UserDao
-import siberia.plugins.Logger
 import siberia.utils.files.FilesUtil
 import siberia.utils.kodein.KodeinService
 import java.time.LocalDateTime

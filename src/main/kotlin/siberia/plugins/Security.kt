@@ -72,5 +72,7 @@ fun Application.configureSecurity() {
 
         loadRule("mobile-access", rules.mobileAccess)
         loadRule("mobile-auth", rules.mobileAuth)
+        loadRule("create-write-off", rules.createWriteOffRequest)
+        loadRule("approve-write-off", rules.approveWriteOffRequest)
     }
 }

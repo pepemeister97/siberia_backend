@@ -16,6 +16,8 @@ import siberia.modules.brand.controller.BrandController
 import siberia.modules.brand.data.models.BrandModel
 import siberia.modules.brand.service.BrandEventService
 import siberia.modules.brand.service.BrandService
+import siberia.modules.bug.controller.BugReportController
+import siberia.modules.bug.service.BugReportService
 import siberia.modules.category.controller.CategoryController
 import siberia.modules.category.data.models.CategoryModel
 import siberia.modules.category.data.models.CategoryToCategoryModel
@@ -102,6 +104,8 @@ fun Application.module() {
         bindSingleton { AuthSocketService(it) }
         bindSingleton { ProductGroupService(it) }
         bindSingleton { ProductGroupEventService(it) }
+        bindSingleton { BugReportService(it) }
+
 
         bindSingleton { AuthController(it) }
         bindSingleton { UserController(it) }
@@ -119,6 +123,7 @@ fun Application.module() {
         bindSingleton { WriteOffTransactionController(it) }
         bindSingleton { FilesController(it) }
         bindSingleton { ProductGroupController(it) }
+        bindSingleton { BugReportController(it) }
     }
 
     DatabaseConnector(
