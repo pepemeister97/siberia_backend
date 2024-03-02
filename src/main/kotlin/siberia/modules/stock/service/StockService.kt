@@ -97,6 +97,13 @@ class StockService(di: DI) : KodeinService(di) {
         StockDao[stockId].fullOutput()
     }
 
+    //For mobile apps where token contains stock id
+    fun getByAuthorizedUser(authorizedUser: AuthorizedUser) = transaction {
+        if (userAccessControlService.getAvailableStocks(authorizedUser.id).filter { it.key == authorizedUser.stockId }.isEmpty())
+            throw ForbiddenException()
+        StockDao[authorizedUser.stockId ?: 0].toOutputDto()
+    }
+
     fun getStockForQr(authorizedUser: AuthorizedUser, stockId: Int): StockDao = transaction {
         val stockDao = StockDao[stockId]
 

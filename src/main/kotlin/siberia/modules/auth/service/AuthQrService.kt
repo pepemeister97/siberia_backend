@@ -55,18 +55,24 @@ class AuthQrService(di: DI) : KodeinService(di) {
         }
     }
 
+    fun getMobileTokenType(authorizedUser: AuthorizedUser): String {
+        var type = "none"
+        if (authorizedUser.stockId != null) {
+            StockDao[authorizedUser.stockId]
+            type = "stock"
+        }
+        if (authorizedUser.transactionId != null) {
+            TransactionDao[authorizedUser.transactionId]
+            type = "transaction"
+        }
+
+        return type
+    }
+
     fun authorizeMobileApp(authorizedUser: AuthorizedUser): MobileAccessOutputDto = transaction {
         try {
             UserDao[authorizedUser.id]
-            var type = "none"
-            if (authorizedUser.stockId != null) {
-                StockDao[authorizedUser.stockId]
-                type = "stock"
-            }
-            if (authorizedUser.transactionId != null) {
-                TransactionDao[authorizedUser.transactionId]
-                type = "transaction"
-            }
+            val type = getMobileTokenType(authorizedUser)
             if (type == "none") {
                 throw Exception("None type of token")
             }
