@@ -17,6 +17,8 @@ class WriteOffTransactionService(di: DI) : AbstractTransactionService(di) {
     fun create(authorizedUser: AuthorizedUser, transactionInputDto: TransactionInputDto): TransactionOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
         val targetStockId = transactionInputDto.from ?: throw BadRequestException("Incorrect target stock")
+        if (transactionInputDto.type != AppConf.requestTypes.writeOff)
+            throw BadRequestException("Bad transaction type")
 
         try {
             StockModel.checkAvailableAmount(targetStockId, transactionInputDto.products)

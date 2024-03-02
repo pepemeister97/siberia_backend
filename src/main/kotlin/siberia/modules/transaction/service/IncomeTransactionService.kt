@@ -22,6 +22,8 @@ class IncomeTransactionService(di: DI) : AbstractTransactionService(di) {
     fun create(authorizedUser: AuthorizedUser, transactionInputDto: TransactionInputDto): TransactionOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
         val targetStockId = transactionInputDto.to ?: throw BadRequestException("Incorrect target stock")
+        if (transactionInputDto.type != AppConf.requestTypes.income)
+            throw BadRequestException("Bad transaction type")
         val transactionDao = createTransaction(userDao, transactionInputDto, targetStockId)
 
         commit()

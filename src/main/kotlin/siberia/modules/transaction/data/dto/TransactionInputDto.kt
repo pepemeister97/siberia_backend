@@ -8,7 +8,7 @@ data class TransactionInputDto (
     val to: Int? = null,
     val type: Int,
     val products: List<TransactionProductInputDto>,
-    val hidden: Boolean = false
+    var hidden: Boolean = false
 ) {
     @Serializable
     data class TransactionProductInputDto(

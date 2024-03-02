@@ -31,7 +31,7 @@ class TransactionController(override val di: DI) : KodeinController() {
 
                     call.respond(transactionService.getAvailableTransactions(authorizedUser, transactionSearchFilter))
                 }
-                authenticate("mobile-access") {
+                authenticate("default") {
                     route("assembly") {
                         get {
                             val authorizedUser = call.getAuthorized()

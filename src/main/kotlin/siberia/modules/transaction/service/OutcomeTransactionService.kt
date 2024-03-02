@@ -10,6 +10,7 @@ import siberia.modules.stock.data.models.StockModel
 import siberia.modules.transaction.data.dao.TransactionDao
 import siberia.modules.transaction.data.dto.TransactionInputDto
 import siberia.modules.transaction.data.dto.TransactionOutputDto
+import siberia.modules.transaction.data.dto.TransactionRemoveResultDto
 import siberia.modules.transaction.data.models.TransactionModel
 import siberia.modules.user.data.dao.UserDao
 import siberia.utils.database.idValue
@@ -17,6 +18,8 @@ import siberia.utils.database.idValue
 class OutcomeTransactionService(di: DI) : AbstractTransactionService(di) {
     fun create(authorizedUser: AuthorizedUser, transactionInputDto: TransactionInputDto): TransactionOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
+        if (transactionInputDto.type != AppConf.requestTypes.outcome)
+            throw BadRequestException("Bad transaction type")
         val targetStockId = transactionInputDto.from ?: throw BadRequestException("Incorrect target stock")
         try {
             StockModel.checkAvailableAmount(targetStockId, transactionInputDto.products)
@@ -88,6 +91,8 @@ class OutcomeTransactionService(di: DI) : AbstractTransactionService(di) {
         }
         TransactionModel.addProductList(transactionId, products)
         StockModel.removeProducts(targetStockId, products)
+
+        transactionDao.toOutputDto()
     }
 
     fun removeHidden(transactionId: Int) = transaction {
@@ -97,21 +102,22 @@ class OutcomeTransactionService(di: DI) : AbstractTransactionService(di) {
         val targetStockId = transactionDao.fromId ?: throw BadRequestException("Bad transaction")
         StockModel.appendProducts(targetStockId, transactionDao.inputProductsList)
         transactionDao.delete()
+
+        TransactionRemoveResultDto(true, "Removed successfully")
     }
 
     fun createFromHidden(authorizedUser: AuthorizedUser, transactionId: Int) = transaction {
         val transactionDao = TransactionDao[transactionId]
-        if (!transactionDao.hidden || transactionDao.typeId != AppConf.requestTypes.outcome)
+        if (
+            !transactionDao.hidden ||
+            transactionDao.typeId != AppConf.requestTypes.outcome ||
+            !userAccessControlService.checkAccessToStock(authorizedUser.id, AppConf.rules.createOutcomeRequest, transactionDao.fromId!!)
+        )
             throw ForbiddenException()
-        val targetStockId = transactionDao.fromId ?: throw BadRequestException("Bad transaction")
+
         transactionDao.hidden = false
         transactionDao.flush()
 
-        changeStatusTo(
-            authorizedUser,
-            transactionDao.idValue,
-            targetStockId,
-            AppConf.requestStatus.open
-        ).toOutputDto()
+        transactionDao.toOutputDto()
     }
 }

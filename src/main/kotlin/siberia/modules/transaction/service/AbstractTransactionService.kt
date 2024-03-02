@@ -22,7 +22,7 @@ import siberia.utils.database.idValue
 import siberia.utils.kodein.KodeinService
 
 abstract class AbstractTransactionService(di: DI) : KodeinService(di) {
-    private val userAccessControlService: UserAccessControlService by instance()
+    protected val userAccessControlService: UserAccessControlService by instance()
 
     private fun checkAccessToStatusForTransaction(userDao: UserDao, transactionId: Int, targetStockId: Int, statusId: Int): Boolean {
         val transactionDao = TransactionDao[transactionId]

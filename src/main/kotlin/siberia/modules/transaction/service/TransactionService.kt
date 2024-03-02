@@ -130,7 +130,7 @@ class TransactionService(di: DI) : KodeinService(di) {
         }
     }
 
-    fun getProductsFromTransactions(authorizedUser: AuthorizedUser, transactionsList: List<Int>): List<TransactionFullOutputDto.TransactionProductDto> {
+    fun getProductsFromTransactions(authorizedUser: AuthorizedUser, transactionsList: List<Int>): List<TransactionFullOutputDto.TransactionProductDto> = transaction {
         val checkAccess = transactionsList.all { checkAccessToTransaction(authorizedUser, it) }
         if (!checkAccess)
             throw ForbiddenException()
@@ -149,15 +149,15 @@ class TransactionService(di: DI) : KodeinService(di) {
                 productsMap[productId] = transactionProductDto
         }
 
-        return productsMap.values.toList()
+        productsMap.values.toList()
     }
 
-    fun getTransactions(authorizedUser: AuthorizedUser, transactionsList: List<Int>): List<TransactionFullOutputDto> {
+    fun getTransactions(authorizedUser: AuthorizedUser, transactionsList: List<Int>): List<TransactionFullOutputDto> = transaction {
         val checkAccess = transactionsList.all { checkAccessToTransaction(authorizedUser, it) }
         if (!checkAccess)
             throw ForbiddenException()
 
-        return transactionsList.map { TransactionDao[it].fullOutput() }
+        transactionsList.map { TransactionDao[it].fullOutput() }
     }
 
     fun getTransactionForQr(authorizedUser: AuthorizedUser, transactionId: Int): TransactionDao = transaction {
