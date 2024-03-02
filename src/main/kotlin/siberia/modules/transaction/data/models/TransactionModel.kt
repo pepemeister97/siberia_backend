@@ -1,9 +1,7 @@
 package siberia.modules.transaction.data.models
 
-import org.jetbrains.exposed.sql.ReferenceOption
-import org.jetbrains.exposed.sql.batchInsert
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import siberia.conf.AppConf
 import siberia.modules.product.data.dao.ProductDao
 import siberia.modules.product.data.models.ProductModel
@@ -20,6 +18,7 @@ object TransactionModel : BaseIntIdTable() {
     val to = reference("to", StockModel, ReferenceOption.CASCADE, ReferenceOption.CASCADE).nullable().default(null)
     val status = reference("status", TransactionStatusModel, ReferenceOption.RESTRICT, ReferenceOption.RESTRICT)
     val type = reference("type", TransactionTypeModel, ReferenceOption.RESTRICT, ReferenceOption.RESTRICT)
+    val hidden = bool("hidden")
 
     fun create(transactionInputDto: TransactionInputDto): TransactionDao = transaction {
         val createdTransaction = TransactionDao.wrapRow(TransactionModel.insert {
@@ -27,6 +26,7 @@ object TransactionModel : BaseIntIdTable() {
             it[from] = transactionInputDto.from
             it[status] = AppConf.requestStatus.created
             it[type] = transactionInputDto.type
+            it[hidden] = transactionInputDto.hidden
         }.resultedValues!!.first())
 
         TransactionToProductModel.batchInsert(transactionInputDto.products) {
@@ -38,6 +38,23 @@ object TransactionModel : BaseIntIdTable() {
 
         createdTransaction
     }
+
+    fun clearProductsList(transactionId: Int): List<TransactionFullOutputDto.TransactionProductDto> = transaction {
+        val products = getFullProductList(transactionId)
+        TransactionToProductModel.deleteWhere { transaction eq transactionId }
+        products
+    }
+
+    fun addProductList(transactionId: Int, products: List<TransactionInputDto.TransactionProductInputDto>) = transaction {
+        TransactionDao[transactionId]
+        TransactionToProductModel.batchInsert(products) {
+            this[TransactionToProductModel.transaction] = transactionId
+            this[TransactionToProductModel.product] = it.productId
+            this[TransactionToProductModel.amount] = it.amount
+            this[TransactionToProductModel.price] = it.price
+        }
+    }
+
 
     fun getFullProductList(transactionId: Int): List<TransactionFullOutputDto.TransactionProductDto> = transaction {
         val slice = ProductModel.columns.toMutableList()

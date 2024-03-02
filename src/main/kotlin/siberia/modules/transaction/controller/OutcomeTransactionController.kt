@@ -25,6 +25,26 @@ class OutcomeTransactionController(override val di: DI) : KodeinController() {
 
                     call.respond(outcomeTransactionService.create(authorizedUser, transactionInputDto))
                 }
+                route("hidden/{transactionId}") {
+                    patch {
+                        val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")
+                        val products = call.receive<List<TransactionInputDto.TransactionProductInputDto>>()
+
+                        call.respond(outcomeTransactionService.updateHidden(transactionId, products))
+                    }
+                    delete {
+                        val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")
+
+                        call.respond(outcomeTransactionService.removeHidden(transactionId))
+                    }
+                    post {
+                        val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")
+                        val authorizedUser = call.getAuthorized()
+
+                        call.respond(outcomeTransactionService.createFromHidden(authorizedUser, transactionId))
+                    }
+                }
+
             }
             authenticate("approve-outcome-request") {
                 route("{transactionId}") {

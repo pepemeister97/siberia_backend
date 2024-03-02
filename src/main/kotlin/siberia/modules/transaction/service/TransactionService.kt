@@ -69,9 +69,10 @@ class TransactionService(di: DI) : KodeinService(di) {
             TransactionModel.to inList availableStocks
         TransactionModel.select {
             (
+                    TransactionModel.hidden eq false and (
                     (TransactionModel.from inList availableStocks) or
                     (TransactionModel.to inList availableStocks) or
-                    processQuery
+                    processQuery)
             ) and
             createNullableListCond(transactionSearchFilter.to, TransactionModel.id.isNotNull(), TransactionModel.to) and
             createNullableListCond(transactionSearchFilter.from, TransactionModel.id.isNotNull(), TransactionModel.from) and
@@ -120,10 +121,10 @@ class TransactionService(di: DI) : KodeinService(di) {
         val availableStocksWithRules = userAccessControlService.getAvailableStocksByOperations(authorizedUser.id)
         val availableStocks = availableStocksWithRules.map { it.key }
         TransactionModel.select {
-            (
-                (TransactionModel.from inList availableStocks) or
-                (TransactionModel.to inList availableStocks)
-            ) and (TransactionModel.status eq requestStatus.open) and (TransactionModel.type eq AppConf.requestTypes.outcome)
+            (TransactionModel.from inList availableStocks) and
+            (TransactionModel.status eq requestStatus.open) and
+            (TransactionModel.type eq AppConf.requestTypes.outcome) and
+            (TransactionModel.hidden eq false)
         }.sortedBy { TransactionModel.updatedAt }.map {
             TransactionDao.wrapRow(it).listItemOutputDto
         }

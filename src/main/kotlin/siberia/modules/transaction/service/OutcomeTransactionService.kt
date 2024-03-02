@@ -10,6 +10,7 @@ import siberia.modules.stock.data.models.StockModel
 import siberia.modules.transaction.data.dao.TransactionDao
 import siberia.modules.transaction.data.dto.TransactionInputDto
 import siberia.modules.transaction.data.dto.TransactionOutputDto
+import siberia.modules.transaction.data.models.TransactionModel
 import siberia.modules.user.data.dao.UserDao
 import siberia.utils.database.idValue
 
@@ -36,10 +37,9 @@ class OutcomeTransactionService(di: DI) : AbstractTransactionService(di) {
         ).toOutputDto()
     }
 
-
     fun cancelCreation(authorizedUser: AuthorizedUser, transactionId: Int): TransactionOutputDto = transaction {
         val transactionDao = TransactionDao[transactionId]
-        if (transactionDao.typeId != AppConf.requestTypes.income)
+        if (transactionDao.typeId != AppConf.requestTypes.outcome)
             throw ForbiddenException()
         val targetStockId = transactionDao.fromId ?: throw BadRequestException("Bad transaction")
 
@@ -68,5 +68,50 @@ class OutcomeTransactionService(di: DI) : AbstractTransactionService(di) {
         commit()
 
         approvedTransaction.toOutputDto()
+    }
+
+    fun updateHidden(transactionId: Int, products: List<TransactionInputDto.TransactionProductInputDto>) = transaction {
+        val transactionDao = TransactionDao[transactionId]
+        if (!transactionDao.hidden || transactionDao.typeId != AppConf.requestTypes.outcome)
+            throw ForbiddenException()
+        val targetStockId = transactionDao.fromId ?: throw BadRequestException("Bad transaction")
+        val oldList = TransactionModel.clearProductsList(transactionId)
+        StockModel.appendProducts(targetStockId, oldList.map { TransactionInputDto.TransactionProductInputDto(
+            productId = it.product.id,
+            amount = it.amount,
+            price = it.price
+        ) })
+        try {
+            StockModel.checkAvailableAmount(targetStockId, products)
+        } catch (_: Exception) {
+            throw BadRequestException("Not enough products in stock")
+        }
+        TransactionModel.addProductList(transactionId, products)
+        StockModel.removeProducts(targetStockId, products)
+    }
+
+    fun removeHidden(transactionId: Int) = transaction {
+        val transactionDao = TransactionDao[transactionId]
+        if (!transactionDao.hidden || transactionDao.typeId != AppConf.requestTypes.outcome)
+            throw ForbiddenException()
+        val targetStockId = transactionDao.fromId ?: throw BadRequestException("Bad transaction")
+        StockModel.appendProducts(targetStockId, transactionDao.inputProductsList)
+        transactionDao.delete()
+    }
+
+    fun createFromHidden(authorizedUser: AuthorizedUser, transactionId: Int) = transaction {
+        val transactionDao = TransactionDao[transactionId]
+        if (!transactionDao.hidden || transactionDao.typeId != AppConf.requestTypes.outcome)
+            throw ForbiddenException()
+        val targetStockId = transactionDao.fromId ?: throw BadRequestException("Bad transaction")
+        transactionDao.hidden = false
+        transactionDao.flush()
+
+        changeStatusTo(
+            authorizedUser,
+            transactionDao.idValue,
+            targetStockId,
+            AppConf.requestStatus.open
+        ).toOutputDto()
     }
 }

@@ -32,13 +32,12 @@ class TransactionDao(id: EntityID<Int>) : BaseIntEntity<TransactionOutputDto>(id
     val typeId: Int get() = _typeId.value
     val type by TransactionTypeDao referencedOn TransactionModel.type
 
+    var hidden by TransactionModel.hidden
+
     val products by ProductDao via TransactionToProductModel
 
     override fun toOutputDto(): TransactionOutputDto =
         TransactionOutputDto(idValue, fromId, toId, statusId, typeId)
-
-    fun toInputDto(): TransactionInputDto =
-        TransactionInputDto(fromId, toId, typeId, listOf())
 
     val inputProductsList get(): List<TransactionInputDto.TransactionProductInputDto> =
         TransactionModel.getFullProductList(idValue).map {
