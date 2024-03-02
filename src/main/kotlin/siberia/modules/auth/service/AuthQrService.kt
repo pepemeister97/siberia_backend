@@ -55,7 +55,7 @@ class AuthQrService(di: DI) : KodeinService(di) {
         }
     }
 
-    fun getMobileTokenType(authorizedUser: AuthorizedUser): String {
+    fun getMobileTokenType(authorizedUser: AuthorizedUser): String = transaction {
         var type = "none"
         if (authorizedUser.stockId != null) {
             StockDao[authorizedUser.stockId]
@@ -66,7 +66,7 @@ class AuthQrService(di: DI) : KodeinService(di) {
             type = "transaction"
         }
 
-        return type
+        type
     }
 
     fun authorizeMobileApp(authorizedUser: AuthorizedUser): MobileAccessOutputDto = transaction {

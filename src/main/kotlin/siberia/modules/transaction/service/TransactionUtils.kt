@@ -81,6 +81,22 @@ object TransactionUtils {
                     }
                 }
             }
+            AppConf.requestTypes.writeOff -> {
+                when (statusId) {
+                    AppConf.requestStatus.created -> {
+                        AppConf.rules.createWriteOffRequest
+                    }
+                    AppConf.requestStatus.creationCancelled -> {
+                        AppConf.rules.approveWriteOffRequest
+                    }
+                    AppConf.requestStatus.processed -> {
+                        AppConf.rules.approveWriteOffRequest
+                    }
+                    else -> {
+                        throw BadRequestException("Bad request status")
+                    }
+                }
+            }
             else -> {
                 throw BadRequestException("Bad request type")
             }

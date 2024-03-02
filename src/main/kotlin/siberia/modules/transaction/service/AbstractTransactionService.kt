@@ -17,6 +17,7 @@ import siberia.modules.transaction.data.models.TransactionModel
 import siberia.modules.transaction.data.models.TransactionRelatedUserModel
 import siberia.modules.user.data.dao.UserDao
 import siberia.modules.user.service.UserAccessControlService
+import siberia.plugins.Logger
 import siberia.utils.database.idValue
 import siberia.utils.kodein.KodeinService
 
@@ -25,8 +26,11 @@ abstract class AbstractTransactionService(di: DI) : KodeinService(di) {
 
     private fun checkAccessToStatusForTransaction(userDao: UserDao, transactionId: Int, targetStockId: Int, statusId: Int): Boolean {
         val transactionDao = TransactionDao[transactionId]
+        Logger.debug(TransactionUtils.availableStatuses(transactionDao), "main")
+        Logger.debug(statusId, "main")
         return if (TransactionUtils.availableStatuses(transactionDao).contains(statusId)) {
             val ruleId = TransactionUtils.mapTypeToRule(transactionDao.typeId, statusId)
+            Logger.debug(ruleId, "main")
             return userAccessControlService.checkAccessToStock(userDao.idValue, ruleId, targetStockId)
         }
         else

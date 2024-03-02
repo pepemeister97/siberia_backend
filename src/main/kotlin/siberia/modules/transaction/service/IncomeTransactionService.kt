@@ -47,7 +47,7 @@ class IncomeTransactionService(di: DI) : AbstractTransactionService(di) {
         ).toOutputDto()
     }
 
-    fun processed(authorizedUser: AuthorizedUser, transactionId: Int): TransactionOutputDto {
+    fun processed(authorizedUser: AuthorizedUser, transactionId: Int): TransactionOutputDto = transaction {
         val transactionDao = TransactionDao[transactionId]
         if (transactionDao.typeId != AppConf.requestTypes.income)
             throw ForbiddenException()
@@ -63,6 +63,7 @@ class IncomeTransactionService(di: DI) : AbstractTransactionService(di) {
                 it.amount
             )
         })
-        return approvedTransaction.toOutputDto()
+
+        approvedTransaction.toOutputDto()
     }
 }

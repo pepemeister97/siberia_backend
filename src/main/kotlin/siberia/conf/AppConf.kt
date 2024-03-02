@@ -168,6 +168,11 @@ object AppConf {
                 requestStatus.failed, requestStatus.deliveryCancelled, requestStatus.delivered
             )
         ),
+        requestTypes.writeOff to mapOf(
+            requestStatus.created to listOf(
+                requestStatus.processed, requestStatus.creationCancelled
+            ),
+        ),
     )
 
 

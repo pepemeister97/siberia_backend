@@ -26,13 +26,13 @@ class WriteOffTransactionController(override val di: DI) : KodeinController() {
 
             authenticate ("approve-write-off") {
                 route("{transactionId}") {
-                    post("approve") {
+                    patch("approve") {
                         val authorizedUser = call.getAuthorized()
                         val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")
 
                         call.respond(writeOffTransactionService.processed(authorizedUser, transactionId))
                     }
-                    post("cancel") {
+                    patch("cancel") {
                         val authorizedUser = call.getAuthorized()
                         val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")
 

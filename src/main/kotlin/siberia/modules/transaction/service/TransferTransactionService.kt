@@ -134,33 +134,49 @@ class TransferTransactionService(di: DI) : AbstractTransactionService(di) {
         // delivered - products which are accepted in partial delivering
         val notDeliveredProducts = mutableListOf<TransactionInputDto.TransactionProductInputDto>()
         val deliveredProducts = mutableListOf<TransactionInputDto.TransactionProductInputDto>()
+        var allNotDelivered = true
         transactionDao.inputProductsList.forEach {
-            if (delivered.contains(it.productId))
+            if (delivered.contains(it.productId)) {
+                allNotDelivered = false
                 deliveredProducts.add(it)
+            }
             else
                 notDeliveredProducts.add(it)
         }
 
-        // To use standard delivering method we need to remove products which are skipped
-        TransactionToProductModel.deleteWhere {
-            (product inList notDeliveredProducts.map { it.productId }) and
-            (transaction eq transactionId)
+        // All not delivered means that
+        // delivered array is empty or contains only products which are not located in stock
+        if (allNotDelivered)
+            throw BadRequestException("Bad delivered array")
+
+        if (notDeliveredProducts.isNotEmpty()) {
+
+            // To use standard delivering method we need to remove products which are skipped
+            TransactionToProductModel.deleteWhere {
+                (product inList notDeliveredProducts.map { it.productId }) and
+                        (transaction eq transactionId)
+            }
+
         }
+
         //Run standard delivered process
         val resultDto = delivered(authorizedUser, transactionId)
 
-        //We don't need rules checking here due to delivered method using
-        // (if not enough rules it will throw exception and that code become unreachable)
-        val newTransactionDao = TransactionModel.create(
-            TransactionInputDto(
-                transactionDao.fromId,
-                transactionDao.toId,
-                AppConf.requestTypes.transfer,
-                notDeliveredProducts
+        if (notDeliveredProducts.isNotEmpty()) {
+            //We don't need rules checking here due to delivered method using
+            // (if not enough rules it will throw exception and that code become unreachable)
+            val newTransactionDao = TransactionModel.create(
+                TransactionInputDto(
+                    transactionDao.fromId,
+                    transactionDao.toId,
+                    AppConf.requestTypes.transfer,
+                    notDeliveredProducts
+                )
             )
-        )
-        newTransactionDao.status = TransactionStatusDao[AppConf.requestStatus.inProgress]
-        newTransactionDao.flush()
+            newTransactionDao.status = TransactionStatusDao[AppConf.requestStatus.inProgress]
+            newTransactionDao.flush()
+
+        }
 
         resultDto
     }
