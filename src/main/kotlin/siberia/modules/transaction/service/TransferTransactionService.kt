@@ -1,5 +1,9 @@
 package siberia.modules.transaction.service
 
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import siberia.conf.AppConf
@@ -9,10 +13,12 @@ import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.stock.data.dao.StockDao
 import siberia.modules.stock.data.models.StockModel
 import siberia.modules.transaction.data.dao.TransactionDao
+import siberia.modules.transaction.data.dao.TransactionStatusDao
 import siberia.modules.transaction.data.dto.TransactionInputDto
 import siberia.modules.transaction.data.dto.TransactionOutputDto
+import siberia.modules.transaction.data.models.TransactionModel
+import siberia.modules.transaction.data.models.TransactionToProductModel
 import siberia.modules.user.data.dao.UserDao
-import siberia.plugins.Logger
 import siberia.utils.database.idValue
 
 class TransferTransactionService(di: DI) : AbstractTransactionService(di) {
@@ -120,15 +126,43 @@ class TransferTransactionService(di: DI) : AbstractTransactionService(di) {
         deliveredTransaction.toOutputDto()
     }
 
-    //TODO: Mechanism for partial delivering
-    fun partialDelivered(
-        authorizedUser: AuthorizedUser,
-        transactionId: Int,
-        productsDelivered: List<TransactionInputDto.TransactionProductInputDto>
-    ): TransactionOutputDto = transaction {
-        Logger.debug("Products partial delivered", "main")
-        Logger.debug(productsDelivered, "main")
-        delivered(authorizedUser, transactionId)
+    fun partialDelivered(authorizedUser: AuthorizedUser, transactionId: Int, delivered: List<Int>): TransactionOutputDto = transaction {
+        val transactionDao = TransactionDao[transactionId]
+
+        //Create two lists
+        // notDelivered - products which are skipped in partial delivering;
+        // delivered - products which are accepted in partial delivering
+        val notDeliveredProducts = mutableListOf<TransactionInputDto.TransactionProductInputDto>()
+        val deliveredProducts = mutableListOf<TransactionInputDto.TransactionProductInputDto>()
+        transactionDao.inputProductsList.forEach {
+            if (delivered.contains(it.productId))
+                deliveredProducts.add(it)
+            else
+                notDeliveredProducts.add(it)
+        }
+
+        // To use standard delivering method we need to remove products which are skipped
+        TransactionToProductModel.deleteWhere {
+            (product inList notDeliveredProducts.map { it.productId }) and
+            (transaction eq transactionId)
+        }
+        //Run standard delivered process
+        val resultDto = delivered(authorizedUser, transactionId)
+
+        //We don't need rules checking here due to delivered method using
+        // (if not enough rules it will throw exception and that code become unreachable)
+        val newTransactionDao = TransactionModel.create(
+            TransactionInputDto(
+                transactionDao.fromId,
+                transactionDao.toId,
+                AppConf.requestTypes.transfer,
+                notDeliveredProducts
+            )
+        )
+        newTransactionDao.status = TransactionStatusDao[AppConf.requestStatus.inProgress]
+        newTransactionDao.flush()
+
+        resultDto
     }
 
     fun notDelivered(authorizedUser: AuthorizedUser, transactionId: Int): TransactionOutputDto = transaction {

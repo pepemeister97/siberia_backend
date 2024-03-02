@@ -70,6 +70,5 @@ object TransactionModel : BaseIntIdTable() {
                 val productDao = ProductDao.wrapRow(it)
                 TransactionFullOutputDto.TransactionProductDto(productDao.toOutputDto(), it[TransactionToProductModel.amount], it[TransactionToProductModel.price])
             }
-
     }
 }

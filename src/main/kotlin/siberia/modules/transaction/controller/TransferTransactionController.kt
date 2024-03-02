@@ -48,6 +48,13 @@ class TransferTransactionController(override val di: DI) : KodeinController() {
                         else -> throw BadRequestException("Bad status provided")
                     }
                 }
+                patch ("partial") {
+                    val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")
+                    val authorizedUser = call.getAuthorized()
+                    val deliveredProductsList = call.receive<List<Int>>()
+
+                    call.respond(transferTransactionService.partialDelivered(authorizedUser, transactionId, deliveredProductsList))
+                }
                 patch("${AppConf.requestStatus.inProgress}/{stockId}") {
                     val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")
                     val stockId = call.parameters.getInt("stockId", "Stock id must be INT")
