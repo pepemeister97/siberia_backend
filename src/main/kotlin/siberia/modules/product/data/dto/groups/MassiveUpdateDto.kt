@@ -27,8 +27,7 @@ data class MassiveUpdateDto (
 ) {
     fun productUpdateDto(productId: Int): ProductUpdateDto =
         ProductUpdateDto(
-            photoName = null,
-            photoBase64 = null,
+            photo = null,
             vendorCode = null,
             eanCode = null,
             barcode = null,

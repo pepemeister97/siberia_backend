@@ -1,7 +1,9 @@
 package siberia.modules.product.data.dao
 
 import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.transactions.transaction
 import siberia.modules.brand.data.dao.BrandDao
 import siberia.modules.category.data.dao.CategoryDao
 import siberia.modules.collection.data.dao.CollectionDao
@@ -10,6 +12,7 @@ import siberia.modules.product.data.dto.*
 import siberia.modules.product.data.dto.systemevents.ProductRemoveEvent
 import siberia.modules.product.data.dto.systemevents.ProductUpdateEvent
 import siberia.modules.product.data.models.ProductModel
+import siberia.modules.product.data.models.ProductToImageModel
 import siberia.modules.stock.data.models.StockToProductModel
 import siberia.utils.database.BaseIntEntity
 import siberia.utils.database.BaseIntEntityClass
@@ -19,7 +22,6 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
 
     companion object: BaseIntEntityClass<ProductOutputDto, ProductDao>(ProductModel)
 
-    var photo by ProductModel.photo
     var vendorCode by ProductModel.vendorCode
     var eanCode by ProductModel.eanCode
     var barcode by ProductModel.barcode
@@ -53,13 +55,17 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
     var distributorPercent by ProductModel.distributorPercent
     var professionalPercent by ProductModel.professionalPercent
 
+    //TODO: Realization for getters
+    val photos: List<String> get() = listOf()
+    val photosLinks: List<Int> get() = listOf()
+
 //    Future iterations
 //    var size by ProductModel.size
 //    var volume by ProductModel.volume
 
     override fun toOutputDto(): ProductOutputDto =
         ProductOutputDto(
-            idValue, photo, vendorCode, barcode,
+            idValue, photos, vendorCode, barcode,
             brandId, name, description, lastPurchasePrice,
             cost, lastPurchaseDate, distributorPrice,
             professionalPrice, commonPrice, categoryId,
@@ -73,7 +79,7 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
             StockToProductModel.product eq this@ProductDao.id
         }.sumOf { it[StockToProductModel.amount] }
         return ProductFullOutputDto(
-            idValue, photo, vendorCode, barcode,
+            idValue, photos, vendorCode, barcode,
             brand?.toOutputDto(), name, description, lastPurchasePrice,
             cost, lastPurchaseDate, distributorPrice,
             professionalPrice, commonPrice, category?.toOutputDto(),
@@ -93,7 +99,7 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
             ))
         }.toMutableMap()
         return ProductRollbackDto(
-            idValue, photo, vendorCode, eanCode, barcode,
+            idValue, photosLinks, vendorCode, eanCode, barcode,
             brand?.toOutputDto(), name, description, lastPurchasePrice,
             cost, lastPurchaseDate, distributorPrice,
             professionalPrice, commonPrice, category?.toOutputDto(),
@@ -107,7 +113,6 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
     )
 
     fun loadUpdateDto(productUpdateDto: ProductUpdateDto) {
-        photo = productUpdateDto.photoName ?: photo
         vendorCode = productUpdateDto.vendorCode ?: vendorCode
         eanCode = productUpdateDto.eanCode ?: eanCode
         barcode = productUpdateDto.barcode ?: barcode
@@ -159,5 +164,14 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
         SystemEventModel.logResettableEvent(event)
 
         super.delete()
+    }
+
+    fun setPhotos(photoList: List<Int>) = transaction {
+        val inserted = ProductToImageModel.batchInsert(photoList) {
+            this[ProductToImageModel.photo] = it
+            this[ProductToImageModel.product] = idValue
+        }.map { it[ProductToImageModel.photo] }
+
+        inserted
     }
 }

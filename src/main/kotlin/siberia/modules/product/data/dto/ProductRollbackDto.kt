@@ -7,7 +7,7 @@ import siberia.modules.stock.data.models.StockProductsListMapped
 
 data class ProductRollbackDto (
     val id: Int,
-    val photoName: String,
+    val photo: List<Int>,
     val vendorCode: String,
     val eanCode: String,
     val barcode: String?,
@@ -31,7 +31,7 @@ data class ProductRollbackDto (
     val fileAlreadyUploaded: Boolean = true,
 ) {
     val createDto: ProductCreateDto get() = ProductCreateDto(
-        photoName, "", vendorCode, eanCode, barcode,
+        photo, vendorCode, eanCode, barcode,
         brand?.id, name, description, distributorPrice,
         professionalPrice, commonPrice, category?.id,
         collection?.id, color, amountInBox,

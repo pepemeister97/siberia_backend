@@ -4,8 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ProductUpdateDto (
-    var photoName: String? = null,
-    var photoBase64: String? = null,
+    var photo: List<Int>? = null,
     var vendorCode: String? = null,
     val eanCode: String? = null,
     var barcode: String? = null,
@@ -35,6 +34,4 @@ data class ProductUpdateDto (
     //Future iterations
     //val size: Double? = null,
     //val volume: Double? = null,
-) {
-    val fileAlreadyUploaded: Boolean get() = isFileAlreadyUploaded ?: false
-}
+)

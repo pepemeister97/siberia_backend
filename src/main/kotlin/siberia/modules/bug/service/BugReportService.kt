@@ -1,6 +1,7 @@
 package siberia.modules.bug.service
 
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.bug.data.dao.BugReportDao
@@ -11,7 +12,6 @@ import siberia.modules.bug.data.models.BugReportModel
 import siberia.modules.transaction.data.dao.TransactionStatusDao.Companion.createLikeCond
 import siberia.modules.transaction.data.dao.TransactionStatusDao.Companion.timeCond
 import siberia.modules.user.data.dao.UserDao
-import siberia.utils.database.transaction
 import siberia.utils.kodein.KodeinService
 
 class BugReportService(di: DI) : KodeinService(di) {

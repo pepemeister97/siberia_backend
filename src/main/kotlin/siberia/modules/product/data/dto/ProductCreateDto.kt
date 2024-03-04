@@ -4,8 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ProductCreateDto (
-    var photoName: String?,
-    var photoBase64: String?,
+    var photoList: List<Int>?,
     var vendorCode: String?,
     var eanCode: String?,
     var barcode: String?,
@@ -21,8 +20,6 @@ data class ProductCreateDto (
     var amountInBox: Int?,
     var expirationDate: Long?,
     var link: String?,
-    //We need it to easily rollback remove events without re-upload files
-    var fileAlreadyUploaded: Boolean? = false,
 //    Future iterations
 //    val size: Double,
 //    val volume: Double,

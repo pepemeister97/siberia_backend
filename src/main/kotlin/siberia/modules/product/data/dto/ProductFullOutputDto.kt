@@ -8,7 +8,7 @@ import siberia.modules.collection.data.dto.CollectionOutputDto
 @Serializable
 data class ProductFullOutputDto (
     val id: Int,
-    val photo: String,
+    val photo: List<String>,
     val vendorCode: String,
     val barcode: String?,
     val brand: BrandOutputDto?,

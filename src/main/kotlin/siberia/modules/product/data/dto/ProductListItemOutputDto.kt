@@ -9,6 +9,6 @@ data class ProductListItemOutputDto (
     val vendorCode: String,
     val quantity: Double = 0.0,
     val price: Double,
-    val fileName: String? = null,
+    val photo: List<String> = listOf(),
     val eanCode: String? = null
 )

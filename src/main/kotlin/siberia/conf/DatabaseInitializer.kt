@@ -421,7 +421,6 @@ object DatabaseInitializer {
         if (ProductModel.selectAll().empty() && createProducts) {
             val categoryBrandCollection = 2
             ProductModel.batchInsert(items) {
-                this[ProductModel.photo] = "$it.png"
                 this[ProductModel.vendorCode] = getTimeMillis().toString()
                 this[ProductModel.eanCode] = getTimeMillis().toString()
                 this[ProductModel.barcode] = getTimeMillis().toString()

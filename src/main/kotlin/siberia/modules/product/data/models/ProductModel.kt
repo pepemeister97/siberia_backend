@@ -14,7 +14,6 @@ import siberia.utils.database.BaseIntIdTable
 import siberia.utils.database.idValue
 
 object ProductModel: BaseIntIdTable() {
-    val photo = text("photo")
     val vendorCode = text("vendor_code")
     val barcode = text("barcode").nullable().default(null)
     val brand = reference("brand", BrandModel, ReferenceOption.SET_NULL, ReferenceOption.SET_NULL).nullable().default(null)

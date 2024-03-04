@@ -1,11 +1,11 @@
 package siberia.modules.product.service
 
-import io.ktor.server.plugins.*
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNotNull
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
+import org.kodein.di.instance
 import siberia.conf.AppConf
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.brand.data.dao.BrandDao
@@ -28,15 +28,14 @@ import siberia.modules.stock.data.models.StockToProductModel
 import siberia.modules.transaction.data.dto.TransactionFullOutputDto
 import siberia.modules.user.data.dao.UserDao
 import siberia.plugins.Logger
-import siberia.utils.files.FilesUtil
 import siberia.utils.kodein.KodeinService
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
 class ProductService(di: DI) : KodeinService(di) {
-    private fun createDao(productCreateDto: ProductCreateDto, photoName: String? = null) = transaction {
-        ProductDao.new {
-            photo = photoName ?: ""
+    private val galleryService: MockImageService by instance()
+    private fun createDao(productCreateDto: ProductCreateDto): ProductDao = transaction {
+        val product = ProductDao.new {
             vendorCode = productCreateDto.vendorCode!!
             eanCode = productCreateDto.eanCode!!
             barcode = productCreateDto.barcode
@@ -57,22 +56,20 @@ class ProductService(di: DI) : KodeinService(di) {
 //            size = productCreateDto.size
 //            volume = productCreateDto.volume
         }
+        product.setPhotos(productCreateDto.photoList ?: listOf())
+
+        product
     }
     fun create(authorizedUser: AuthorizedUser, productCreateDto: ProductCreateDto): ProductFullOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
         val event = ProductCreateEvent(userDao.login, productCreateDto.name!!, productCreateDto.vendorCode!!)
 
-        val photoName
-        = if (!productCreateDto.fileAlreadyUploaded!! && !productCreateDto.photoName.isNullOrBlank())
-            FilesUtil.buildName(productCreateDto.photoName!!)
-        else if (productCreateDto.fileAlreadyUploaded!!) productCreateDto.photoName
-        else ""
+        productCreateDto.photoList = galleryService.filterExists( productCreateDto.photoList ?: listOf())
 
-        val productDao = createDao(productCreateDto, photoName)
+        val productDao = createDao(productCreateDto)
 
         SystemEventModel.logEvent(event)
-        if (photoName != "" && !productCreateDto.fileAlreadyUploaded!!)
-            FilesUtil.upload(productCreateDto.photoBase64!!, photoName!!)
+
         commit()
 
         productDao.fullOutput()
@@ -99,27 +96,8 @@ class ProductService(di: DI) : KodeinService(di) {
     fun update(authorizedUser: AuthorizedUser, productId: Int, productUpdateDto: ProductUpdateDto): ProductFullOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
         val productDao = ProductDao[productId]
-        val photoName =
-            if (productUpdateDto.photoName != null &&
-                productUpdateDto.photoName != "" &&
-                productUpdateDto.fileAlreadyUploaded
-            )
-                FilesUtil.buildName(productUpdateDto.photoName!!)
-            else if (
-                productUpdateDto.photoName != null &&
-                productUpdateDto.fileAlreadyUploaded
-            )
-                productUpdateDto.photoName!!
-            else ""
 
-        productUpdateDto.photoName = photoName
         productDao.loadAndFlush(userDao.login, productUpdateDto)
-
-        if (photoName != "" && productUpdateDto.photoBase64 != null && !productUpdateDto.fileAlreadyUploaded)
-            FilesUtil.upload(productUpdateDto.photoBase64!!, photoName)
-        else if (photoName != "")
-            throw BadRequestException("Photo base 64 must be provided")
-
 
         commit()
 
@@ -214,7 +192,7 @@ class ProductService(di: DI) : KodeinService(di) {
         } else{
             listOf(ProductModel.id to SortOrder.ASC)
         }
-
+        //TODO: Join Gallery model for products photos
         ProductModel
             .join(
                 StockToProductModel,
@@ -231,7 +209,6 @@ class ProductService(di: DI) : KodeinService(di) {
                 ProductModel.commonPrice,
                 StockToProductModel.amount,
                 ProductModel.eanCode,
-                ProductModel.photo
             )
             .select {
                 convertToOperator(searchFilterDto)
@@ -250,7 +227,7 @@ class ProductService(di: DI) : KodeinService(di) {
                     vendorCode = it[ProductModel.vendorCode],
                     quantity = amount,
                     price = it[ProductModel.commonPrice],
-                    fileName = it[ProductModel.photo],
+                    photo = listOf(),
                     eanCode = it[ProductModel.eanCode]
                 )
             }
