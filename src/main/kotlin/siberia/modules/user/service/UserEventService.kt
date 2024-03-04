@@ -52,4 +52,8 @@ class UserEventService(di: DI) : KodeinEventService(di) {
         }
     }
 
+    override fun rollbackCreate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {
+        TODO("Not yet implemented")
+    }
+
 }

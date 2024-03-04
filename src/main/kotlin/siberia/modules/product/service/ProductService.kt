@@ -1,6 +1,7 @@
 package siberia.modules.product.service
 
 import io.ktor.server.plugins.*
+import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNotNull
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -15,6 +16,7 @@ import siberia.modules.logger.data.models.SystemEventModel
 import siberia.modules.product.data.dao.ProductDao
 import siberia.modules.product.data.dto.*
 import siberia.modules.product.data.dto.systemevents.ProductCreateEvent
+import siberia.modules.product.data.dto.systemevents.ProductMassiveCreateEvent
 import siberia.modules.product.data.models.ProductModel
 import siberia.modules.rbac.data.dao.RoleDao.Companion.createNullableRangeCond
 import siberia.modules.rbac.data.dao.RuleCategoryDao.Companion.createNullableListCond
@@ -32,18 +34,9 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 
 class ProductService(di: DI) : KodeinService(di) {
-    fun create(authorizedUser: AuthorizedUser, productCreateDto: ProductCreateDto): ProductFullOutputDto = transaction {
-        val userDao = UserDao[authorizedUser.id]
-        val event = ProductCreateEvent(userDao.login, productCreateDto.name!!, productCreateDto.vendorCode!!)
-
-        val photoName
-        = if (!productCreateDto.fileAlreadyUploaded!! && !productCreateDto.photoName.isNullOrBlank())
-            FilesUtil.buildName(productCreateDto.photoName!!)
-        else if (productCreateDto.fileAlreadyUploaded!!) productCreateDto.photoName
-        else ""
-
-        val productDao = ProductDao.new {
-            photo = photoName!!
+    private fun createDao(productCreateDto: ProductCreateDto, photoName: String? = null) = transaction {
+        ProductDao.new {
+            photo = photoName ?: ""
             vendorCode = productCreateDto.vendorCode!!
             eanCode = productCreateDto.eanCode!!
             barcode = productCreateDto.barcode
@@ -64,6 +57,18 @@ class ProductService(di: DI) : KodeinService(di) {
 //            size = productCreateDto.size
 //            volume = productCreateDto.volume
         }
+    }
+    fun create(authorizedUser: AuthorizedUser, productCreateDto: ProductCreateDto): ProductFullOutputDto = transaction {
+        val userDao = UserDao[authorizedUser.id]
+        val event = ProductCreateEvent(userDao.login, productCreateDto.name!!, productCreateDto.vendorCode!!)
+
+        val photoName
+        = if (!productCreateDto.fileAlreadyUploaded!! && !productCreateDto.photoName.isNullOrBlank())
+            FilesUtil.buildName(productCreateDto.photoName!!)
+        else if (productCreateDto.fileAlreadyUploaded!!) productCreateDto.photoName
+        else ""
+
+        val productDao = createDao(productCreateDto, photoName)
 
         SystemEventModel.logEvent(event)
         if (photoName != "" && !productCreateDto.fileAlreadyUploaded!!)
@@ -73,21 +78,22 @@ class ProductService(di: DI) : KodeinService(di) {
         productDao.fullOutput()
     }
 
+    private val json = Json { ignoreUnknownKeys = true }
+
     fun bulkInsert(authorizedUser: AuthorizedUser, list : List<ProductCreateDto>) : List<ProductListItemOutputDto> = transaction {
-        val returnList = mutableListOf<ProductListItemOutputDto>()
-        list.forEach {
-            val product = create(authorizedUser, it)
-            returnList.add(
-                ProductListItemOutputDto(
-                    product.id,
-                    product.name,
-                    product.vendorCode,
-                    0.0,
-                    product.commonPrice
-                )
-            )
+        val userDao = UserDao[authorizedUser.id]
+        val insertedProducts = list.map {
+            createDao(it).listItemDto
         }
-        returnList
+
+        val rollbackInstance = json.encodeToString(
+            ProductMassiveInsertRollbackDto.serializer(),
+            ProductMassiveInsertRollbackDto(insertedProducts)
+        )
+        val event = ProductMassiveCreateEvent(userDao.login, rollbackInstance)
+        SystemEventModel.logResettableEvent(event)
+
+        insertedProducts
     }
 
     fun update(authorizedUser: AuthorizedUser, productId: Int, productUpdateDto: ProductUpdateDto): ProductFullOutputDto = transaction {

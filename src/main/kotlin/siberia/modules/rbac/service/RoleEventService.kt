@@ -24,4 +24,8 @@ class RoleEventService(di: DI) : KodeinEventService(di) {
             userAccessControlService.addRoles(authorizedUser, it.first, listOf(createEventData.objectId))
         }
     }
+
+    override fun rollbackCreate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {
+        TODO("Not yet implemented")
+    }
 }

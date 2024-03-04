@@ -32,4 +32,8 @@ class CategoryEventService(di: DI) : KodeinEventService(di) {
             createRecursive(authorizedUser, createEventDto.objectDto.children, categoryDto.parent)
         }
     }
+
+    override fun rollbackCreate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {
+        TODO("Not yet implemented")
+    }
 }

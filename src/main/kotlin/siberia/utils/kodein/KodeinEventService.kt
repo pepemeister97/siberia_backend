@@ -12,7 +12,7 @@ import siberia.modules.logger.data.models.SystemEventModel
 abstract class KodeinEventService(di: DI) : KodeinService(di) {
     protected abstract fun rollbackUpdate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto)
     protected abstract fun rollbackRemove(authorizedUser: AuthorizedUser, event: SystemEventOutputDto)
-
+    protected abstract fun rollbackCreate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto)
 
     fun rollback(authorizedUser: AuthorizedUser, eventId: Int) {
         val events = SystemEventModel.getWithRelated(eventId)
@@ -22,6 +22,7 @@ abstract class KodeinEventService(di: DI) : KodeinService(di) {
             when (event.eventTypeId) {
                 AppConf.eventTypes.updateEvent -> rollbackUpdate(authorizedUser, event)
                 AppConf.eventTypes.removeEvent -> rollbackRemove(authorizedUser, event)
+                AppConf.eventTypes.createEvent -> rollbackCreate(authorizedUser, event)
             }
             event.id
         }

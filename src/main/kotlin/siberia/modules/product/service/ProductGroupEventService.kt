@@ -28,4 +28,7 @@ class ProductGroupEventService(di: DI) : KodeinEventService(di) {
         val rollbackEventData = event.getRollbackData<ProductGroupCreateDto>()
         productGroupService.create(rollbackEventData.objectDto)
     } }
+
+    override fun rollbackCreate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {
+    }
 }

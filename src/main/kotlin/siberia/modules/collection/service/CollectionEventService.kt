@@ -19,4 +19,8 @@ class CollectionEventService(di: DI) : KodeinEventService(di) {
         val createEventData = event.getRollbackData<CollectionInputDto>()
         collectionService.create(authorizedUser, createEventData.objectDto)
     }
+
+    override fun rollbackCreate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {
+        TODO("Not yet implemented")
+    }
 }

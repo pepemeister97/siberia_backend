@@ -19,4 +19,8 @@ class BrandEventService(di: DI) : KodeinEventService(di) {
         val createEventData = event.getRollbackData<BrandInputDto>()
         brandService.create(authorizedUser, createEventData.objectDto)
     }
+
+    override fun rollbackCreate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {
+        TODO("Not yet implemented")
+    }
 }

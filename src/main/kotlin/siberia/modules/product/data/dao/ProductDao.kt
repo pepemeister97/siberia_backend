@@ -103,7 +103,7 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
     }
 
     val listItemDto: ProductListItemOutputDto get() = ProductListItemOutputDto(
-        id = idValue, name = name, vendorCode = vendorCode, price = distributorPrice
+        id = idValue, name = name, vendorCode = vendorCode, price = commonPrice
     )
 
     fun loadUpdateDto(productUpdateDto: ProductUpdateDto) {
