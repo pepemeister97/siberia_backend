@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 data class ImageOutputDto(
     val id : Int,
     val name : String,
-    val photo : String,
-    val authorId : Int,
+    val url : String,
+    val author : String?,
     val description : String?,
 )

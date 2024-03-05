@@ -2,6 +2,7 @@ package siberia.modules.image.service
 
 
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import siberia.modules.auth.data.dto.AuthorizedUser
@@ -15,6 +16,7 @@ import siberia.modules.product.data.dto.ProductRemoveResultDto
 import siberia.modules.transaction.data.dao.TransactionStatusDao.Companion.createLikeCond
 import siberia.modules.transaction.data.dao.TransactionStatusDao.Companion.timeCond
 import siberia.modules.user.data.dao.UserDao
+import siberia.modules.user.data.models.UserModel
 import siberia.utils.files.FilesUtil
 import siberia.utils.kodein.KodeinService
 
@@ -28,7 +30,7 @@ class ImageService(di: DI) : KodeinService(di) {
                 GalleryDao.new {
                     photo = photoName
                     name = it.name
-                    authorId = userDao.id.value
+                    author = userDao
                     description = it.description
                 }.toOutputDto()
             )
@@ -57,20 +59,27 @@ class ImageService(di: DI) : KodeinService(di) {
             imageId,
             image.name,
             image.photo,
-            image.authorId,
+            image.author?.login,
             image.description
         )
     }
     fun getAll(filter: ImageSearchFilterDto?) : List<ImageOutputDto> = transaction {
-        if (filter == null) {
-            GalleryDao.all()
-        } else {
-            GalleryDao.find {
-                createLikeCond(filter.name, GalleryModel.id neq 0, GalleryModel.name) and
-                        timeCond(Pair(filter.rangeStart, filter.rangeEnd), BugReportModel.createdAt)
+        GalleryModel
+            .leftJoin(UserModel)
+            .select {
+                createLikeCond(filter?.name, GalleryModel.id neq 0, GalleryModel.name) and
+                timeCond(Pair(filter?.rangeStart, filter?.rangeEnd), BugReportModel.createdAt)
             }
-        }
-    }.map { it.toOutputDto() }
+            .map {
+                ImageOutputDto(
+                   id = it[GalleryModel.id].value,
+                   name = it[GalleryModel.name],
+                   url = it[GalleryModel.url],
+                   author = it[UserModel.login],
+                   description = null
+               )
+            }
+    }
     fun filterExists(images : List<Int>) : List<Int> = transaction{
         val galleryDao = GalleryDao
         val returnList = mutableListOf<Int>()
