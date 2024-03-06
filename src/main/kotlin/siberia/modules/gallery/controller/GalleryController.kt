@@ -16,13 +16,13 @@ class GalleryController(override val di: DI) : KodeinController() {
     private val galleryService : GalleryService by instance()
     override fun Routing.registerRoutes() {
         authenticate("default") {
-            route("images"){
+            route("gallery"){
             post {
                 val images = call.receive<List<ImageCreateDto>>()
                 val authorizedUser = call.getAuthorized()
                 call.respond(galleryService.create(authorizedUser, images))
             }
-            post("filter"){
+            post("all"){
                 val filter = call.receive<ImageSearchFilterDto>()
                 call.respond(galleryService.getAll(filter))
             }
