@@ -29,8 +29,8 @@ import siberia.modules.collection.data.models.CollectionModel
 import siberia.modules.collection.service.CollectionEventService
 import siberia.modules.collection.service.CollectionService
 import siberia.modules.files.FilesController
-import siberia.modules.image.controller.ImageController
-import siberia.modules.image.service.ImageService
+import siberia.modules.gallery.controller.GalleryController
+import siberia.modules.gallery.service.GalleryService
 import siberia.modules.logger.controller.SystemEventController
 import siberia.modules.logger.data.models.SystemEventModel
 import siberia.modules.logger.data.models.SystemEventObjectTypeModel
@@ -109,7 +109,7 @@ fun Application.module() {
         bindSingleton { ProductGroupService(it) }
         bindSingleton { ProductGroupEventService(it) }
         bindSingleton { BugReportService(it) }
-        bindSingleton { ImageService(it) }
+        bindSingleton { GalleryService(it) }
 
 
         bindSingleton { AuthController(it) }
@@ -129,7 +129,7 @@ fun Application.module() {
         bindSingleton { FilesController(it) }
         bindSingleton { ProductGroupController(it) }
         bindSingleton { BugReportController(it) }
-        bindSingleton { ImageController(it) }
+        bindSingleton { GalleryController(it) }
     }
 
     DatabaseConnector(

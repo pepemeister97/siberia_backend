@@ -1,4 +1,4 @@
-package siberia.modules.image.service
+package siberia.modules.gallery.service
 
 
 import org.jetbrains.exposed.sql.and
@@ -7,11 +7,11 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.bug.data.models.BugReportModel
-import siberia.modules.image.data.dao.GalleryDao
-import siberia.modules.image.data.dto.ImageCreateDto
-import siberia.modules.image.data.dto.ImageOutputDto
-import siberia.modules.image.data.dto.ImageSearchFilterDto
-import siberia.modules.image.data.models.GalleryModel
+import siberia.modules.gallery.data.dao.GalleryDao
+import siberia.modules.gallery.data.dto.ImageCreateDto
+import siberia.modules.gallery.data.dto.ImageOutputDto
+import siberia.modules.gallery.data.dto.ImageSearchFilterDto
+import siberia.modules.gallery.data.models.GalleryModel
 import siberia.modules.product.data.dto.ProductRemoveResultDto
 import siberia.modules.transaction.data.dao.TransactionStatusDao.Companion.createLikeCond
 import siberia.modules.transaction.data.dao.TransactionStatusDao.Companion.timeCond
@@ -20,7 +20,7 @@ import siberia.modules.user.data.models.UserModel
 import siberia.utils.files.FilesUtil
 import siberia.utils.kodein.KodeinService
 
-class ImageService(di: DI) : KodeinService(di) {
+class GalleryService(di: DI) : KodeinService(di) {
     fun create(authorizedUser: AuthorizedUser, images : List<ImageCreateDto>) = transaction{
         val userDao = UserDao[authorizedUser.id]
         val returnList = mutableListOf<ImageOutputDto>()
@@ -28,7 +28,7 @@ class ImageService(di: DI) : KodeinService(di) {
             val photoName = FilesUtil.buildName(it.photoName)
             returnList.add(
                 GalleryDao.new {
-                    photo = photoName
+                    url = photoName
                     name = it.name
                     author = userDao
                     description = it.description
@@ -58,7 +58,7 @@ class ImageService(di: DI) : KodeinService(di) {
         ImageOutputDto(
             imageId,
             image.name,
-            image.photo,
+            image.url,
             image.author?.login,
             image.description
         )

@@ -120,14 +120,17 @@ class TransactionService(di: DI) : KodeinService(di) {
     fun getTransactionOnAssembly(authorizedUser: AuthorizedUser): List<TransactionListItemOutputDto> = transaction {
         val availableStocksWithRules = userAccessControlService.getAvailableStocksByOperations(authorizedUser.id)
         val availableStocks = availableStocksWithRules.map { it.key }
-        TransactionModel.select {
-            (TransactionModel.from inList availableStocks) and
-            (TransactionModel.status eq requestStatus.open) and
-            (TransactionModel.type eq AppConf.requestTypes.outcome) and
-            (TransactionModel.hidden eq false)
-        }.sortedBy { TransactionModel.updatedAt }.map {
-            TransactionDao.wrapRow(it).listItemOutputDto
-        }
+        TransactionModel
+            .select {
+                (TransactionModel.from inList availableStocks) and
+                (TransactionModel.status eq requestStatus.open) and
+                (TransactionModel.type eq AppConf.requestTypes.outcome) and
+                (TransactionModel.hidden eq false)
+            }
+            .sortedBy { TransactionModel.updatedAt }
+            .map {
+                TransactionDao.wrapRow(it).listItemOutputDto
+            }
     }
 
     fun getProductsFromTransactions(authorizedUser: AuthorizedUser, transactionsList: List<Int>): List<TransactionFullOutputDto.TransactionProductDto> = transaction {

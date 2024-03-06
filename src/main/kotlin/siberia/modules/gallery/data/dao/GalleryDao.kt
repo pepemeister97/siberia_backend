@@ -1,8 +1,8 @@
-package siberia.modules.image.data.dao
+package siberia.modules.gallery.data.dao
 
 import org.jetbrains.exposed.dao.id.EntityID
-import siberia.modules.image.data.dto.ImageOutputDto
-import siberia.modules.image.data.models.GalleryModel
+import siberia.modules.gallery.data.dto.ImageOutputDto
+import siberia.modules.gallery.data.models.GalleryModel
 import siberia.modules.user.data.dao.UserDao
 
 import siberia.utils.database.BaseIntEntity
@@ -13,7 +13,7 @@ class GalleryDao(id: EntityID<Int>): BaseIntEntity<ImageOutputDto>(id, GalleryMo
 
     companion object: BaseIntEntityClass<ImageOutputDto, GalleryDao>(GalleryModel)
 
-    var photo by GalleryModel.url
+    var url by GalleryModel.url
     var name by GalleryModel.name
     var description by GalleryModel.description
 
@@ -22,7 +22,7 @@ class GalleryDao(id: EntityID<Int>): BaseIntEntity<ImageOutputDto>(id, GalleryMo
         ImageOutputDto(
             idValue,
             name,
-            photo,
+            url,
             author?.login,
             description
         )

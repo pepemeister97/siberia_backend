@@ -2,7 +2,6 @@ package siberia.modules.product.service
 
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNotNull
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import org.kodein.di.instance
@@ -12,12 +11,15 @@ import siberia.modules.brand.data.dao.BrandDao
 import siberia.modules.brand.data.dao.BrandDao.Companion.createRangeCond
 import siberia.modules.category.data.dao.CategoryDao
 import siberia.modules.collection.data.dao.CollectionDao
+import siberia.modules.gallery.data.models.GalleryModel
+import siberia.modules.gallery.service.GalleryService
 import siberia.modules.logger.data.models.SystemEventModel
 import siberia.modules.product.data.dao.ProductDao
 import siberia.modules.product.data.dto.*
 import siberia.modules.product.data.dto.systemevents.ProductCreateEvent
 import siberia.modules.product.data.dto.systemevents.ProductMassiveCreateEvent
 import siberia.modules.product.data.models.ProductModel
+import siberia.modules.product.data.models.ProductToImageModel
 import siberia.modules.rbac.data.dao.RoleDao.Companion.createNullableRangeCond
 import siberia.modules.rbac.data.dao.RuleCategoryDao.Companion.createNullableListCond
 import siberia.modules.stock.data.dao.StockDao
@@ -27,13 +29,12 @@ import siberia.modules.stock.data.models.StockModel
 import siberia.modules.stock.data.models.StockToProductModel
 import siberia.modules.transaction.data.dto.TransactionFullOutputDto
 import siberia.modules.user.data.dao.UserDao
-import siberia.plugins.Logger
 import siberia.utils.kodein.KodeinService
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
 class ProductService(di: DI) : KodeinService(di) {
-    private val galleryService: MockImageService by instance()
+    private val galleryService: GalleryService by instance()
     private fun createDao(productCreateDto: ProductCreateDto): ProductDao = transaction {
         val product = ProductDao.new {
             vendorCode = productCreateDto.vendorCode!!
@@ -139,22 +140,8 @@ class ProductService(di: DI) : KodeinService(di) {
 //            createRangeCond(searchFilterDto.volume, (ProductModel.id neq 0), ProductModel.volume, -1.0, Double.MAX_VALUE) and
     }
 
-    private fun getByFilter(productSearchDto: ProductSearchDto, additionalFilters: Op<Boolean>): SizedIterable<ProductDao> = transaction {
-        val paginationOutputDto = productSearchDto.pagination
-
-        ProductDao.find {
-            convertToOperator(productSearchDto) and
-            additionalFilters
-        }.let {
-            if (paginationOutputDto == null)
-                it
-            else
-                it.limit(paginationOutputDto.n, paginationOutputDto.offset)
-        }
-    }
-
     fun getByFilter(productSearchDto: ProductSearchDto): List<ProductListItemOutputDto> = transaction {
-        getByFilter(productSearchDto, ProductModel.id.isNotNull()).map { it.listItemDto }
+        getAvailableByFilter(searchFilterDto = productSearchDto)
     }
 
     fun getOne(productId: Int): ProductFullOutputDto = transaction {
@@ -183,53 +170,89 @@ class ProductService(di: DI) : KodeinService(di) {
     }
 
     fun getAvailableByFilter(
-        authorizedUser: AuthorizedUser,
+        authorizedUser: AuthorizedUser? = null,
         searchFilterDto: ProductSearchDto
     ): List<ProductListItemOutputDto> = transaction {
 
-        val ordering = if (searchFilterDto.filters?.availability != null && searchFilterDto.filters.availability){
+        val ordering = if (authorizedUser != null && searchFilterDto.filters?.availability != null && searchFilterDto.filters.availability){
             listOf(StockToProductModel.amount to SortOrder.DESC_NULLS_LAST, ProductModel.id to SortOrder.ASC)
         } else{
             listOf(ProductModel.id to SortOrder.ASC)
         }
-        //TODO: Join Gallery model for products photos
-        ProductModel
-            .join(
-                StockToProductModel,
-                JoinType.LEFT,
-                additionalConstraint = {
-                    (StockToProductModel.product eq ProductModel.id) and
-                    (StockToProductModel.stock eq authorizedUser.stockId)
-                }
-            )
+
+        val slice = mutableListOf(
+            ProductModel.id,
+            ProductModel.name,
+            ProductModel.vendorCode,
+            ProductModel.commonPrice,
+            ProductModel.eanCode,
+            GalleryModel.url
+        )
+        if (authorizedUser != null)
+            slice.add(StockToProductModel.amount)
+
+        val resultMap: MutableMap<Int, ProductListItemOutputDto> = mutableMapOf()
+            with(
+                ProductModel
+                .join(
+                    ProductToImageModel,
+                    JoinType.LEFT,
+                    additionalConstraint = {
+                        ProductModel.id eq ProductToImageModel.product
+                    }
+                )
+                .join(
+                    GalleryModel,
+                    JoinType.LEFT,
+                    additionalConstraint = {
+                        ProductToImageModel.photo eq GalleryModel.id
+                    }
+                )
+            ) {
+                if (authorizedUser != null)
+                    join(
+                        StockToProductModel,
+                        JoinType.LEFT,
+                        additionalConstraint = {
+                            (StockToProductModel.product eq ProductModel.id) and
+                            (StockToProductModel.stock eq authorizedUser.stockId)
+                        }
+                    )
+                else
+                    this
+            }
             .slice(
-                ProductModel.id,
-                ProductModel.name,
-                ProductModel.vendorCode,
-                ProductModel.commonPrice,
-                StockToProductModel.amount,
-                ProductModel.eanCode,
+                slice
             )
             .select {
                 convertToOperator(searchFilterDto)
             }
             .orderBy(*ordering.toTypedArray())
-            .map {
-                //If join returns nothing (no such product in stock) amount = 0
-                val amount = try { it[StockToProductModel.amount].toDouble() } catch (_: Exception) { 0.0 }
-                if (it[ProductModel.id].value < 4) {
-                    Logger.debug(it[ProductModel.id].value, "main")
-                    Logger.debug(amount, "main")
+            .forEach {
+                if (resultMap.containsKey(it[ProductModel.id].value)) {
+                    resultMap[it[ProductModel.id].value]!!.photo.add(it[GalleryModel.url])
+                } else {
+                    //If join returns nothing (no such product in stock) amount = 0
+                    val amount = try { it[StockToProductModel.amount].toDouble() } catch (_: Exception) { 0.0 }
+
+                    val photoList = with(it[GalleryModel.url]) {
+                        if (this == null)
+                            mutableListOf()
+                        else
+                            mutableListOf(it[GalleryModel.url])
+                    }
+
+                    resultMap[it[ProductModel.id].value] = ProductListItemOutputDto(
+                        id = it[ProductModel.id].value,
+                        name = it[ProductModel.name],
+                        vendorCode = it[ProductModel.vendorCode],
+                        quantity = amount,
+                        price = it[ProductModel.commonPrice],
+                        photo = photoList,
+                        eanCode = it[ProductModel.eanCode]
+                    )
                 }
-                ProductListItemOutputDto(
-                    id = it[ProductModel.id].value,
-                    name = it[ProductModel.name],
-                    vendorCode = it[ProductModel.vendorCode],
-                    quantity = amount,
-                    price = it[ProductModel.commonPrice],
-                    photo = listOf(),
-                    eanCode = it[ProductModel.eanCode]
-                )
             }
+        resultMap.values.toList()
     }
 }

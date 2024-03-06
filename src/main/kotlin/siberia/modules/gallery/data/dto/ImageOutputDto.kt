@@ -1,4 +1,4 @@
-package siberia.modules.image.data.dto
+package siberia.modules.gallery.data.dto
 
 import kotlinx.serialization.Serializable
 

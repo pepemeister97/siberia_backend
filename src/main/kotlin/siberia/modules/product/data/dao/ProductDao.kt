@@ -7,6 +7,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import siberia.modules.brand.data.dao.BrandDao
 import siberia.modules.category.data.dao.CategoryDao
 import siberia.modules.collection.data.dao.CollectionDao
+import siberia.modules.gallery.data.dao.GalleryDao
 import siberia.modules.logger.data.models.SystemEventModel
 import siberia.modules.product.data.dto.*
 import siberia.modules.product.data.dto.systemevents.ProductRemoveEvent
@@ -55,9 +56,10 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
     var distributorPercent by ProductModel.distributorPercent
     var professionalPercent by ProductModel.professionalPercent
 
-    //TODO: Realization for getters
-    val photos: List<String> get() = listOf()
-    val photosLinks: List<Int> get() = listOf()
+    val photos by GalleryDao via ProductToImageModel
+
+    val photosUrls: List<String> get() = photos.map { it.url }
+    val photosLinks: List<Int> get() = photos.map { it.idValue }
 
 //    Future iterations
 //    var size by ProductModel.size
@@ -65,7 +67,7 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
 
     override fun toOutputDto(): ProductOutputDto =
         ProductOutputDto(
-            idValue, photos, vendorCode, barcode,
+            idValue, photosUrls, vendorCode, barcode,
             brandId, name, description, lastPurchasePrice,
             cost, lastPurchaseDate, distributorPrice,
             professionalPrice, commonPrice, categoryId,
@@ -79,7 +81,7 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
             StockToProductModel.product eq this@ProductDao.id
         }.sumOf { it[StockToProductModel.amount] }
         return ProductFullOutputDto(
-            idValue, photos, vendorCode, barcode,
+            idValue, photosUrls, vendorCode, barcode,
             brand?.toOutputDto(), name, description, lastPurchasePrice,
             cost, lastPurchaseDate, distributorPrice,
             professionalPrice, commonPrice, category?.toOutputDto(),

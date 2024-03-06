@@ -1,4 +1,4 @@
-package siberia.modules.image.data.models
+package siberia.modules.gallery.data.models
 
 import org.jetbrains.exposed.sql.ReferenceOption
 import siberia.modules.user.data.models.UserModel
