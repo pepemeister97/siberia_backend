@@ -31,6 +31,7 @@ import siberia.modules.collection.service.CollectionService
 import siberia.modules.files.FilesController
 import siberia.modules.gallery.controller.GalleryController
 import siberia.modules.gallery.service.GalleryService
+import siberia.modules.gallery.data.models.GalleryModel
 import siberia.modules.logger.controller.SystemEventController
 import siberia.modules.logger.data.models.SystemEventModel
 import siberia.modules.logger.data.models.SystemEventObjectTypeModel
@@ -141,7 +142,7 @@ fun Application.module() {
         ProductModel, ProductToImageModel,
         SystemEventModel, SystemEventTypeModel, SystemEventObjectTypeModel,
         TransactionModel, TransactionToProductModel, TransactionRelatedUserModel, TransactionStatusModel, TransactionTypeModel,
-        BugReportModel
+        BugReportModel, GalleryModel
     ) {
         DatabaseInitializer.initRules()
         DatabaseInitializer.initEventTypes()

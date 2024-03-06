@@ -6,7 +6,6 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import siberia.modules.auth.data.dto.AuthorizedUser
-import siberia.modules.bug.data.models.BugReportModel
 import siberia.modules.gallery.data.dao.GalleryDao
 import siberia.modules.gallery.data.dto.ImageCreateDto
 import siberia.modules.gallery.data.dto.ImageOutputDto
@@ -68,7 +67,7 @@ class GalleryService(di: DI) : KodeinService(di) {
             .leftJoin(UserModel)
             .select {
                 createLikeCond(filter?.name, GalleryModel.id neq 0, GalleryModel.name) and
-                timeCond(Pair(filter?.rangeStart, filter?.rangeEnd), BugReportModel.createdAt)
+                timeCond(Pair(filter?.rangeStart, filter?.rangeEnd), GalleryModel.createdAt)
             }
             .map {
                 ImageOutputDto(
