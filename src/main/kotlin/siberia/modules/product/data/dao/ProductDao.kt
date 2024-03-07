@@ -1,7 +1,9 @@
 package siberia.modules.product.data.dao
 
 import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.batchInsert
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import siberia.modules.brand.data.dao.BrandDao
@@ -91,15 +93,16 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
         )
     }
 
-    fun rollbackOutput(): ProductRollbackDto {
-        val stocksRelations = StockToProductModel.select {
+    fun rollbackOutput(withStocks: Boolean = true): ProductRollbackDto {
+        val stocksRelations = if (withStocks) StockToProductModel.select {
             StockToProductModel.product eq this@ProductDao.id
         }.associate {
             Pair(it[StockToProductModel.stock].value, mutableMapOf(
                 it[StockToProductModel.product].value
                         to Pair(it[StockToProductModel.amount], it[StockToProductModel.price])
             ))
-        }.toMutableMap()
+        }.toMutableMap() else mutableMapOf()
+
         return ProductRollbackDto(
             idValue, photosLinks, vendorCode, eanCode, barcode,
             brand?.toOutputDto(), name, description, lastPurchasePrice,
@@ -148,10 +151,16 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
             name,
             vendorCode,
             idValue,
-            createEncodedRollbackUpdateDto<ProductOutputDto, ProductUpdateDto>(productUpdateDto)
+            createEncodedRollbackUpdateDto<ProductRollbackDto, ProductUpdateDto>(productUpdateDto, rollbackOutput(false))
         )
         SystemEventModel.logResettableEvent(event)
         loadUpdateDto(productUpdateDto)
+
+        if (productUpdateDto.photo != null) {
+            ProductToImageModel.deleteWhere { product eq idValue }
+            setPhotos(productUpdateDto.photo!!)
+        }
+
         flush()
     }
 

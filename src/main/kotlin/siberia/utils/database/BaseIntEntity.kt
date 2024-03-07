@@ -27,7 +27,7 @@ abstract class BaseIntEntity<OutputDto : SerializableAny>(id: EntityID<Int>, tab
         }
     }
 
-    inline fun <reified Output : OutputDto, reified Update : SerializableAny> initRollbackInstance(onUpdate: Update, output: OutputDto = toOutputDto()): Update {
+    inline fun <reified Output : SerializableAny, reified Update : SerializableAny> initRollbackInstance(onUpdate: Update, output: SerializableAny = toOutputDto()): Update {
         val updateDtoKlass = Update::class
         val outputDtoKlass = Output::class
         val rollbackInstance = createRollbackInstanceTemplate(updateDtoKlass)
@@ -49,7 +49,7 @@ abstract class BaseIntEntity<OutputDto : SerializableAny>(id: EntityID<Int>, tab
 
 
     @OptIn(InternalSerializationApi::class)
-    inline fun <reified Output : OutputDto, reified Update : SerializableAny> createEncodedRollbackUpdateDto(onUpdate: Update, output: OutputDto = toOutputDto()): String {
+    inline fun <reified Output : SerializableAny, reified Update : SerializableAny> createEncodedRollbackUpdateDto(onUpdate: Update, output: SerializableAny = toOutputDto()): String {
         val updateDtoKlass = Update::class
         val rollbackDto = initRollbackInstance<Output, Update>(onUpdate, output)
 
