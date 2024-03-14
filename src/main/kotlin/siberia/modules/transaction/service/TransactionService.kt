@@ -168,9 +168,18 @@ class TransactionService(di: DI) : KodeinService(di) {
         if (!checkAccessToTransaction(authorizedUser, transactionId))
             throw ForbiddenException()
 
-        if (!listOf(
-            requestStatus.inProgress
-        ).contains(transactionDao.statusId))
+        if (
+            (
+                !listOf(
+                    requestStatus.inProgress
+                ).contains(transactionDao.statusId) && transactionDao.typeId == AppConf.requestTypes.transfer
+            ) ||
+            (
+                !listOf(
+                    requestStatus.open
+                ).contains(transactionDao.statusId) && transactionDao.typeId == AppConf.requestTypes.outcome
+            )
+        )
             throw ForbiddenException()
 
         transactionDao

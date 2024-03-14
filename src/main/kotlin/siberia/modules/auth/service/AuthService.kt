@@ -11,6 +11,7 @@ import siberia.exceptions.UnauthorizedException
 import siberia.modules.auth.data.dto.*
 import siberia.modules.rbac.data.models.RbacModel
 import siberia.modules.stock.service.StockService
+import siberia.modules.transaction.data.dao.TransactionDao
 import siberia.modules.user.data.dao.UserDao
 import siberia.modules.user.data.dto.UserOutputDto
 import siberia.modules.user.data.models.UserModel
@@ -92,7 +93,7 @@ class AuthService(override val di: DI) : KodeinService(di) {
         return userDto
     }
 
-    fun getAuthenticatedStockData(authorizedUser: AuthorizedUser): AuthenticatedStockOutputDto {
+    fun getAuthenticatedStockData(authorizedUser: AuthorizedUser): AuthenticatedStockOutputDto = transaction {
         val targetStockId = authorizedUser.stockId ?: throw ForbiddenException()
         val stockData = stockService.getByAuthorizedUser(authorizedUser)
         val operationAccessData = MobileOperationAccessDto(
@@ -101,10 +102,17 @@ class AuthService(override val di: DI) : KodeinService(di) {
             transfersManaging = userAccessControlService.checkAccessToStock(authorizedUser.id, AppConf.rules.createTransferRequest, targetStockId),
         )
 
-        return AuthenticatedStockOutputDto(
+
+        AuthenticatedStockOutputDto(
             stockData = stockData,
             operationsAccess = operationAccessData,
-            type = authQrService.getMobileTokenType(authorizedUser)
+            type = authQrService.getMobileTokenType(authorizedUser),
+            transactionData = with(authorizedUser.transactionId) {
+                if (this != null)
+                    TransactionDao[this].fullOutput()
+                else
+                    null
+            }
         )
     }
 }
