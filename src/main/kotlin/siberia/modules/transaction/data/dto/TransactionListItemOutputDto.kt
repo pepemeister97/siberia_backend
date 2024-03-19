@@ -13,4 +13,5 @@ data class TransactionListItemOutputDto (
     val toName: String? = null,
     val status: TransactionStatusOutputDto,
     val type: TransactionTypeOutputDto,
+    val timestamp: String,
 )

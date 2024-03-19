@@ -9,4 +9,5 @@ data class TransactionOutputDto (
     val to: Int? = null,
     val status: Int,
     val type: Int,
+    val timestamp: String,
 )
