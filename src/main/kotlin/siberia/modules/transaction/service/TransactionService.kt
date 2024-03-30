@@ -171,7 +171,7 @@ class TransactionService(di: DI) : KodeinService(di) {
         if (
             (
                 !listOf(
-                    requestStatus.inProgress
+                    requestStatus.inProgress, requestStatus.open
                 ).contains(transactionDao.statusId) && transactionDao.typeId == AppConf.requestTypes.transfer
             ) ||
             (

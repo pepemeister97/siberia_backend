@@ -39,7 +39,9 @@ import siberia.modules.logger.data.models.SystemEventTypeModel
 import siberia.modules.logger.service.SystemEventService
 import siberia.modules.product.controller.ProductController
 import siberia.modules.product.controller.ProductGroupController
+import siberia.modules.product.data.models.ProductGroupModel
 import siberia.modules.product.data.models.ProductModel
+import siberia.modules.product.data.models.ProductToGroupModel
 import siberia.modules.product.data.models.ProductToImageModel
 import siberia.modules.product.service.*
 import siberia.modules.stock.data.models.StockModel
@@ -140,6 +142,7 @@ fun Application.module() {
         BrandModel, CollectionModel,
         CategoryModel, CategoryToCategoryModel,
         ProductModel, ProductToImageModel,
+        ProductGroupModel, ProductToGroupModel,
         SystemEventModel, SystemEventTypeModel, SystemEventObjectTypeModel,
         TransactionModel, TransactionToProductModel, TransactionRelatedUserModel, TransactionStatusModel, TransactionTypeModel,
         BugReportModel, GalleryModel

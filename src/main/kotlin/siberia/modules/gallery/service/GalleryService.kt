@@ -10,6 +10,7 @@ import siberia.modules.gallery.data.dao.GalleryDao
 import siberia.modules.gallery.data.dto.ImageCreateDto
 import siberia.modules.gallery.data.dto.ImageOutputDto
 import siberia.modules.gallery.data.dto.ImageSearchFilterDto
+import siberia.modules.gallery.data.dto.ImageUpdateDto
 import siberia.modules.gallery.data.models.GalleryModel
 import siberia.modules.product.data.dto.ProductRemoveResultDto
 import siberia.modules.transaction.data.dao.TransactionStatusDao.Companion.createLikeCond
@@ -88,5 +89,13 @@ class GalleryService(di: DI) : KodeinService(di) {
             }
         }
         returnList
+    }
+
+    fun update(imageId: Int, imageUpdateDto: ImageUpdateDto): ImageOutputDto = transaction {
+        val galleryDao = GalleryDao[imageId]
+        galleryDao.loadUpdate(imageUpdateDto)
+        galleryDao.flush()
+
+        galleryDao.toOutputDto()
     }
 }

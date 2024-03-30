@@ -33,4 +33,8 @@ object FilesUtil {
             null
         }
     }
+
+    fun encodeBytes(bytes: ByteArray?): String {
+        return Base64.getEncoder().encodeToString(bytes)
+    }
 }

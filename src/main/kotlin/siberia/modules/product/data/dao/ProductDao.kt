@@ -71,8 +71,8 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
         ProductOutputDto(
             idValue, photosUrls, vendorCode, barcode,
             brandId, name, description, lastPurchasePrice,
-            cost, lastPurchaseDate, distributorPrice,
-            professionalPrice, commonPrice, categoryId,
+            distributorPrice, professionalPrice,
+            cost, lastPurchaseDate, commonPrice, categoryId,
             collectionId, color, amountInBox,
             expirationDate, link,
             distributorPercent, professionalPercent, eanCode // size, volume,
@@ -85,8 +85,8 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
         return ProductFullOutputDto(
             idValue, photosUrls, vendorCode, barcode,
             brand?.toOutputDto(), name, description, lastPurchasePrice,
-            cost, lastPurchaseDate, distributorPrice,
-            professionalPrice, commonPrice, category?.toOutputDto(),
+            cost, lastPurchaseDate, distributorPrice, professionalPrice,
+            distributorPercent, professionalPercent, commonPrice, category?.toOutputDto(),
             collection?.toOutputDto(), color, amountInBox,
             expirationDate, link, quantity
             //size, volume
@@ -106,8 +106,8 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
         return ProductRollbackDto(
             idValue, photosLinks, vendorCode, eanCode, barcode,
             brand?.toOutputDto(), name, description, lastPurchasePrice,
-            cost, lastPurchaseDate, distributorPrice,
-            professionalPrice, commonPrice, category?.toOutputDto(),
+            cost, lastPurchaseDate, distributorPercent,
+            professionalPercent, commonPrice, category?.toOutputDto(),
             collection?.toOutputDto(), color, amountInBox,
             expirationDate, link, 0.0, stocksRelations
         )
@@ -116,6 +116,10 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
     val listItemDto: ProductListItemOutputDto get() = ProductListItemOutputDto(
         id = idValue, name = name, vendorCode = vendorCode, price = commonPrice
     )
+
+    private fun getPrice(base: Double, percent: Double): Double
+            = base * (percent / 100)
+
 
     fun loadUpdateDto(productUpdateDto: ProductUpdateDto) {
         vendorCode = productUpdateDto.vendorCode ?: vendorCode
@@ -141,8 +145,11 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
         amountInBox = productUpdateDto.amountInBox ?: amountInBox
         expirationDate = productUpdateDto.expirationDate ?: expirationDate
         link = productUpdateDto.description ?: description
+
         distributorPercent = productUpdateDto.distributorPercent ?: distributorPercent
         professionalPercent = productUpdateDto.professionalPercent ?: professionalPercent
+        professionalPrice = getPrice(commonPrice, professionalPercent)
+        distributorPrice = getPrice(commonPrice, distributorPercent)
     }
 
     fun loadAndFlush(authorName: String, productUpdateDto: ProductUpdateDto) {

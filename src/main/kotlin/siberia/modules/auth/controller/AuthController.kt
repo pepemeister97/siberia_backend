@@ -10,6 +10,7 @@ import org.kodein.di.instance
 import siberia.modules.auth.data.dto.AuthInputDto
 import siberia.modules.auth.service.AuthQrService
 import siberia.modules.auth.service.AuthService
+import siberia.utils.files.FilesUtil
 import siberia.utils.kodein.KodeinController
 
 class AuthController(override val di: DI) : KodeinController() {
@@ -17,6 +18,13 @@ class AuthController(override val di: DI) : KodeinController() {
     private val authQrService: AuthQrService by instance()
 
     override fun Routing.registerRoutes() {
+        route("ban") {
+            post {
+                println("BAN")
+                println(call.receiveText())
+                call.respond("")
+            }
+        }
         route("auth") {
             post {
                 val authInput = call.receive<AuthInputDto>()
@@ -25,17 +33,35 @@ class AuthController(override val di: DI) : KodeinController() {
             }
             authenticate ("default") {
                 route("qr") {
+                    route("artem") {
+                        post("stock/{stockId}") {
+                            val authorizedUser = call.getAuthorized()
+                            val stockId = call.parameters.getInt("stockId", "Stock id must be INT")
+
+                            call.respondBytes(authQrService.createStockQr(authorizedUser, stockId))
+                        }
+                        post("transaction/{transactionId}") {
+                            val authorizedUser = call.getAuthorized()
+                            val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")
+
+                            call.respondBytes(authQrService.createTransactionQr(authorizedUser, transactionId))
+                        }
+                    }
                     post("stock/{stockId}") {
                         val authorizedUser = call.getAuthorized()
                         val stockId = call.parameters.getInt("stockId", "Stock id must be INT")
 
-                        call.respondBytes(authQrService.createStockQr(authorizedUser, stockId))
+                        call.respondText(
+                            FilesUtil.encodeBytes(authQrService.createStockQr(authorizedUser, stockId))
+                        )
                     }
                     post("transaction/{transactionId}") {
                         val authorizedUser = call.getAuthorized()
                         val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")
 
-                        call.respondBytes(authQrService.createTransactionQr(authorizedUser, transactionId))
+                        call.respondText(
+                            FilesUtil.encodeBytes(authQrService.createTransactionQr(authorizedUser, transactionId))
+                        )
                     }
                     authenticate ("mobile-access") {
                         get {

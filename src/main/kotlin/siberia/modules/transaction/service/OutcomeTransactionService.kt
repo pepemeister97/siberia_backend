@@ -21,11 +21,6 @@ class OutcomeTransactionService(di: DI) : AbstractTransactionService(di) {
         if (transactionInputDto.type != AppConf.requestTypes.outcome)
             throw BadRequestException("Bad transaction type")
         val targetStockId = transactionInputDto.from ?: throw BadRequestException("Incorrect target stock")
-        try {
-            StockModel.checkAvailableAmount(targetStockId, transactionInputDto.products)
-        } catch (_: Exception) {
-            throw BadRequestException("Not enough products in stock")
-        }
 
         val transactionDao = createTransaction(userDao, transactionInputDto, targetStockId)
         StockModel.removeProducts(targetStockId, transactionInputDto.products)
@@ -84,11 +79,7 @@ class OutcomeTransactionService(di: DI) : AbstractTransactionService(di) {
             amount = it.amount,
             price = it.price
         ) })
-        try {
-            StockModel.checkAvailableAmount(targetStockId, products)
-        } catch (_: Exception) {
-            throw BadRequestException("Not enough products in stock")
-        }
+
         TransactionModel.addProductList(transactionId, products)
         StockModel.removeProducts(targetStockId, products)
 

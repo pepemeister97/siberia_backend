@@ -20,12 +20,6 @@ class WriteOffTransactionService(di: DI) : AbstractTransactionService(di) {
         if (transactionInputDto.type != AppConf.requestTypes.writeOff)
             throw BadRequestException("Bad transaction type")
 
-        try {
-            StockModel.checkAvailableAmount(targetStockId, transactionInputDto.products)
-        } catch (_: Exception) {
-            throw BadRequestException("Not enough products in stock")
-        }
-
         val transactionDao = createTransaction(userDao, transactionInputDto, targetStockId)
         StockModel.removeProducts(targetStockId, transactionInputDto.products)
 

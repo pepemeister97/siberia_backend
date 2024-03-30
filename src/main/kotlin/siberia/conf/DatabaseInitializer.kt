@@ -428,9 +428,14 @@ object DatabaseInitializer {
                 this[ProductModel.name] = "Product #$it"
                 this[ProductModel.description] = "Description for product #$it"
                 this[ProductModel.lastPurchasePrice] = (it * 8).toDouble()
-                this[ProductModel.distributorPrice] = (it * 16).toDouble()
-                this[ProductModel.professionalPrice] = (it * 24).toDouble()
-                this[ProductModel.commonPrice] = (it * 32).toDouble()
+                val commonPrice = (it * 32).toDouble()
+                val distributorPercent = (it * 16).toDouble()
+                this[ProductModel.distributorPercent] = distributorPercent
+                this[ProductModel.distributorPrice] = (distributorPercent / 100) * commonPrice
+                val professionalPercent = (it * 16).toDouble()
+                this[ProductModel.professionalPercent] = professionalPercent
+                this[ProductModel.professionalPrice] = (professionalPercent / 100) * commonPrice
+                this[ProductModel.commonPrice] = commonPrice
                 this[ProductModel.category] = categoryBrandCollection
                 this[ProductModel.collection] = categoryBrandCollection
                 this[ProductModel.color] = "New ultra color #$it"

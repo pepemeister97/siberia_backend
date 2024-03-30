@@ -1,7 +1,9 @@
 package siberia.modules.product.data.dto.groups
 
+import kotlinx.serialization.Serializable
 import siberia.modules.product.data.dto.ProductUpdateDto
 
+@Serializable
 data class MassiveUpdateDto (
     //If null -> dont update
     //If 0 -> set null
@@ -23,7 +25,6 @@ data class MassiveUpdateDto (
     var link: String? = null,
     val distributorPercent: Double? = null,
     val professionalPercent: Double? = null,
-    val eanCode: String? = null
 ) {
     fun productUpdateDto(productId: Int): ProductUpdateDto =
         ProductUpdateDto(
