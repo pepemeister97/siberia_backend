@@ -5,7 +5,7 @@ import siberia.modules.category.data.dto.CategoryOutputDto
 import siberia.modules.collection.data.dto.CollectionOutputDto
 import siberia.modules.stock.data.models.StockProductsListMapped
 
-data class ProductRollbackDto (
+data class  ProductRollbackDto (
     val id: Int,
     val photo: List<Int>,
     val vendorCode: String,
@@ -28,12 +28,13 @@ data class ProductRollbackDto (
     val link: String,
     val quantity: Double,
     val stocksRelations: MutableMap<Int, StockProductsListMapped> = mutableMapOf(),
+    val offertaPrice: Double?,
     val fileAlreadyUploaded: Boolean = true,
 ) {
     val createDto: ProductCreateDto get() = ProductCreateDto(
         photo, vendorCode, eanCode, barcode,
         brand?.id, name, description, commonPrice, category?.id,
         collection?.id, color, amountInBox,
-        expirationDate, link, distributorPercent, professionalPercent
+        expirationDate, link, offertaPrice, distributorPercent, professionalPercent
     )
 }
