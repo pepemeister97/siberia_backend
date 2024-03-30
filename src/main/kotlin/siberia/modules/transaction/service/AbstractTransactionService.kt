@@ -24,7 +24,7 @@ import siberia.utils.kodein.KodeinService
 abstract class AbstractTransactionService(di: DI) : KodeinService(di) {
     protected val userAccessControlService: UserAccessControlService by instance()
 
-    private fun checkAccessToStatusForTransaction(userDao: UserDao, transactionId: Int, targetStockId: Int, statusId: Int): Boolean {
+    protected fun checkAccessToStatusForTransaction(userDao: UserDao, transactionId: Int, targetStockId: Int, statusId: Int): Boolean {
         val transactionDao = TransactionDao[transactionId]
         Logger.debug(TransactionUtils.availableStatuses(transactionDao), "main")
         Logger.debug(statusId, "main")

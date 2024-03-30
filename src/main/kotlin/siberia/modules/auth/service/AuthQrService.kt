@@ -47,7 +47,7 @@ class AuthQrService(di: DI) : KodeinService(di) {
         try {
             val userDao = UserDao[authorizedUser.id]
             val transactionDao = transactionService.getTransactionForQr(authorizedUser, transactionId)
-            val token = JwtUtil.createMobileAuthToken(QrTokenDto(userDao.idValue, stockId = transactionDao.fromId, transactionId = transactionDao.idValue))
+            val token = JwtUtil.createMobileAuthToken(QrTokenDto(userDao.idValue, stockId = transactionDao.fromId ?: transactionDao.toId, transactionId = transactionDao.idValue))
             createQr(token)
         } catch (e: Exception) {
             Logger.debugException("Exception during QR generation", e, "main")
@@ -79,6 +79,7 @@ class AuthQrService(di: DI) : KodeinService(di) {
             val token = JwtUtil.createMobileAccessToken(QrTokenDto(
                 authorizedUser.id, authorizedUser.stockId, authorizedUser.transactionId
             ))
+
             MobileAccessOutputDto(token, type)
         } catch (e: Exception) {
             Logger.debugException("Exception during mobile app authorization", e, "main")

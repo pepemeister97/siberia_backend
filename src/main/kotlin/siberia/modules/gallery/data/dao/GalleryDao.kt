@@ -2,6 +2,7 @@ package siberia.modules.gallery.data.dao
 
 import org.jetbrains.exposed.dao.id.EntityID
 import siberia.modules.gallery.data.dto.ImageOutputDto
+import siberia.modules.gallery.data.dto.ImageUpdateDto
 import siberia.modules.gallery.data.models.GalleryModel
 import siberia.modules.user.data.dao.UserDao
 
@@ -26,4 +27,9 @@ class GalleryDao(id: EntityID<Int>): BaseIntEntity<ImageOutputDto>(id, GalleryMo
             author?.login,
             description
         )
+
+    fun loadUpdate(imageUpdateDto: ImageUpdateDto) {
+        name = imageUpdateDto.name ?: name
+        description = imageUpdateDto.description ?: description
+    }
 }

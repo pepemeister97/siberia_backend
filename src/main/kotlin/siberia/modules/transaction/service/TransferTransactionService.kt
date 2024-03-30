@@ -96,6 +96,22 @@ class TransferTransactionService(di: DI) : AbstractTransactionService(di) {
         transactionInProgress.toOutputDto()
     }
 
+    fun checkAccessToProcessTransfer(authorizedUser: AuthorizedUser, transactionId: Int, processByStock: Int): Boolean = transaction {
+        val userDao = UserDao[authorizedUser.id]
+        val transactionDao = TransactionDao[transactionId]
+
+        if (!checkAccessToStatusForTransaction(userDao, transactionId, processByStock, AppConf.requestStatus.inProgress))
+            throw ForbiddenException()
+
+        try {
+            StockModel.checkAvailableAmount(processByStock, transactionDao.inputProductsList)
+        } catch (_: Exception) {
+            throw ForbiddenException()
+        }
+
+        true
+    }
+
     fun cancelProcess(authorizedUser: AuthorizedUser, transactionId: Int): TransactionOutputDto = transaction {
         val transactionDao = TransactionDao[transactionId]
         val processingStockId = transactionDao.fromId ?: throw BadRequestException("Bad transaction")

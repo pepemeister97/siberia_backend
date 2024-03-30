@@ -35,6 +35,10 @@ import java.time.ZoneOffset
 
 class ProductService(di: DI) : KodeinService(di) {
     private val galleryService: GalleryService by instance()
+
+    private fun getPrice(base: Double, percent: Double): Double
+        = base * (percent / 100)
+
     private fun createDao(productCreateDto: ProductCreateDto): ProductDao = transaction {
         val product = ProductDao.new {
             vendorCode = productCreateDto.vendorCode!!
@@ -43,8 +47,10 @@ class ProductService(di: DI) : KodeinService(di) {
             brand = if (productCreateDto.brand != null) BrandDao[productCreateDto.brand!!] else null
             name = productCreateDto.name!!
             description = productCreateDto.description!!
-            distributorPrice = productCreateDto.distributorPrice!!
-            professionalPrice = productCreateDto.professionalPrice!!
+            distributorPrice = getPrice(productCreateDto.commonPrice!!, productCreateDto.distributorPercent!!)
+            distributorPercent = productCreateDto.distributorPercent!!
+            professionalPrice = getPrice(productCreateDto.commonPrice!!, productCreateDto.professionalPercent!!)
+            professionalPercent = productCreateDto.professionalPercent!!
             commonPrice = productCreateDto.commonPrice!!
             category = if (productCreateDto.category != null) CategoryDao[productCreateDto.category!!] else null
             collection = if (productCreateDto.collection != null) CollectionDao[productCreateDto.collection!!] else null

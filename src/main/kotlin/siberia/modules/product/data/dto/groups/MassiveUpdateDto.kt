@@ -1,7 +1,9 @@
 package siberia.modules.product.data.dto.groups
 
+import kotlinx.serialization.Serializable
 import siberia.modules.product.data.dto.ProductUpdateDto
 
+@Serializable
 data class MassiveUpdateDto (
     //If null -> dont update
     //If 0 -> set null

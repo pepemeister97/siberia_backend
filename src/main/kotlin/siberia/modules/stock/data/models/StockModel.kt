@@ -43,7 +43,7 @@ object StockModel: BaseIntIdTable() {
         }
     }
 
-    fun checkAvailableAmount(stockId: Int, products: List<TransactionInputDto.TransactionProductInputDto>) = transaction {
+    fun checkAvailableAmount(stockId: Int, products: List<TransactionInputDto.TransactionProductInputDto>): List<ResultRow> = transaction {
         val productsMapped = getProductsMapped(products).first
         val exist = StockToProductModel.select {
             (StockToProductModel.product inList products.map { it.productId }) and (StockToProductModel.stock eq stockId)
@@ -55,17 +55,18 @@ object StockModel: BaseIntIdTable() {
 
         if (exist.size < products.size)
             throw Exception("Not enough")
+
+        exist
     }
 
     fun removeProducts(stockId: Int, products: List<TransactionInputDto.TransactionProductInputDto>) = transaction {
         val productsMapped = getProductsMapped(products)
-        val exist = StockToProductModel.select {
-            (StockToProductModel.product inList productsMapped.second) and (StockToProductModel.stock eq stockId)
-        }.map { it }
 
-        if (products.size > exist.size)
+        val exist = try {
+            checkAvailableAmount(stockId, products)
+        } catch (_: Exception) {
             throw BadRequestException("Not enough products in stock")
-
+        }
 
         StockToProductModel.deleteWhere {
             StockToProductModel.id inList exist.map { it[StockToProductModel.id] }

@@ -11,8 +11,6 @@ data class ProductCreateDto (
     var brand: Int? = null,
     var name: String?,
     var description: String?,
-    var distributorPrice: Double?,
-    var professionalPrice: Double?,
     var commonPrice: Double?,
     var category: Int? = null,
     var collection: Int? = null,
@@ -21,6 +19,8 @@ data class ProductCreateDto (
     var expirationDate: Long?,
     var link: String?,
     var offertaPrice: Double?
+    var distributorPercent: Double?,
+    var professionalPercent: Double?
 //    Future iterations
 //    val size: Double,
 //    val volume: Double,

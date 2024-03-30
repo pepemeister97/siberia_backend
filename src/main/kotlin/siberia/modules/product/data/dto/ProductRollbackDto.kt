@@ -17,8 +17,8 @@ data class  ProductRollbackDto (
     val lastPurchasePrice: Double?,
     val cost: Double?,
     val lastPurchaseDate: Long?,
-    val distributorPrice: Double,
-    val professionalPrice: Double,
+    val distributorPercent: Double,
+    val professionalPercent: Double,
     val commonPrice: Double,
     val category: CategoryOutputDto?,
     val collection: CollectionOutputDto?,
@@ -33,9 +33,8 @@ data class  ProductRollbackDto (
 ) {
     val createDto: ProductCreateDto get() = ProductCreateDto(
         photo, vendorCode, eanCode, barcode,
-        brand?.id, name, description, distributorPrice,
-        professionalPrice, commonPrice, category?.id,
+        brand?.id, name, description, commonPrice, category?.id,
         collection?.id, color, amountInBox,
-        expirationDate, link, offertaPrice
+        expirationDate, link, offertaPrice, distributorPercent, professionalPercent
     )
 }

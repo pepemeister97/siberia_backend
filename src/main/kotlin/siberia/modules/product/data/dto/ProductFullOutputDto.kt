@@ -19,6 +19,8 @@ data class ProductFullOutputDto (
     val lastPurchaseDate: Long?,
     val distributorPrice: Double,
     val professionalPrice: Double,
+    val distributorPercent: Double,
+    val professionalPercent: Double,
     val commonPrice: Double,
     val category: CategoryOutputDto?,
     val collection: CollectionOutputDto?,

@@ -9,6 +9,7 @@ import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.modules.gallery.data.dto.ImageCreateDto
 import siberia.modules.gallery.data.dto.ImageSearchFilterDto
+import siberia.modules.gallery.data.dto.ImageUpdateDto
 import siberia.modules.gallery.service.GalleryService
 import siberia.utils.kodein.KodeinController
 
@@ -30,6 +31,12 @@ class GalleryController(override val di: DI) : KodeinController() {
                 delete {
                     val imageId = call.parameters.getInt("imageId", "Image id must be INT")
                     call.respond(galleryService.remove(imageId))
+                }
+                patch {
+                    val imageId = call.parameters.getInt("imageId", "Image id must be INT")
+                    val imageUpdateDto = call.receive<ImageUpdateDto>()
+
+                    call.respond(galleryService.update(imageId, imageUpdateDto))
                 }
                 get{
                     val imageId = call.parameters.getInt("imageId", "Image id must be INT")

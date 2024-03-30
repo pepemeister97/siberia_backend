@@ -6,6 +6,7 @@ import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+import siberia.exceptions.BadRequestException
 import siberia.modules.product.data.dto.ProductListItemOutputDto
 import siberia.utils.database.BaseIntIdTable
 
@@ -29,6 +30,11 @@ object ProductToGroupModel : BaseIntIdTable() {
     }
 
     fun setProducts(groupId: Int, products: List<Int>) = transaction {
+        if (ProductModel.select {
+            ProductModel.id inList products
+        }.count() != products.size.toLong())
+            throw BadRequestException("Bad product id provided")
+
         ProductToGroupModel.deleteWhere { group eq groupId }
         ProductToGroupModel.batchInsert(products) {
             this[group] = groupId

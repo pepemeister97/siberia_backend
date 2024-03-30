@@ -14,7 +14,8 @@ data class TransactionFullOutputDto (
     val status: TransactionStatusOutputDto,
     val type: TransactionTypeOutputDto,
     val products: List<TransactionProductDto>,
-    var availableStatuses: List<TransactionStatusOutputDto> = listOf()
+    val timestamp: String,
+    var availableStatuses: List<TransactionStatusOutputDto> = listOf(),
 ) {
     @Serializable
     data class TransactionProductDto(
