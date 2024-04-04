@@ -28,7 +28,8 @@ data class ProductFullOutputDto (
     val amountInBox: Int,
     val expirationDate: Long,
     val link: String,
-    val quantity: Double
+    val quantity: Double,
+    val offerPrice: Double?
 //    Future iterations
 //    val size: Double,
 //    val volume: Double,
