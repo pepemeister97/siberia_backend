@@ -2,19 +2,21 @@ package siberia.utils.parse
 
 import com.github.doyaaaaaken.kotlincsv.dsl.csvReader
 import io.ktor.server.plugins.*
-import siberia.plugins.Logger
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.primaryConstructor
 
-object CSVParser {
+abstract class AbstractCsvMapper <T: Any> {
+    abstract val required: Map<String, Boolean>
+    abstract val klass: KClass<T>
+
 
     private val reader = csvReader {
         delimiter = ';'
     }
 
-    fun parseCSV(csv : ByteArray, dto : Any) : List<Any> {
+    protected fun parseCSV(csv : ByteArray) : List<T?> {
         val rows : List<Map<String, String>>
 
         try {
@@ -23,29 +25,42 @@ object CSVParser {
             throw BadRequestException("Bad CSV File")
         }
 
-        return mapping(rows, dto)
+        return mapping(rows)
     }
-    private fun mapping(rows : List<Map<String, String>>, dto : Any) : List<Any> {
+    private fun mapping(rows : List<Map<String, String>>) : MutableList<T?> {
 
-        val returnList = mutableListOf<Any>()
+        val returnList = mutableListOf<T?>()
 
         rows.forEach { row ->
-            @Suppress("UNCHECKED_CAST")
-            val instance = createEmptyInstanceTemplate(dto as KClass<Any>)
+            val checked = required.toMutableMap()
+
+            val instance = try {
+                createEmptyInstanceTemplate(klass)
+            } catch (_: Exception) {
+                returnList.add(null)
+                return@forEach
+            }
 
             val map = mutableMapOf<String, Pair<Any?, String>>()
-            dto.primaryConstructor?.parameters?.forEach {
+            klass.primaryConstructor?.parameters?.forEach {
                 map[it.name!!] = Pair(null, it.type.toString())
             }
-            Logger.debug(map, "main")
+
             row.forEach {
                 if (map.containsKey(it.key)) {
                     val type = map[it.key]!!.second
                     map[it.key] = Pair(it.value as Any?, type)
+                    checked.remove(it.key)
                 }
             }
-            dto.primaryConstructor?.parameters?.forEach { param ->
-                val prop = dto.memberProperties.first { it.name == param.name }
+
+            if (checked.isNotEmpty()) {
+                returnList.add(null)
+                return@forEach
+            }
+
+            klass.primaryConstructor?.parameters?.forEach { param ->
+                val prop = klass.memberProperties.first { it.name == param.name }
                 val currentValue = map[param.name]!!.first
                 if (prop is KMutableProperty<*>) {
                     try {
@@ -72,12 +87,13 @@ object CSVParser {
                     }
                 }
             }
+
             returnList.add(instance)
         }
         return returnList
     }
 
-    private inline fun <reified T: Any> createEmptyInstanceTemplate(instanceKlass: KClass<T>): T {
+    private fun createEmptyInstanceTemplate(instanceKlass: KClass<T>): T {
         val args = List(instanceKlass.primaryConstructor?.parameters?.size ?: 0) { null }
         return instanceKlass.primaryConstructor?.call(*args.toTypedArray()) ?: throw Exception("Failed build empty instance")
     }

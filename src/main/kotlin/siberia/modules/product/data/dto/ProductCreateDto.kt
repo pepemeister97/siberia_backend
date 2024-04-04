@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ProductCreateDto (
-    var photoList: List<Int>?,
+    var photoList: List<Int>? = listOf(),
     var vendorCode: String?,
     var eanCode: String?,
     var barcode: String?,
@@ -12,7 +12,7 @@ data class ProductCreateDto (
     var name: String?,
     var description: String?,
     var commonPrice: Double?,
-    var category: Int? = null,
+    var category: Int?,
     var collection: Int? = null,
     var color: String?,
     var amountInBox: Int?,
