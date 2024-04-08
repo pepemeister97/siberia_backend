@@ -17,13 +17,14 @@ object ProductToGroupModel : BaseIntIdTable() {
 
     fun getProducts(groupId: Int): List<ProductListItemOutputDto> = transaction {
         leftJoin(ProductModel)
-        .slice(ProductModel.id, ProductModel.name, ProductModel.vendorCode)
+        .slice(ProductModel.id, ProductModel.name, ProductModel.vendorCode, ProductModel.eanCode)
         .select { group eq groupId }
         .map {
             ProductListItemOutputDto(
                 id = it[ProductModel.id].value,
                 name = it[ProductModel.name],
                 vendorCode = it[ProductModel.vendorCode],
+                eanCode = it[ProductModel.eanCode],
                 price = 0.0
             )
         }

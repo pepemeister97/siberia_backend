@@ -7,6 +7,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.kodein.di.DI
 import org.kodein.di.instance
+import siberia.exceptions.BadRequestException
 import siberia.modules.product.data.dto.ProductCreateDto
 import siberia.modules.product.data.dto.ProductListItemOutputDto
 import siberia.modules.product.data.dto.ProductSearchDto
@@ -72,6 +73,15 @@ class ProductController(override val di: DI) : KodeinController() {
                     val searchFilterDto = call.receive<ProductSearchDto>()
 
                     call.respond<List<ProductListItemOutputDto>>(productService.getAvailableByFilter(authorizedUser, searchFilterDto))
+                }
+            }
+            route("bar/{barCode}") {
+                authenticate("mobile-access") {
+                    get {
+                        val barCode = call.parameters["barCode"] ?: throw BadRequestException("BarCode must be provided")
+
+                        call.respond(productService.getByBarCode(barCode))
+                    }
                 }
             }
             route("{productId}") {

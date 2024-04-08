@@ -9,7 +9,9 @@ import siberia.modules.collection.data.dto.CollectionOutputDto
 data class ProductFullOutputDto (
     val id: Int,
     val photo: List<String>,
+    val photoIds: List<Int>,
     val vendorCode: String,
+    val eanCode: String,
     val barcode: String?,
     val brand: BrandOutputDto?,
     val name: String,
@@ -29,7 +31,7 @@ data class ProductFullOutputDto (
     val expirationDate: Long,
     val link: String,
     val quantity: Double,
-    val offerPrice: Double?
+    val offertaPrice: Double?
 //    Future iterations
 //    val size: Double,
 //    val volume: Double,

@@ -1,17 +1,16 @@
 package siberia.modules.product.data.dto
 
-import siberia.modules.brand.data.dto.BrandOutputDto
-import siberia.modules.category.data.dto.CategoryOutputDto
-import siberia.modules.collection.data.dto.CollectionOutputDto
+import kotlinx.serialization.Serializable
 import siberia.modules.stock.data.models.StockProductsListMapped
 
+@Serializable
 data class  ProductRollbackDto (
     val id: Int,
     val photo: List<Int>,
     val vendorCode: String,
     val eanCode: String,
     val barcode: String?,
-    val brand: BrandOutputDto?,
+    val brand: Int?,
     val name: String,
     val description: String,
     val lastPurchasePrice: Double?,
@@ -20,8 +19,8 @@ data class  ProductRollbackDto (
     val distributorPercent: Double,
     val professionalPercent: Double,
     val commonPrice: Double,
-    val category: CategoryOutputDto?,
-    val collection: CollectionOutputDto?,
+    val category: Int?,
+    val collection: Int?,
     val color: String,
     val amountInBox: Int,
     val expirationDate: Long,
@@ -33,8 +32,8 @@ data class  ProductRollbackDto (
 ) {
     val createDto: ProductCreateDto get() = ProductCreateDto(
         photo, vendorCode, eanCode, barcode,
-        brand?.id, name, description, commonPrice, category?.id,
-        collection?.id, color, amountInBox,
+        brand, name, description, commonPrice, category,
+        collection, color, amountInBox,
         expirationDate, link, offertaPrice, distributorPercent, professionalPercent
     )
 }

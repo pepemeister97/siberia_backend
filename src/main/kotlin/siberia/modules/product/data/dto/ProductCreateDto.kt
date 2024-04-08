@@ -18,7 +18,7 @@ data class ProductCreateDto (
     var amountInBox: Int?,
     var expirationDate: Long?,
     var link: String?,
-    var offertaPrice: Double?
+    var offertaPrice: Double?,
     var distributorPercent: Double?,
     var professionalPercent: Double?
 //    Future iterations

@@ -62,6 +62,7 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
     val photos by GalleryDao via ProductToImageModel
 
     val photosUrls: List<String> get() = photos.map { it.url }
+    val photosIds: List<Int> get() = photos.map { it.idValue }
     val photosLinks: List<Int> get() = photos.map { it.idValue }
 
 //    Future iterations
@@ -70,7 +71,7 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
 
     override fun toOutputDto(): ProductOutputDto =
         ProductOutputDto(
-            idValue, photosUrls, vendorCode, barcode,
+            idValue, photosUrls, photosIds, vendorCode, barcode,
             brandId, name, description, lastPurchasePrice,
             distributorPrice, professionalPrice,
             cost, lastPurchaseDate, commonPrice, categoryId,
@@ -85,7 +86,7 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
             StockToProductModel.product eq this@ProductDao.id
         }.sumOf { it[StockToProductModel.amount] }
         return ProductFullOutputDto(
-            idValue, photosUrls, vendorCode, barcode,
+            idValue, photosUrls, photosIds, vendorCode, eanCode, barcode,
             brand?.toOutputDto(), name, description, lastPurchasePrice,
             cost, lastPurchaseDate, distributorPrice, professionalPrice,
             distributorPercent, professionalPercent, commonPrice, category?.toOutputDto(),
@@ -107,10 +108,10 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
 
         return ProductRollbackDto(
             idValue, photosLinks, vendorCode, eanCode, barcode,
-            brand?.toOutputDto(), name, description, lastPurchasePrice,
+            brand?.idValue, name, description, lastPurchasePrice,
             cost, lastPurchaseDate, distributorPercent,
-            professionalPercent, commonPrice, category?.toOutputDto(),
-            collection?.toOutputDto(), color, amountInBox,
+            professionalPercent, commonPrice, category?.idValue,
+            collection?.idValue, color, amountInBox,
             expirationDate, link, 0.0, stocksRelations, offertaPrice
         )
     }
@@ -138,7 +139,7 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
 //        professionalPrice = productUpdateDto.professionalPrice ?: professionalPrice
         commonPrice = productUpdateDto.commonPrice ?: commonPrice
         offertaPrice = productUpdateDto.offertaPrice ?: offertaPrice
-        category = if (productUpdateDto.category != null) CategoryDao[productUpdateDto.category!!] else category
+        category = if (productUpdateDto.category != 0 && productUpdateDto.category != null) CategoryDao[productUpdateDto.category!!] else category
 
         collection = if (productUpdateDto.collection != 0 && productUpdateDto.collection != null) CollectionDao[productUpdateDto.collection!!]
                     else if (productUpdateDto.collection == 0) null

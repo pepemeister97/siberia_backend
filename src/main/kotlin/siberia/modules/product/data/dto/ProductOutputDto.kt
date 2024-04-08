@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 data class ProductOutputDto(
     val id: Int,
     val photo: List<String>,
+    val photoIds: List<Int>,
     val vendorCode: String,
     val barcode: String?,
     val brand: Int?,

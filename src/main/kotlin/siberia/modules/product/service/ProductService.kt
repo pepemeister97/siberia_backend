@@ -262,4 +262,10 @@ class ProductService(di: DI) : KodeinService(di) {
             }
         resultMap.values.toList()
     }
+
+    fun getByBarCode(barCode: String): List<ProductListItemOutputDto> = transaction {
+        ProductDao.find {
+            ProductModel.barcode eq barCode
+        }.map { el -> el.listItemDto }
+    }
 }
