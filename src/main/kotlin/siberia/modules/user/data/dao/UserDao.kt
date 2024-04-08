@@ -51,7 +51,9 @@ class UserDao(id: EntityID<Int>): BaseIntEntity<UserOutputDto>(id, UserModel) {
         get() = RbacModel.userToRuleLinks(userId = idValue, withStock = true)
 
     val hasAccessToProcessTransfers: Boolean
-        get() = rulesWithStocks.any { it.ruleId == AppConf.rules.manageTransferRequest }
+        get() = RbacModel.userToRuleLinks(userId = idValue, withStock = true, expanded = true).any {
+            it.ruleId == AppConf.rules.manageTransferRequest
+        }
 
     override fun toOutputDto(): UserOutputDto =
         UserOutputDto(idValue, name, login, null, lastLogin)

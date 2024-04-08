@@ -219,6 +219,11 @@ object AppConf {
             requestStatus.notDelivered to StockPair.TO,
             requestStatus.failed to StockPair.TO,
             requestStatus.deliveryCancelled to StockPair.TO,
+        ),
+        requestTypes.writeOff to mapOf(
+            requestStatus.created to StockPair.FROM,
+            requestStatus.processed to StockPair.FROM,
+            requestStatus.creationCancelled to StockPair.FROM,
         )
     )
 }

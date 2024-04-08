@@ -91,6 +91,8 @@ class TransactionService(di: DI) : KodeinService(di) {
         val hasAccessToManageTransfers = userDao.hasAccessToProcessTransfers
         Logger.debug("HAS ACCESS TO MANAGE", "main")
         Logger.debug(hasAccessToManageTransfers, "main")
+        Logger.debug(userDao.rulesWithStocks, "main")
+        Logger.debug(TransactionUtils.availableStatuses(transactionDao), "main")
         TransactionUtils.availableStatuses(transactionDao).filter {
             if (
                 transactionDao.statusId == requestStatus.open
@@ -102,7 +104,8 @@ class TransactionService(di: DI) : KodeinService(di) {
                 false
             else {
                 val ruleId = TransactionUtils.mapTypeToRule(transactionDao.typeId, it)
-                Logger.debug(transactionDao.idValue, "main")
+                Logger.debug("Transaction output", "main")
+                Logger.debug(transactionDao.toOutputDto(), "main")
                 val targetStock = getTargetStock(transactionDao, it)
                 (userAccessControlService.checkAccessToStock(authorizedUser.id, ruleId, targetStock))
             }

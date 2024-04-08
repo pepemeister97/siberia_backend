@@ -82,7 +82,7 @@ class TransferTransactionService(di: DI) : AbstractTransactionService(di) {
 
     fun startProcess(authorizedUser: AuthorizedUser, transactionId: Int, processByStock: Int): TransactionOutputDto = transaction {
         val transactionDao = TransactionDao[transactionId]
-        StockDao[processByStock]
+        val fromStock = StockDao[processByStock]
 
         val transactionInProgress = checkTypeAndChangeStatus(
             authorizedUser,
@@ -92,6 +92,8 @@ class TransferTransactionService(di: DI) : AbstractTransactionService(di) {
         )
 
         StockModel.removeProducts(processByStock, transactionInProgress.inputProductsList)
+        transactionInProgress.from = fromStock
+        transactionInProgress.flush()
 
         transactionInProgress.toOutputDto()
     }

@@ -132,9 +132,9 @@ object DatabaseInitializer {
         }
         RuleModel.insert {
             it[id] = AppConf.rules.approveWriteOffRequest
-            it[name] = "View products list"
+            it[name] = "Approve write-off request"
             it[description] = "Ability to approve write-off requests creations"
-            it[needStock] = false
+            it[needStock] = true
         }
         RuleModel.insert {
             it[id] = AppConf.rules.concreteStockView
