@@ -1,17 +1,14 @@
-package siberia.modules.product.data.dto.groups.systemevents
+package siberia.modules.user.data.dto.systemevents.useraccess.rules
 
 import siberia.conf.AppConf
 
-class ProductGroupRemoveEvent(
+data class UserRulesRemovedEvent(
     override val author: String,
     override val eventObjectName: String,
+    override val eventDescription: String,
     override val eventObjectId: Int,
     override val rollbackInstance: String
-) : ProductGroupEvent() {
-
+): UserRulesEvent() {
     override val eventType: Int
         get() = AppConf.eventTypes.removeEvent
-
-    override val eventDescription: String
-        get() = "Product` group '$eventObjectName' was removed"
 }

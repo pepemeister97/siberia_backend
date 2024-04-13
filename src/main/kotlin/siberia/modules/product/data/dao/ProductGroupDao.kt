@@ -5,6 +5,7 @@ import siberia.modules.logger.data.models.SystemEventModel
 import siberia.modules.product.data.dto.ProductListItemOutputDto
 import siberia.modules.product.data.dto.groups.*
 import siberia.modules.product.data.dto.groups.systemevents.ProductGroupRemoveEvent
+import siberia.modules.product.data.dto.groups.systemevents.ProductGroupUpdateEvent
 import siberia.modules.product.data.models.ProductGroupModel
 import siberia.modules.product.data.models.ProductToGroupModel
 import siberia.utils.database.BaseIntEntity
@@ -22,13 +23,28 @@ class ProductGroupDao(id: EntityID<Int>) : BaseIntEntity<ProductGroupOutputDto>(
     fun toFullOutput(): ProductGroupFullOutputDto =
         ProductGroupFullOutputDto(idValue, name, products)
 
-    fun rollbackOutput(): ProductGroupCreateDto =
+    private fun removeRollbackDto(): ProductGroupCreateDto =
         ProductGroupCreateDto(name, products.map { it.id })
 
-    fun loadAndFlush(productGroupUpdateDto: ProductGroupUpdateDto): Boolean {
+    private fun updateRollbackDto(): ProductGroupUpdateRollbackDto =
+        ProductGroupUpdateRollbackDto(name, products.map { it.id })
+
+    fun loadAndFlush(authorName: String, productGroupUpdateDto: ProductGroupUpdateDto): Boolean {
+        val event = ProductGroupUpdateEvent(
+            authorName,
+            with(productGroupUpdateDto) {
+                if (name == this@ProductGroupDao.name || name == null) this@ProductGroupDao.name
+                else "$name (${this@ProductGroupDao.name})"
+            },
+            idValue,
+            createEncodedRollbackUpdateDto<ProductGroupUpdateRollbackDto, ProductGroupUpdateDto>(productGroupUpdateDto, updateRollbackDto())
+        )
+
         name = productGroupUpdateDto.name ?: name
         if (productGroupUpdateDto.products != null)
             ProductToGroupModel.setProducts(idValue, productGroupUpdateDto.products)
+
+        SystemEventModel.logResettableEvent(event)
 
         return flush()
     }
@@ -38,7 +54,7 @@ class ProductGroupDao(id: EntityID<Int>) : BaseIntEntity<ProductGroupOutputDto>(
             authorName,
             name,
             idValue,
-            createRollbackRemoveDto<ProductGroupCreateDto>(rollbackOutput())
+            createRollbackRemoveDto<ProductGroupCreateDto>(removeRollbackDto())
         )
         SystemEventModel.logResettableEvent(event)
 

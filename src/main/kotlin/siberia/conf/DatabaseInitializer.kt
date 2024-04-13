@@ -214,6 +214,10 @@ object DatabaseInitializer {
             it[id] = AppConf.objectTypes.productBulkCreate
             it[name] = "Product bulk create"
         }
+        SystemEventObjectTypeModel.insert {
+            it[id] = AppConf.objectTypes.productBulkCreate
+            it[name] = "User rights update"
+        }
     }
 
     fun initRequestTypes() {

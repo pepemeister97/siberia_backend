@@ -6,13 +6,20 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.logger.data.dto.SystemEventOutputDto
+import siberia.modules.product.data.dao.ProductDao
 import siberia.modules.product.data.dto.ProductMassiveInsertRollbackDto
+import siberia.modules.product.data.dto.groups.MassiveUpdateRollbackDto
 import siberia.modules.product.data.models.ProductModel
 import siberia.utils.kodein.KodeinEventService
 
 class ProductMassiveEventService(di: DI) : KodeinEventService(di) {
     override fun rollbackUpdate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {
-        TODO("Not yet implemented")
+        val rollbackMassiveUpdate = event.getRollbackData<MassiveUpdateRollbackDto>().objectDto
+        rollbackMassiveUpdate.productsData.forEach {
+            val product = ProductDao[it.id!!]
+            product.loadUpdateDto(it)
+            product.flush()
+        }
     }
 
     override fun rollbackRemove(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {

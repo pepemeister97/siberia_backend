@@ -19,7 +19,11 @@ import siberia.modules.rbac.service.RbacService
 import siberia.modules.user.data.dao.UserDao
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.auth.service.AuthSocketService
-import siberia.modules.user.data.dto.systemevents.useraccess.UserRightsUpdated
+import siberia.modules.user.data.dto.systemevents.useraccess.roles.UserRolesCreatedEvent
+import siberia.modules.user.data.dto.systemevents.useraccess.roles.UserRolesRemovedEvent
+import siberia.modules.user.data.dto.systemevents.useraccess.rules.UserRulesCreatedEvent
+import siberia.modules.user.data.dto.systemevents.useraccess.rules.UserRulesRemovedEvent
+import siberia.utils.database.BaseIntEntity
 import siberia.utils.database.idValue
 import siberia.utils.kodein.KodeinService
 
@@ -27,11 +31,42 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
     private val authSocketService: AuthSocketService by instance()
     private val rbacService: RbacService by instance()
 
-    private fun logUpdate(author: AuthorizedUser, target: String, description: String) = transaction {
-        val authorName: String = UserDao[author.id].login
-        val event = UserRightsUpdated(authorName, target, description)
-        SystemEventModel.logEvent(event)
+    private enum class UpdateDirection {
+        CREATED, REMOVED
     }
+
+    private fun logUpdateRoles(author: AuthorizedUser, target: UserDao, updateDirection: UpdateDirection, old: List<RoleOutputDto>) = transaction {
+        val description = "User roles were updated"
+        val authorName: String = UserDao[author.id].login
+        val eventInstance = BaseIntEntity.EventInstance(
+            getUserRoles(target.idValue),
+            old
+        )
+        val rollbackInstance = eventInstance.serialize()
+        val event = if (updateDirection == UpdateDirection.CREATED)
+            UserRolesCreatedEvent(authorName, target.login, description, target.idValue, rollbackInstance)
+        else
+            UserRolesRemovedEvent(authorName, target.login, description, target.idValue, rollbackInstance)
+
+        SystemEventModel.logResettableEvent(event)
+    }
+
+    private fun logUpdateRules(author: AuthorizedUser, target: UserDao, updateDirection: UpdateDirection, old: List<LinkedRuleOutputDto>) = transaction {
+        val description = "User rules were updated"
+        val authorName: String = UserDao[author.id].login
+        val eventInstance = BaseIntEntity.EventInstance(
+            getUserRules(target.idValue),
+            old
+        )
+        val rollbackInstance = eventInstance.serialize()
+        val event = if (updateDirection == UpdateDirection.CREATED)
+            UserRulesCreatedEvent(authorName, target.login, description, target.idValue, rollbackInstance)
+        else
+            UserRulesRemovedEvent(authorName, target.login, description, target.idValue, rollbackInstance)
+
+        SystemEventModel.logResettableEvent(event)
+    }
+
 
     private fun List<LinkedRuleOutputDto>.appendToUser(userDao: UserDao, simplifiedBy: Int? = null): List<LinkedRuleOutputDto> =
         map { link ->
@@ -67,7 +102,7 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
 
     fun addRules(authorizedUser: AuthorizedUser, targetId: Int, newRules: List<LinkedRuleInputDto>): List<LinkedRuleOutputDto> = transaction {
         val userDao = UserDao[targetId]
-        logUpdate(authorizedUser, userDao.login, "New rules added")
+        logUpdateRules(authorizedUser, userDao, UpdateDirection.CREATED, getUserRules(targetId))
         val addedRules = addRules(userDao, newRules)
         if (userDao.idValue != authorizedUser.id)
             authSocketService.updateRules(userDao.idValue)
@@ -84,7 +119,7 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
 
     fun addRoles(authorizedUser: AuthorizedUser, targetId: Int, newRoles: List<Int>): List<RoleOutputDto> = transaction {
         val userDao = UserDao[targetId]
-        logUpdate(authorizedUser, userDao.login, "New roles added")
+        logUpdateRoles(authorizedUser, userDao, UpdateDirection.CREATED, getUserRoles(targetId))
         val addedRoles = addRoles(userDao, newRoles)
         if (userDao.idValue != authorizedUser.id)
             authSocketService.updateRules(userDao.idValue)
@@ -99,19 +134,21 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
 
     fun getUserRoles(userId: Int): List<RoleOutputDto> = transaction { UserDao[userId].rolesWithRules }
 
-    fun removeRules(authorizedUser: AuthorizedUser, targetId: Int, linkedRules: List<LinkedRuleInputDto>) = transaction {
+    fun removeRules(authorizedUser: AuthorizedUser, targetId: Int, linkedRules: List<LinkedRuleInputDto>, shadowed: Boolean = false) = transaction {
         val targetDao = UserDao[targetId]
+        if (!shadowed)
+            logUpdateRules(authorizedUser, targetDao, UpdateDirection.REMOVED, getUserRules(targetId))
         RbacModel.unlinkRules((RbacModel.user eq targetDao.idValue) and RbacModel.simplifiedBy.isNull(), linkedRules)
-        logUpdate(authorizedUser, targetDao.login, "Some rules were removed")
         commit()
         if (authorizedUser.id != targetDao.idValue)
             authSocketService.updateRules(targetDao.idValue)
     }
 
-    fun removeRoles(authorizedUser: AuthorizedUser, targetId: Int, linkedRoles: List<Int>) = transaction {
+    fun removeRoles(authorizedUser: AuthorizedUser, targetId: Int, linkedRoles: List<Int>, shadowed: Boolean = false) = transaction {
         val targetDao = UserDao[targetId]
+        if (!shadowed)
+            logUpdateRoles(authorizedUser, targetDao, UpdateDirection.REMOVED, getUserRoles(targetId))
         RbacModel.unlinkRoles(targetDao.idValue, linkedRoles)
-        logUpdate(authorizedUser, targetDao.login, "Some roles were removed")
         commit()
         if (authorizedUser.id != targetDao.idValue)
             authSocketService.updateRules(targetDao.idValue)

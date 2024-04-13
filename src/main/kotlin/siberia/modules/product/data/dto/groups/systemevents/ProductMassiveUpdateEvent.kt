@@ -15,8 +15,8 @@ class ProductMassiveUpdateEvent(
     override val eventDescription: String
         get() = "Products massive update (by group $eventObjectName)"
     override val rollbackRoute: String
-        get() = "product/groups"
+        get() = "product/groups/bulk"
 
     override val eventObjectType: Int
-        get() = AppConf.objectTypes.productGroupEvent
+        get() = AppConf.objectTypes.massiveProductUpdateEvent
 }

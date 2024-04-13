@@ -2,6 +2,7 @@ package siberia.utils.database
 
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import org.jetbrains.exposed.dao.IntEntity
@@ -52,10 +53,16 @@ abstract class BaseIntEntity<OutputDto : SerializableAny>(id: EntityID<Int>, tab
 
 
     @Serializable
-    data class EventInstance <T, R> (
+    data class EventInstance <T: SerializableAny, R: SerializableAny> (
         val rollbackInstance: T,
         val afterInstance: R
-    )
+    ) {
+        @Transient
+        val json = Json { ignoreUnknownKeys = true }
+        @OptIn(InternalSerializationApi::class)
+        fun serialize(): String =
+            json.encodeToString(EventInstance::class.serializer(), this)
+    }
 
     @OptIn(InternalSerializationApi::class)
     inline fun <reified Output : SerializableAny, reified Update : SerializableAny> createEncodedRollbackUpdateDto(onUpdate: Update, output: SerializableAny = toOutputDto()): String {

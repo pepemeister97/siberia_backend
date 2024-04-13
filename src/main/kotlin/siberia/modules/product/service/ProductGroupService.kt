@@ -36,11 +36,13 @@ class ProductGroupService(di: DI) : KodeinService(di) {
     }
 
     fun update(
+        authorizedUser: AuthorizedUser,
         groupId: Int,
         productGroupUpdateDto: ProductGroupUpdateDto
     ): ProductGroupOutputDto = transaction {
+        val userDao = UserDao[authorizedUser.id]
         val productGroupDao = ProductGroupDao[groupId]
-        productGroupDao.loadAndFlush(productGroupUpdateDto)
+        productGroupDao.loadAndFlush(userDao.login, productGroupUpdateDto)
 
         productGroupDao.toOutputDto()
     }

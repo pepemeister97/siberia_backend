@@ -58,10 +58,7 @@ import siberia.modules.stock.service.StockService
 import siberia.modules.transaction.controller.*
 import siberia.modules.transaction.data.models.*
 import siberia.modules.transaction.service.*
-import siberia.modules.user.service.UserAccessControlService
-import siberia.modules.user.service.UserEventService
-import siberia.modules.user.service.UserService
-import siberia.modules.user.service.UserSocketService
+import siberia.modules.user.service.*
 import siberia.plugins.*
 import siberia.utils.database.DatabaseConnector
 import siberia.utils.kodein.bindSingleton
@@ -87,6 +84,8 @@ fun Application.module() {
         bindSingleton { UserService(it) }
         bindSingleton { UserEventService(it) }
         bindSingleton { UserAccessControlService(it) }
+        bindSingleton { UserRulesEventService(it) }
+        bindSingleton { UserRolesEventService(it) }
         bindSingleton { UserSocketService(it) }
         bindSingleton { RbacService(it) }
         bindSingleton { RoleEventService(it) }
