@@ -28,8 +28,8 @@ class DatabaseConnector(vararg tables: Table, initializer: Transaction.() -> Uni
                     jdbcUrl = database.url
                     username = database.user
                     password = database.password
-                    maximumPoolSize = 5
-                    minimumIdle = 5
+                    maximumPoolSize = 25
+                    minimumIdle = 25
                     maxLifetime = 600000
                     keepaliveTime = 30000
                     isAutoCommit = false

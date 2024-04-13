@@ -31,15 +31,17 @@ class CollectionDao(id: EntityID<Int>) : BaseIntEntity<CollectionOutputDto>(id, 
         CollectionOutputDto(idValue, name)
 
     fun loadAndFlush(authorName: String, collectionUpdateDto: CollectionUpdateDto, batch: EntityBatchUpdate? = null): Boolean {
-        val nameOnUpdate = collectionUpdateDto.name ?: return true
         val event = CollectionUpdateEvent(
             authorName,
-            name,
+            with(collectionUpdateDto) {
+                if (name == this@CollectionDao.name || name == null) this@CollectionDao.name
+                else "$name (${this@CollectionDao.name})"
+            },
             createEncodedRollbackUpdateDto<CollectionOutputDto, CollectionUpdateDto>(collectionUpdateDto),
             idValue
         )
         SystemEventModel.logResettableEvent(event)
-        name = nameOnUpdate
+        name = collectionUpdateDto.name ?: name
         return super.flush(batch)
     }
 

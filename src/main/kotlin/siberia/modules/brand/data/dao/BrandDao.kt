@@ -31,15 +31,17 @@ class BrandDao(id: EntityID<Int>) : BaseIntEntity<BrandOutputDto>(id, BrandModel
         BrandOutputDto(idValue, name)
 
     fun loadAndFlush(authorName: String, brandUpdateDto: BrandUpdateDto, batch: EntityBatchUpdate? = null): Boolean {
-        val nameOnUpdate = brandUpdateDto.name ?: return true
         val event = BrandUpdateEvent(
             authorName,
-            nameOnUpdate,
+            with(brandUpdateDto) {
+                if (name == this@BrandDao.name || name == null) this@BrandDao.name
+                else "$name (${this@BrandDao.name})"
+            },
             createEncodedRollbackUpdateDto<BrandOutputDto, BrandUpdateDto>(brandUpdateDto),
             idValue
         )
         SystemEventModel.logResettableEvent(event)
-        name = nameOnUpdate
+        name = brandUpdateDto.name ?: name
         return super.flush(batch)
     }
 
@@ -51,6 +53,7 @@ class BrandDao(id: EntityID<Int>) : BaseIntEntity<BrandOutputDto>(id, BrandModel
             idValue
         )
         SystemEventModel.logResettableEvent(event)
+
         super.delete()
     }
 }

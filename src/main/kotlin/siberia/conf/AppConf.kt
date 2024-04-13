@@ -95,7 +95,8 @@ object AppConf {
         collectionEvent = objectTypesConf.getInt("collection"),
         categoryEvent = objectTypesConf.getInt("category"),
         transactionEvent = objectTypesConf.getInt("transaction"),
-        productGroupEvent = objectTypesConf.getInt("product-group")
+        productGroupEvent = objectTypesConf.getInt("product-group"),
+        productBulkCreate = objectTypesConf.getInt("product-bulk-create"),
     )
 
     val requestTypes = RequestTypeConf(

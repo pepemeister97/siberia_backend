@@ -100,6 +100,7 @@ fun Application.module() {
         bindSingleton { ProductService(it) }
         bindSingleton { ProductEventService(it) }
         bindSingleton { ProductParseService(it) }
+        bindSingleton { ProductMassiveEventService(it) }
         bindSingleton { StockService(it) }
         bindSingleton { StockEventService(it) }
         bindSingleton { TransactionService(it) }

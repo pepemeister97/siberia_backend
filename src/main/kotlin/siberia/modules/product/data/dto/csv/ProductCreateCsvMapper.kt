@@ -21,6 +21,7 @@ class ProductCreateCsvMapper : AbstractCsvMapper<ProductCreateDto>() {
             "amountInBox"         to true,
             "expirationDate"      to true,
             "link"                to true,
+            "offertaPrice"        to true,
         )
     override val klass: KClass<ProductCreateDto>
         get() = ProductCreateDto::class

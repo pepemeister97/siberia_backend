@@ -1,10 +1,10 @@
 package siberia.modules.logger.data.dto
 
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.serializer
+import siberia.utils.database.BaseIntEntity
+import siberia.utils.database.EMPTY
 import siberia.utils.database.SerializableAny
 
 @Serializable
@@ -19,8 +19,8 @@ data class SystemEventOutputDto (
     val eventDescription: String,
     val eventObjectId: Int? = null,
     val canBeReset: Boolean,
-    val rollbackInstance: String? = null,
-    val rollbackRoute: String? = null,
+    var rollbackInstance: String? = null,
+    var rollbackRoute: String? = null,
 
     //Next iterations
 //    val eventObject: Int? = null,
@@ -36,12 +36,11 @@ data class SystemEventOutputDto (
 
     @Transient val json = Json { ignoreUnknownKeys = true }
 
-    @OptIn(InternalSerializationApi::class)
     inline fun <reified T : SerializableAny> getRollbackData(): UpdateEventDto<T> {
         val objectId = eventObjectId ?: throw Exception("Bad event")
         if (rollbackInstance == null || rollbackInstance == "")
             throw Exception("Rollback instance is not provided")
-        val objectUpdateDto = this.json.decodeFromString(T::class.serializer(), rollbackInstance)
-        return UpdateEventDto(objectId, objectUpdateDto)
+        val eventInstance = json.decodeFromString<BaseIntEntity.EventInstance<T, EMPTY>>(rollbackInstance!!)
+        return UpdateEventDto(objectId, eventInstance.rollbackInstance)
     }
 }

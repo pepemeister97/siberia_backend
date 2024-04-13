@@ -26,6 +26,9 @@ class SystemEventService(di: DI) : KodeinService(di) {
             }
         }.toList()
 
+    fun getOne(eventId: Int): SystemEventOutputDto =
+        SystemEventModel.getOne(eventId)
+
     fun getAllTypes() = SystemEventTypeModel.getAll()
 
     fun getAllObjectTypes() = SystemEventObjectTypeModel.getAll()

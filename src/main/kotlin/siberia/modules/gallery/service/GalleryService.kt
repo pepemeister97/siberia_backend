@@ -98,4 +98,12 @@ class GalleryService(di: DI) : KodeinService(di) {
 
         galleryDao.toOutputDto()
     }
+
+    fun getPaths(ids: List<Int>): List<String> = transaction {
+        GalleryModel.select {
+            GalleryModel.id inList ids
+        }.map {
+            it[GalleryModel.url]
+        }
+    }
 }

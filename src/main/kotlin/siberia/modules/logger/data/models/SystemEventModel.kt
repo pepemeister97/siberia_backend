@@ -2,6 +2,7 @@ package siberia.modules.logger.data.models
 
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
+import siberia.exceptions.NotFoundException
 import siberia.modules.logger.data.dto.SystemEventCreateDto
 import siberia.modules.logger.data.dto.SystemEventOutputDto
 import siberia.modules.logger.data.dto.resettable.ResettableSystemEventCreateDto
@@ -28,8 +29,9 @@ object SystemEventModel: BaseIntIdTable() {
     val relatedTo = reference("related_to", SystemEventModel, ReferenceOption.SET_NULL, ReferenceOption.SET_NULL).nullable().default(null)
     val canBeReset = bool("can_be_reset")
 
-    private fun ResultRow.toOutputDto() =
-        SystemEventOutputDto(
+    private fun ResultRow.toOutputDto(needRollback: Boolean = false): SystemEventOutputDto {
+
+        val systemEventOutputDto = SystemEventOutputDto(
             id = this[SystemEventModel.id].value,
             author = this[author],
             eventType = this[SystemEventTypeModel.name],
@@ -40,26 +42,39 @@ object SystemEventModel: BaseIntIdTable() {
             timestamp = this[createdAt].toString(),
             eventObjectTypeId = this[eventObjectType].value,
             eventTypeId = this[eventType].value,
-            rollbackInstance = this[rollbackInstance],
-            rollbackRoute = this[rollbackRoute],
             canBeReset = this[canBeReset],
         )
 
-    private fun Join.sliceForOutput() = with(this) { slice(
-        SystemEventModel.id,
-        author,
-        eventType,
-        SystemEventTypeModel.name,
-        eventObjectName,
-        eventObjectType,
-        eventDescription,
-        eventObjectId,
-        SystemEventObjectTypeModel.name,
-        createdAt,
-        canBeReset,
-        rollbackInstance,
-        rollbackRoute
-    ) }
+        if (needRollback) {
+            systemEventOutputDto.rollbackInstance = this[rollbackInstance]
+            systemEventOutputDto.rollbackRoute = this[rollbackRoute]
+        }
+
+        return systemEventOutputDto
+    }
+
+    private fun Join.sliceForOutput(needRollback: Boolean = false) = with(this) {
+        val slice = mutableListOf(
+            SystemEventModel.id,
+            author,
+            eventType,
+            SystemEventTypeModel.name,
+            eventObjectName,
+            eventObjectType,
+            eventDescription,
+            eventObjectId,
+            SystemEventObjectTypeModel.name,
+            createdAt,
+            canBeReset
+        )
+
+        if (needRollback) {
+            slice.add(rollbackInstance)
+            slice.add(rollbackRoute)
+        }
+
+        slice(slice)
+    }
 
     fun getList(query: SqlExpressionBuilder.() -> Op<Boolean>): List<SystemEventOutputDto> = transaction {
         SystemEventModel
@@ -77,11 +92,22 @@ object SystemEventModel: BaseIntIdTable() {
             .leftJoin(SystemEventTypeModel)
             .leftJoin(SystemEventObjectTypeModel)
 //            .join(SystemEventModel, JoinType.LEFT, relatedTo, SystemEventModel.id)
-            .sliceForOutput()
+            .sliceForOutput(needRollback = true)
             .select { SystemEventModel.id eq eventId }
             .map {
-                it.toOutputDto()
+                it.toOutputDto(needRollback = true)
             }
+    }
+
+    fun getOne(eventId: Int): SystemEventOutputDto = transaction {
+        SystemEventModel
+            .leftJoin(SystemEventTypeModel)
+            .leftJoin(SystemEventObjectTypeModel)
+            .sliceForOutput(needRollback = true)
+            .select { SystemEventModel.id eq eventId }
+            .firstOrNull()
+            ?.toOutputDto(needRollback = true)
+            ?: throw NotFoundException("System event [$eventId] not found")
     }
 
     fun <T : SystemEventCreateDto> logEvent(event: T) = transaction {

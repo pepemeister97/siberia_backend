@@ -13,6 +13,9 @@ import kotlin.reflect.full.primaryConstructor
 
 typealias SerializableAny = @Serializable Any
 
+@Serializable
+class EMPTY
+
 abstract class BaseIntEntity<OutputDto : SerializableAny>(id: EntityID<Int>, table: BaseIntIdTable): IntEntity(id) {
     val createdAt by table.createdAt
     var updatedAt by table.updatedAt
@@ -36,9 +39,9 @@ abstract class BaseIntEntity<OutputDto : SerializableAny>(id: EntityID<Int>, tab
             val currentProp = try { outputDtoKlass.memberProperties.first { it.name == param.name } } catch (_: Exception) { null }
                 ?: return@forEach
             val currentValue = currentProp.call(output)
-            val onUpdateValue = prop.call(rollbackInstance)
-            val defaultValue = prop.call(onUpdate)
-            if (onUpdateValue != defaultValue) {
+            val onUpdateValue = prop.call(onUpdate)
+            val defaultValue = prop.call(rollbackInstance)
+            if (onUpdateValue != currentValue && onUpdateValue != defaultValue) {
                 if (prop is KMutableProperty<*>)
                     prop.setter.call(rollbackInstance, currentValue)
             }
@@ -48,12 +51,22 @@ abstract class BaseIntEntity<OutputDto : SerializableAny>(id: EntityID<Int>, tab
     }
 
 
+    @Serializable
+    data class EventInstance <T, R> (
+        val rollbackInstance: T,
+        val afterInstance: R
+    )
+
     @OptIn(InternalSerializationApi::class)
     inline fun <reified Output : SerializableAny, reified Update : SerializableAny> createEncodedRollbackUpdateDto(onUpdate: Update, output: SerializableAny = toOutputDto()): String {
         val updateDtoKlass = Update::class
         val rollbackDto = initRollbackInstance<Output, Update>(onUpdate, output)
 
-        return json.encodeToString(updateDtoKlass.serializer(), rollbackDto)
+        val eventInstance = EventInstance(
+            rollbackDto, onUpdate
+        )
+
+        return json.encodeToString(EventInstance.serializer(updateDtoKlass.serializer(), updateDtoKlass.serializer()), eventInstance)
     }
 
     inline fun <reified Output : OutputDto, reified Update : SerializableAny> getRollbackInstance(
@@ -73,7 +86,11 @@ abstract class BaseIntEntity<OutputDto : SerializableAny>(id: EntityID<Int>, tab
     protected inline fun <reified Output : SerializableAny> createRollbackRemoveDto(dto: Output): String {
         val outputDtoKlass = Output::class
 
-        return json.encodeToString(outputDtoKlass.serializer(), dto)
+        val eventInstance = EventInstance(
+            dto, EMPTY()
+        )
+
+        return json.encodeToString(EventInstance.serializer(outputDtoKlass.serializer(), EMPTY.serializer()), eventInstance)
     }
 
 }

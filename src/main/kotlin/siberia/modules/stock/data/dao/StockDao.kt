@@ -55,7 +55,10 @@ class StockDao(id: EntityID<Int>): BaseIntEntity<StockOutputDto>(id, StockModel)
     fun loadAndFlush(authorName: String, stockUpdateDto: StockUpdateDto): Boolean {
         val event = StockUpdateEvent(
             authorName,
-            stockUpdateDto.name ?: name,
+            with(stockUpdateDto) {
+                if (name == this@StockDao.name || name == null) this@StockDao.name
+                else "$name (${this@StockDao.name})"
+            },
             idValue,
             createEncodedRollbackUpdateDto<StockOutputDto, StockUpdateDto>(stockUpdateDto)
         )

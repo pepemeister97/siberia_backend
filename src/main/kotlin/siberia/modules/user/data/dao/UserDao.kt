@@ -83,7 +83,10 @@ class UserDao(id: EntityID<Int>): BaseIntEntity<UserOutputDto>(id, UserModel) {
     fun loadAndFlush(authorName: String, userUpdateDto: UserUpdateDto): Boolean {
         val event = UserUpdateEvent(
             authorName,
-            login,
+            with(userUpdateDto) {
+                if (name == this@UserDao.name || name == null) this@UserDao.name
+                else "$name (${this@UserDao.name})"
+            },
             userUpdateDto.login ?: login,
             idValue,
             createEncodedRollbackUpdateDto<UserOutputDto, UserUpdateDto>(userUpdateDto, toOutputWithHash())

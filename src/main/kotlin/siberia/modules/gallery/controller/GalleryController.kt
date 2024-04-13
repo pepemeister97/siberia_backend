@@ -7,6 +7,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.kodein.di.DI
 import org.kodein.di.instance
+import siberia.modules.gallery.data.dto.GetPathsInputDto
 import siberia.modules.gallery.data.dto.ImageCreateDto
 import siberia.modules.gallery.data.dto.ImageSearchFilterDto
 import siberia.modules.gallery.data.dto.ImageUpdateDto
@@ -26,6 +27,11 @@ class GalleryController(override val di: DI) : KodeinController() {
             post("all"){
                 val filter = call.receive<ImageSearchFilterDto>()
                 call.respond(galleryService.getAll(filter))
+            }
+            post("paths") {
+                val getPathsInputDto = call.receive<GetPathsInputDto>()
+
+                call.respond<List<String>>(galleryService.getPaths(getPathsInputDto.ids))
             }
             route("{imageId}"){
                 delete {

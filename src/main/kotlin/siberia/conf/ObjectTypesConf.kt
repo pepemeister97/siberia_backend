@@ -9,6 +9,7 @@ data class ObjectTypesConf (
     val brandEvent: Int,
     val collectionEvent: Int,
     val categoryEvent: Int,
-    val transactionEvent: Int,
-    val productGroupEvent: Int
+    val transactionEvent: Int, //Not implemented
+    val productGroupEvent: Int,
+    val productBulkCreate: Int
 )

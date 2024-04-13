@@ -42,18 +42,18 @@ class RoleDao(id: EntityID<Int>): BaseIntEntity<RoleOutputDto>(id, RoleModel) {
     fun loadAndFlush(authorName: String, roleUpdateDto: RoleUpdateDto, batch: EntityBatchUpdate? = null): Boolean {
         val event = RoleUpdateEvent(
             authorName,
-            name,
+            with(roleUpdateDto) {
+                if (name == this@RoleDao.name || name == null) this@RoleDao.name
+                else "$name (${this@RoleDao.name})"
+            },
             roleUpdateDto.name ?: name,
             createEncodedRollbackUpdateDto<RoleOutputDto, RoleUpdateDto>(roleUpdateDto),
             idValue
         )
         SystemEventModel.logResettableEvent(event)
 
-        if (roleUpdateDto.name != null)
-            name = roleUpdateDto.name!!
-
-        if (roleUpdateDto.description != null)
-            description = roleUpdateDto.description
+        name = roleUpdateDto.name ?: name
+        description = roleUpdateDto.description ?: description
 
         return super.flush(batch)
     }

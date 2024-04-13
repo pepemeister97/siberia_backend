@@ -27,14 +27,17 @@ class CategoryDao(id: EntityID<Int>) : BaseIntEntity<CategoryOutputDto>(id, Cate
     fun loadAndFlush(authorName: String, categoryUpdateDto: CategoryUpdateDto): Boolean {
         val event = CategoryUpdateEvent(
             authorName,
-            name,
+            with(categoryUpdateDto) {
+                if (name == this@CategoryDao.name || name == null) this@CategoryDao.name
+                else "$name (${this@CategoryDao.name})"
+            },
             idValue,
             createEncodedRollbackUpdateDto<CategoryOutputDto, CategoryUpdateDto>(categoryUpdateDto)
         )
         SystemEventModel.logResettableEvent(event)
 
-        if (categoryUpdateDto.name != null)
-            name = categoryUpdateDto.name!!
+        name = categoryUpdateDto.name ?: name
+
         if (categoryUpdateDto.parent == idValue)
             throw BadRequestException("Bad parent ID")
         if (categoryUpdateDto.parent != null && categoryUpdateDto.parent != 0) {

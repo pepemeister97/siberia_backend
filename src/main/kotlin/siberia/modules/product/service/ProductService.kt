@@ -2,6 +2,7 @@ package siberia.modules.product.service
 
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.Table.Dual.join
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import org.kodein.di.instance
@@ -29,6 +30,8 @@ import siberia.modules.stock.data.models.StockModel
 import siberia.modules.stock.data.models.StockToProductModel
 import siberia.modules.transaction.data.dto.TransactionFullOutputDto
 import siberia.modules.user.data.dao.UserDao
+import siberia.utils.database.BaseIntEntity
+import siberia.utils.database.EMPTY
 import siberia.utils.kodein.KodeinService
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -91,9 +94,15 @@ class ProductService(di: DI) : KodeinService(di) {
         }
 
         val rollbackInstance = json.encodeToString(
-            ProductMassiveInsertRollbackDto.serializer(),
-            ProductMassiveInsertRollbackDto(insertedProducts)
+            BaseIntEntity.EventInstance.serializer(
+                ProductMassiveInsertRollbackDto.serializer(),
+                EMPTY.serializer()
+            ),
+            BaseIntEntity.EventInstance(
+                ProductMassiveInsertRollbackDto(insertedProducts), EMPTY()
+            )
         )
+
         val event = ProductMassiveCreateEvent(userDao.login, rollbackInstance)
         SystemEventModel.logResettableEvent(event)
 
@@ -148,7 +157,79 @@ class ProductService(di: DI) : KodeinService(di) {
     }
 
     fun getByFilter(productSearchDto: ProductSearchDto): List<ProductListItemOutputDto> = transaction {
-        getAvailableByFilter(searchFilterDto = productSearchDto)
+        getList(searchFilterDto = productSearchDto)
+//        getAvailableByFilter(searchFilterDto = productSearchDto)
+    }
+
+    fun getList(authorizedUser: AuthorizedUser? = null, searchFilterDto: ProductSearchDto): List<ProductListItemOutputDto> = transaction {
+        val ordering = if (authorizedUser != null && searchFilterDto.filters?.availability != null && searchFilterDto.filters.availability){
+            listOf(StockToProductModel.amount to SortOrder.DESC_NULLS_LAST, ProductModel.id to SortOrder.ASC)
+        } else{
+            listOf(ProductModel.id to SortOrder.ASC)
+        }
+
+        val ids = ProductModel.slice(ProductModel.id).select {
+            convertToOperator(searchFilterDto)
+        }.map { it[ProductModel.id] }
+
+        val photosMapped: MutableMap<Int, MutableList<String>> = mutableMapOf()
+
+        ProductToImageModel.join(
+            GalleryModel,
+            JoinType.LEFT,
+            additionalConstraint = {
+                ProductToImageModel.photo eq GalleryModel.id
+            }
+        ).slice(ProductToImageModel.photo, GalleryModel.url).select {
+            ProductToImageModel.product inList ids
+        }.map {
+            photosMapped[it[ProductToImageModel.photo].value]?.add(it[GalleryModel.url])
+                ?: with(photosMapped) {
+                    this[it[ProductToImageModel.photo].value] = mutableListOf(it[GalleryModel.url])
+                }
+        }
+
+        val slice = mutableListOf(
+            ProductModel.id,
+            ProductModel.name,
+            ProductModel.vendorCode,
+            ProductModel.commonPrice,
+            ProductModel.eanCode
+        )
+
+        if (authorizedUser != null)
+            slice.add(StockToProductModel.amount)
+
+        with(
+            ProductModel.slice(slice)
+        ) {
+            if (authorizedUser != null)
+                join(
+                    StockToProductModel,
+                    JoinType.LEFT,
+                    additionalConstraint = {
+                        (StockToProductModel.product eq ProductModel.id) and
+                        (StockToProductModel.stock eq authorizedUser.stockId)
+                    }
+                )
+            else
+                this
+        }.select {
+            convertToOperator(searchFilterDto)
+        }.orderBy(*ordering.toTypedArray()).map {
+            val amount = try { it[StockToProductModel.amount].toDouble() } catch (_: Exception) { 0.0 }
+
+            val id = it[ProductModel.id].value
+            ProductListItemOutputDto(
+                id = id,
+                name = it[ProductModel.name],
+                vendorCode = it[ProductModel.vendorCode],
+                quantity = amount,
+                price = it[ProductModel.commonPrice],
+                photo = photosMapped[id] ?: mutableListOf(),
+                eanCode = it[ProductModel.eanCode]
+            )
+        }
     }
 
     fun getOne(productId: Int): ProductFullOutputDto = transaction {

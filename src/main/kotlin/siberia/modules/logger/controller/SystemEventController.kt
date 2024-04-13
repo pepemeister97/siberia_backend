@@ -25,6 +25,11 @@ class SystemEventController(override val di: DI) : KodeinController() {
 
                     call.respond(systemEventService.getByFilter(filter))
                 }
+                get("{eventId}") {
+                    val eventId = call.parameters.getInt("eventId", "EventId must be int")
+
+                    call.respond(systemEventService.getOne(eventId))
+                }
             }
             authenticate("default") {
                 get("types") {

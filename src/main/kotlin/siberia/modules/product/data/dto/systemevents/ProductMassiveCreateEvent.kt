@@ -13,10 +13,10 @@ data class ProductMassiveCreateEvent(
     override val eventDescription: String
         get() = "Some products were added"
     override val eventObjectName: String
-        get() = ""
+        get() = "From file upload"
 
     override val rollbackRoute: String
         get() = "product/bulk"
     override val eventObjectType: Int
-        get() = AppConf.objectTypes.productEvent
+        get() = AppConf.objectTypes.productBulkCreate
 }

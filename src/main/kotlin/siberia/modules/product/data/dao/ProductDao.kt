@@ -159,7 +159,10 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
     fun loadAndFlush(authorName: String, productUpdateDto: ProductUpdateDto) {
         val event = ProductUpdateEvent(
             authorName,
-            name,
+            with(productUpdateDto) {
+                if (name == this@ProductDao.name || name == null) this@ProductDao.name
+                else "$name (${this@ProductDao.name})"
+            },
             vendorCode,
             idValue,
             createEncodedRollbackUpdateDto<ProductRollbackDto, ProductUpdateDto>(productUpdateDto, rollbackOutput(false))
