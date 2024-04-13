@@ -70,7 +70,7 @@ class OutcomeTransactionService(di: DI) : AbstractTransactionService(di) {
 
     fun updateHidden(transactionId: Int, products: List<TransactionInputDto.TransactionProductInputDto>) = transaction {
         val transactionDao = TransactionDao[transactionId]
-        if (!transactionDao.hidden || transactionDao.typeId != AppConf.requestTypes.outcome)
+        if (transactionDao.typeId != AppConf.requestTypes.outcome || transactionDao.statusId != AppConf.requestStatus.open)
             throw ForbiddenException()
         val targetStockId = transactionDao.fromId ?: throw BadRequestException("Bad transaction")
         val oldList = TransactionModel.clearProductsList(transactionId)

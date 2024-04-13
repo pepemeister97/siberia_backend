@@ -19,6 +19,12 @@ class OutcomeTransactionController(override val di: DI) : KodeinController() {
     override fun Routing.registerRoutes() {
         route("transaction/outcome") {
             authenticate ("create-outcome-request") {
+                post {
+                    val authorizedUser = call.getAuthorized()
+                    val transactionInputDto = call.receive<TransactionInputDto>()
+
+                    call.respond(outcomeTransactionService.create(authorizedUser, transactionInputDto))
+                }
                 post ("{transactionId}") {
                     val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")
                     val authorizedUser = call.getAuthorized()
@@ -34,12 +40,6 @@ class OutcomeTransactionController(override val di: DI) : KodeinController() {
                         call.respond(outcomeTransactionService.create(authorizedUser, transactionInputDto))
                     }
                     route("{transactionId}") {
-                        patch {
-                            val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")
-                            val products = call.receive<List<TransactionInputDto.TransactionProductInputDto>>()
-
-                            call.respond(outcomeTransactionService.updateHidden(transactionId, products))
-                        }
                         delete {
                             val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")
 
@@ -51,6 +51,12 @@ class OutcomeTransactionController(override val di: DI) : KodeinController() {
             }
             authenticate("approve-outcome-request") {
                 route("{transactionId}") {
+                    patch {
+                        val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")
+                        val products = call.receive<List<TransactionInputDto.TransactionProductInputDto>>()
+
+                        call.respond(outcomeTransactionService.updateHidden(transactionId, products))
+                    }
                     patch("approve") {
                         val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")
                         val authorizedUser = call.getAuthorized()
