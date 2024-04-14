@@ -49,7 +49,7 @@ class StockController(override val di: DI) : KodeinController() {
 
                     call.respond(stockService.create(authorizedUser, stockCreateDto))
                 }
-                post ("rollback/{event}") {
+                post ("rollback/{eventId}") {
                     val authorizedUser = call.getAuthorized()
                     val eventId = call.parameters.getInt("eventId", "Event id must be int")
 

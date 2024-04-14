@@ -32,6 +32,7 @@ import siberia.modules.transaction.data.dto.TransactionFullOutputDto
 import siberia.modules.user.data.dao.UserDao
 import siberia.utils.database.BaseIntEntity
 import siberia.utils.database.EMPTY
+import siberia.utils.database.idValue
 import siberia.utils.kodein.KodeinService
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -72,11 +73,12 @@ class ProductService(di: DI) : KodeinService(di) {
     }
     fun create(authorizedUser: AuthorizedUser, productCreateDto: ProductCreateDto): ProductFullOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
-        val event = ProductCreateEvent(userDao.login, productCreateDto.name!!, productCreateDto.vendorCode!!)
 
         productCreateDto.photoList = galleryService.filterExists( productCreateDto.photoList ?: listOf())
 
         val productDao = createDao(productCreateDto)
+
+        val event = ProductCreateEvent(userDao.login, productCreateDto.name!!, productDao.vendorCode, productDao.idValue)
 
         SystemEventModel.logEvent(event)
 

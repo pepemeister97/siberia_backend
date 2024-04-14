@@ -3,10 +3,11 @@ package siberia.modules.product.data.dto.systemevents
 import siberia.conf.AppConf
 
 data class ProductCreateEvent(
-    override val author: String, val createdProductName: String, val createdProductVendorCode: String
-) : ProductEvent() {
+    override val author: String,
+    val createdProductName: String,
+    val createdProductVendorCode: String,
     override val eventObjectId: Int
-        get() = 0
+) : ProductEvent() {
     override val rollbackInstance: String
         get() = ""
     override val eventType: Int

@@ -1,12 +1,15 @@
 package siberia.modules.logger.data.models
 
+import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import siberia.exceptions.NotFoundException
 import siberia.modules.logger.data.dto.SystemEventCreateDto
 import siberia.modules.logger.data.dto.SystemEventOutputDto
 import siberia.modules.logger.data.dto.resettable.ResettableSystemEventCreateDto
+import siberia.utils.database.BaseIntEntity
 import siberia.utils.database.BaseIntIdTable
+import siberia.utils.database.EMPTY
 
 object SystemEventModel: BaseIntIdTable() {
     val author = text("author")
@@ -123,6 +126,18 @@ object SystemEventModel: BaseIntIdTable() {
     }
 
     fun <T : ResettableSystemEventCreateDto> logResettableEvent(event: T) {
+        //If we could decode rollback as two empty models, rollback is empty update
+        //If we get an exception during decoding rollback is not empty
+        val emptyRollback = try {
+            Json.decodeFromString<BaseIntEntity.EventInstance<EMPTY, EMPTY>>(event.rollbackInstance)
+            true //Definitely empty
+        } catch (e: Exception) {
+            false //Not empty
+        }
+
+        if (event.rollbackInstance == "" || emptyRollback)
+            return
+
         SystemEventModel.insert {
             it[author] = event.author
             it[eventObjectName] = event.eventObjectName

@@ -89,7 +89,6 @@ class UserDao(id: EntityID<Int>): BaseIntEntity<UserOutputDto>(id, UserModel) {
                 if (name == this@UserDao.name || name == null) this@UserDao.name
                 else "$name (${this@UserDao.name})"
             },
-            userUpdateDto.login ?: login,
             idValue,
             createEncodedRollbackUpdateDto<UserOutputDto, UserUpdateDto>(userUpdateDto, toOutputWithHash())
         )
