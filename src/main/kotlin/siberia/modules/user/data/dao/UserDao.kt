@@ -15,6 +15,8 @@ import siberia.modules.user.data.dto.UserUpdateDto
 import siberia.modules.user.data.dto.systemevents.user.UserCreateEvent
 import siberia.modules.user.data.dto.systemevents.user.UserRemoveEvent
 import siberia.modules.user.data.dto.systemevents.user.UserUpdateEvent
+import siberia.modules.user.data.dto.systemevents.useraccess.UserRolesRollbackDto
+import siberia.modules.user.data.dto.systemevents.useraccess.UserRulesRollbackDto
 import siberia.modules.user.data.models.UserModel
 import siberia.utils.database.BaseIntEntity
 import siberia.utils.database.BaseIntEntityClass
@@ -108,5 +110,13 @@ class UserDao(id: EntityID<Int>): BaseIntEntity<UserOutputDto>(id, UserModel) {
         SystemEventModel.logResettableEvent(event)
 
         super.delete()
+    }
+
+    fun rulesUpdateRollbackDto(updated: List<LinkedRuleInputDto>): String {
+        return createRollbackRemoveDto<UserRulesRollbackDto>(UserRulesRollbackDto(updated))
+    }
+
+    fun rolesUpdateRollbackDto(updated: List<Int>): String {
+        return createRollbackRemoveDto<UserRolesRollbackDto>(UserRolesRollbackDto(updated))
     }
 }

@@ -15,15 +15,15 @@ import siberia.modules.user.data.dto.CreateUserDto
 import siberia.modules.user.data.dto.UserFilterDto
 import siberia.modules.user.data.dto.UserOutputDto
 import siberia.modules.user.data.dto.UserUpdateDto
-import siberia.modules.user.service.UserAccessControlService
-import siberia.modules.user.service.UserEventService
-import siberia.modules.user.service.UserService
+import siberia.modules.user.service.*
 import siberia.utils.kodein.KodeinController
 
 class UserController(override val di: DI) : KodeinController() {
     private val userAccessControlService: UserAccessControlService by instance()
     private val userService: UserService by instance()
     private val userEventService: UserEventService by instance()
+    private val userRolesEventService: UserRolesEventService by instance()
+    private val userRulesEventService: UserRulesEventService by instance()
 
     override fun Routing.registerRoutes() {
         authenticate("default") {
@@ -62,6 +62,18 @@ class UserController(override val di: DI) : KodeinController() {
                     val eventId = call.parameters.getInt("eventId", "Event id must be INT")
 
                     call.respond(userEventService.rollback(authorizedUser, eventId))
+                }
+                post("rules/rollback/{eventId}") {
+                    val authorizedUser = call.getAuthorized()
+                    val eventId = call.parameters.getInt("eventId", "Event id must be INT")
+
+                    call.respond(userRulesEventService.rollback(authorizedUser, eventId))
+                }
+                post("roles/rollback/{eventId}") {
+                    val authorizedUser = call.getAuthorized()
+                    val eventId = call.parameters.getInt("eventId", "Event id must be INT")
+
+                    call.respond(userRolesEventService.rollback(authorizedUser, eventId))
                 }
                 route("{userId}") {
                     get {

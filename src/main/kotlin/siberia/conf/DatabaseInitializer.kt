@@ -215,7 +215,7 @@ object DatabaseInitializer {
             it[name] = "Product bulk create"
         }
         SystemEventObjectTypeModel.insert {
-            it[id] = AppConf.objectTypes.productBulkCreate
+            it[id] = AppConf.objectTypes.userRightsEvent
             it[name] = "User rights update"
         }
     }

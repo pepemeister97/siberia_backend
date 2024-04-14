@@ -8,5 +8,5 @@ abstract class UserRolesEvent: ResettableSystemEventCreateDto() {
         get() = AppConf.objectTypes.userRightsEvent
 
     override val rollbackRoute: String
-        get() = "rbac/user/roles"
+        get() = "user/roles"
 }

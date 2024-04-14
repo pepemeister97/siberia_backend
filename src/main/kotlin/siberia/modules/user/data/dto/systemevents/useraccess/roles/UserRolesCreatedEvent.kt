@@ -10,5 +10,5 @@ data class UserRolesCreatedEvent(
     override val rollbackInstance: String
 ): UserRolesEvent() {
     override val eventType: Int
-        get() = AppConf.eventTypes.updateEvent
+        get() = AppConf.eventTypes.createEvent
 }
