@@ -98,7 +98,7 @@ class RbacService(di: DI) : KodeinService(di) {
         else listOf()
 
         val author = UserDao[authorizedUser.id]
-        logEvent(RoleCreateEvent(author.login, roleDao.name))
+        logEvent(RoleCreateEvent(roleDao.idValue, roleDao.name, author.login))
         commit()
 
         RoleOutputDto(roleDao.idValue, roleDao.name, roleDao.description, linkedRules)

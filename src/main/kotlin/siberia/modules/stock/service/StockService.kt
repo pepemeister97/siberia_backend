@@ -29,7 +29,7 @@ class StockService(di: DI) : KodeinService(di) {
             name = stockCreateDto.name
             address = stockCreateDto.address
         }
-        val event = StockCreateEvent(userDao.login, stockCreateDto.name)
+        val event = StockCreateEvent(userDao.login, stockCreateDto.name, stockDao.idValue)
         SystemEventModel.logEvent(event)
         commit()
 

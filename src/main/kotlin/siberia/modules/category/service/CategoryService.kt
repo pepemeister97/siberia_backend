@@ -20,7 +20,7 @@ class CategoryService(di: DI) : KodeinService(di) {
 
         val createdCategory = CategoryModel.new(categoryInputDto, parentCategoryId)
 
-        val event = CategoryCreateEvent(userDao.login, createdCategory.name)
+        val event = CategoryCreateEvent(userDao.login, createdCategory.name, createdCategory.id)
         SystemEventModel.logEvent(event)
 
         commit()

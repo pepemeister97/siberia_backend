@@ -35,7 +35,7 @@ class UserDao(id: EntityID<Int>): BaseIntEntity<UserOutputDto>(id, UserModel) {
 
         fun new(authorName: String, init: UserDao.() -> Unit): UserDao {
             val userDao = super.new(init)
-            val userCreateEvent = UserCreateEvent(authorName, userDao.login)
+            val userCreateEvent = UserCreateEvent(authorName, userDao.login, userDao.idValue)
             SystemEventModel.logEvent(userCreateEvent)
             return userDao
         }

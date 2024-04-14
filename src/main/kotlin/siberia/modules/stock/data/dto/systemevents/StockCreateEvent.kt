@@ -3,10 +3,10 @@ package siberia.modules.stock.data.dto.systemevents
 import siberia.conf.AppConf
 
 data class StockCreateEvent(
-    override val author: String, val createdStockName: String
-) : StockEvent() {
+    override val author: String,
+    val createdStockName: String,
     override val eventObjectId: Int
-        get() = 0
+) : StockEvent() {
     override val rollbackInstance: String
         get() = ""
     override val eventType: Int

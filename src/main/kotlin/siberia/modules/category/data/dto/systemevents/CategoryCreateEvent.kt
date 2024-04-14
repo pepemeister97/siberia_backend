@@ -3,10 +3,10 @@ package siberia.modules.category.data.dto.systemevents
 import siberia.conf.AppConf
 
 data class CategoryCreateEvent(
-    override val author: String, val createdCategoryName: String
-) : CategoryEvent() {
+    override val author: String,
+    val createdCategoryName: String,
     override val eventObjectId: Int
-        get() = 0
+) : CategoryEvent() {
     override val rollbackInstance: String
         get() = ""
     override val eventType: Int

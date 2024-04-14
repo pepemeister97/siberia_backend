@@ -3,10 +3,10 @@ package siberia.modules.user.data.dto.systemevents.user
 import siberia.conf.AppConf
 
 data class UserCreateEvent(
-    override val author: String, val createdUserLogin: String
-) : UserEvent() {
+    override val author: String,
+    val createdUserLogin: String,
     override val eventObjectId: Int
-        get() = 0
+) : UserEvent() {
     override val rollbackInstance: String
         get() = ""
     override val eventType: Int

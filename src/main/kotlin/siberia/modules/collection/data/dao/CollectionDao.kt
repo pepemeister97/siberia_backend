@@ -17,10 +17,10 @@ class CollectionDao(id: EntityID<Int>) : BaseIntEntity<CollectionOutputDto>(id, 
 
     companion object : BaseIntEntityClass<CollectionOutputDto, CollectionDao>(CollectionModel) {
         fun new(authorName: String, init: CollectionDao.() -> Unit): CollectionDao {
-            val brandDao = super.new(init)
-            val event = CollectionCreateEvent(authorName, brandDao.name)
+            val collectionDao = super.new(init)
+            val event = CollectionCreateEvent(authorName, collectionDao.name, collectionDao.idValue)
             SystemEventModel.logEvent(event)
-            return brandDao
+            return collectionDao
         }
 
     }
