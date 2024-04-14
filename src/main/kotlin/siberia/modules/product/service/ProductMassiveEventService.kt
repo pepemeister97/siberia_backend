@@ -13,11 +13,11 @@ import siberia.modules.product.data.models.ProductModel
 import siberia.utils.kodein.KodeinEventService
 
 class ProductMassiveEventService(di: DI) : KodeinEventService(di) {
-    override fun rollbackUpdate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {
+    override fun rollbackUpdate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) = transaction {
         val rollbackMassiveUpdate = event.getRollbackData<MassiveUpdateRollbackDto>().objectDto
         rollbackMassiveUpdate.productsData.forEach {
-            val product = ProductDao[it.id!!]
-            product.loadUpdateDto(it)
+            val product = ProductDao[it.first.id!!]
+            product.loadUpdateDto(it.first)
             product.flush()
         }
     }

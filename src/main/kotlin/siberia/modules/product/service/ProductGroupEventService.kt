@@ -15,13 +15,13 @@ class ProductGroupEventService(di: DI) : KodeinEventService(di) {
     //Massive update rollback
     override fun rollbackUpdate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto): Unit = transaction {
         val rollbackEventData = event.getRollbackData<ProductGroupUpdateDto>()
-        productGroupService.update(authorizedUser, rollbackEventData.objectId, rollbackEventData.objectDto)
+        productGroupService.update(authorizedUser, rollbackEventData.objectId, rollbackEventData.objectDto, shadowed = true)
     }
 
     //Product group remove rollback
     override fun rollbackRemove(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) { transaction {
         val rollbackEventData = event.getRollbackData<ProductGroupCreateDto>()
-        productGroupService.create(rollbackEventData.objectDto)
+        productGroupService.create(authorizedUser, rollbackEventData.objectDto)
     } }
 
     override fun rollbackCreate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {

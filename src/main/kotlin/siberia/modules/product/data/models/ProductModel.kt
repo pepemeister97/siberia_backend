@@ -40,11 +40,15 @@ object ProductModel: BaseIntIdTable() {
 //    val size = double("size").default(1.0)
 //    val volume = double("volume").default(1.0)
 
-    fun updateBatch(products: List<Int>, massiveUpdateDto: MassiveUpdateDto): List<ProductUpdateDto> = transaction {
+    fun updateBatch(products: List<Int>, massiveUpdateDto: MassiveUpdateDto): List<Pair<ProductUpdateDto, ProductOutputDto>> = transaction {
         val rollbackList = ProductDao.find {
             ProductModel.id inList products
         }.map {
-            it.getRollbackInstance<ProductOutputDto, ProductUpdateDto>(massiveUpdateDto.productUpdateDto(it.idValue))
+            val outputDto = it.toOutputDto()
+            val updateDto = it.getRollbackInstance<ProductOutputDto, ProductUpdateDto>(massiveUpdateDto.productUpdateDto(it.idValue), outputDto)
+            updateDto.id = it.idValue
+
+            Pair(updateDto, outputDto)
         }
 
         ProductModel.update({ ProductModel.id inList products }) {

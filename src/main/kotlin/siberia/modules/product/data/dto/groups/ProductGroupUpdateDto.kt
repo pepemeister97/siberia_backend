@@ -4,6 +4,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ProductGroupUpdateDto (
-    val name: String? = null,
-    val products: List<Int>? = null
+    var name: String? = null,
+    var products: List<Int>? = null
 )

@@ -25,9 +25,10 @@ class ProductGroupController(override val di: DI) : KodeinController() {
                     call.respond<List<ProductGroupOutputDto>>(productGroupService.getAll())
                 }
                 post {
+                    val authorizedUser = call.getAuthorized()
                     val productGroupCreateDto = call.receive<ProductGroupCreateDto>()
 
-                    call.respond<ProductGroupFullOutputDto>(productGroupService.create(productGroupCreateDto))
+                    call.respond<ProductGroupFullOutputDto>(productGroupService.create(authorizedUser, productGroupCreateDto))
                 }
                 post("bulk/rollback/{eventId}") {
                     val authorizedUser = call.getAuthorized()

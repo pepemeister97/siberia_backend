@@ -6,6 +6,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.id.EntityID
+import siberia.plugins.Logger
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.full.memberProperties
@@ -57,11 +58,20 @@ abstract class BaseIntEntity<OutputDto : SerializableAny>(id: EntityID<Int>, tab
             val currentValue = currentProp.call(output)
             val onUpdateValue = prop.call(onUpdate)
             val defaultValue = prop.call(rollbackInstance)
-            if (onUpdateValue != currentValue && onUpdateValue != defaultValue) {
+            Logger.debug(prop.name, "main")
+            Logger.debug(currentValue, "main")
+            Logger.debug(onUpdateValue, "main")
+            Logger.debug(defaultValue, "main")
+            if (onUpdateValue != currentValue &&
+                onUpdateValue != defaultValue &&
+                prop.name != "id"
+            ) {
                 if (prop is KMutableProperty<*>)
                     prop.setter.call(rollbackInstance, currentValue)
             }
         }
+
+        Logger.debug(rollbackInstance, "main")
 
         return rollbackInstance
     }

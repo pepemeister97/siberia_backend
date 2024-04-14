@@ -29,22 +29,25 @@ class ProductGroupDao(id: EntityID<Int>) : BaseIntEntity<ProductGroupOutputDto>(
     private fun updateRollbackDto(): ProductGroupUpdateRollbackDto =
         ProductGroupUpdateRollbackDto(name, products.map { it.id })
 
-    fun loadAndFlush(authorName: String, productGroupUpdateDto: ProductGroupUpdateDto): Boolean {
-        val event = ProductGroupUpdateEvent(
-            authorName,
-            with(productGroupUpdateDto) {
-                if (name == this@ProductGroupDao.name || name == null) this@ProductGroupDao.name
-                else "$name (${this@ProductGroupDao.name})"
-            },
-            idValue,
-            createEncodedRollbackUpdateDto<ProductGroupUpdateRollbackDto, ProductGroupUpdateDto>(productGroupUpdateDto, updateRollbackDto())
-        )
+    fun loadAndFlush(authorName: String, productGroupUpdateDto: ProductGroupUpdateDto, shadowed: Boolean = false): Boolean {
+        if (!shadowed) {
+            val event = ProductGroupUpdateEvent(
+                authorName,
+                with(productGroupUpdateDto) {
+                    if (name == this@ProductGroupDao.name || name == null) this@ProductGroupDao.name
+                    else "$name (${this@ProductGroupDao.name})"
+                },
+                idValue,
+                createEncodedRollbackUpdateDto<ProductGroupUpdateRollbackDto, ProductGroupUpdateDto>(productGroupUpdateDto, updateRollbackDto())
+            )
+
+            SystemEventModel.logResettableEvent(event)
+        }
 
         name = productGroupUpdateDto.name ?: name
         if (productGroupUpdateDto.products != null)
-            ProductToGroupModel.setProducts(idValue, productGroupUpdateDto.products)
+            ProductToGroupModel.setProducts(idValue, productGroupUpdateDto.products ?: listOf())
 
-        SystemEventModel.logResettableEvent(event)
 
         return flush()
     }
@@ -60,4 +63,8 @@ class ProductGroupDao(id: EntityID<Int>) : BaseIntEntity<ProductGroupOutputDto>(
 
         super.delete()
     }
+
+    fun getMassiveUpdateRollbackInstance(massiveUpdateRollbackDto: MassiveUpdateRollbackDto): String =
+        createRollbackRemoveDto<MassiveUpdateRollbackDto>(massiveUpdateRollbackDto)
+
 }

@@ -116,6 +116,7 @@ object SystemEventModel: BaseIntIdTable() {
             it[eventObjectName] = event.eventObjectName
             it[eventObjectType] = event.eventObjectType
             it[eventDescription] = event.eventDescription
+            it[eventObjectId] = event.eventObjectId
             it[eventType] = event.eventType
             it[canBeReset] = false
         }
