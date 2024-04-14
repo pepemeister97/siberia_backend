@@ -44,9 +44,13 @@ class GalleryService(di: DI) : KodeinService(di) {
     fun remove(imageId : Int) = transaction{
         val galleryDao = GalleryDao[imageId]
 
+        val fileName = galleryDao.url
+
         galleryDao.delete()
 
         commit()
+
+        FilesUtil.removeFile(fileName)
 
         ProductRemoveResultDto(
             success = true,
