@@ -2,11 +2,16 @@ package siberia.modules.rbac.data.dao
 
 import org.jetbrains.exposed.dao.EntityBatchUpdate
 import org.jetbrains.exposed.dao.id.EntityID
+import siberia.modules.logger.data.dto.resettable.ResettableSystemEventCreateDto
 import siberia.modules.logger.data.models.SystemEventModel
+import siberia.modules.rbac.data.dto.LinkedRuleInputDto
 import siberia.modules.rbac.data.dto.RoleOutputDto
+import siberia.modules.rbac.data.dto.RoleRollbackDto
 import siberia.modules.rbac.data.dto.RoleUpdateDto
 import siberia.modules.rbac.data.dto.systemevents.RoleRemoveEvent
 import siberia.modules.rbac.data.dto.systemevents.RoleUpdateEvent
+import siberia.modules.rbac.data.dto.systemevents.rules.RoleAppendRulesEvent
+import siberia.modules.rbac.data.dto.systemevents.rules.RoleRemoveRulesEvent
 import siberia.modules.rbac.data.models.RbacModel
 import siberia.modules.rbac.data.models.role.RoleModel
 import siberia.modules.user.data.models.UserModel
@@ -69,5 +74,26 @@ class RoleDao(id: EntityID<Int>): BaseIntEntity<RoleOutputDto>(id, RoleModel) {
         SystemEventModel.logResettableEvent(event)
 
         super.delete()
+    }
+
+    fun getRulesPatchEvent(authorName: String, linkedRules: List<LinkedRuleInputDto>, remove: Boolean = false): ResettableSystemEventCreateDto {
+        val roleRollbackDto = RoleRollbackDto(
+            name, description, linkedRules, relatedUsers, remove
+        )
+
+        return if (remove)
+            RoleRemoveRulesEvent(
+                authorName,
+                idValue,
+                name,
+                createRollbackRemoveDto<RoleRollbackDto>(roleRollbackDto)
+            )
+        else
+            RoleAppendRulesEvent(
+                authorName,
+                idValue,
+                name,
+                createRollbackRemoveDto<RoleRollbackDto>(roleRollbackDto)
+            )
     }
 }

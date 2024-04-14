@@ -52,6 +52,7 @@ import siberia.modules.user.controller.UserController
 import siberia.modules.user.data.models.UserModel
 import siberia.modules.rbac.service.RbacService
 import siberia.modules.rbac.service.RoleEventService
+import siberia.modules.rbac.service.RoleRulesEventService
 import siberia.modules.stock.controller.StockController
 import siberia.modules.stock.service.StockEventService
 import siberia.modules.stock.service.StockService
@@ -89,6 +90,7 @@ fun Application.module() {
         bindSingleton { UserSocketService(it) }
         bindSingleton { RbacService(it) }
         bindSingleton { RoleEventService(it) }
+        bindSingleton { RoleRulesEventService(it) }
         bindSingleton { SystemEventService(it) }
         bindSingleton { BrandService(it) }
         bindSingleton { BrandEventService(it) }

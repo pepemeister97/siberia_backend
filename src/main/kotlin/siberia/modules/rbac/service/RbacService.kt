@@ -18,7 +18,6 @@ import siberia.modules.rbac.data.dao.RuleDao
 import siberia.modules.rbac.data.models.RbacModel
 import siberia.modules.rbac.data.dto.*
 import siberia.modules.rbac.data.dto.systemevents.RoleCreateEvent
-import siberia.modules.rbac.data.dto.systemevents.RoleUpdateEvent
 import siberia.modules.rbac.data.models.role.RoleModel
 import siberia.modules.rbac.data.models.rule.RuleModel
 import siberia.modules.stock.data.dao.StockDao
@@ -33,9 +32,14 @@ class RbacService(di: DI) : KodeinService(di) {
     private fun logEvent(event: SystemEventCreateDto) {
         SystemEventModel.logEvent(event)
     }
-    private fun logUpdateEvent(author: AuthorizedUser, oldTarget: String, target: String) {
+    private fun logUpdateEvent(author: AuthorizedUser, roleDao: RoleDao, linkedRules: List<LinkedRuleInputDto>) {
         val authorDao = UserDao[author.id]
-        logEvent(RoleUpdateEvent(authorDao.login, oldTarget, target))
+        SystemEventModel.logResettableEvent(roleDao.getRulesPatchEvent(authorDao.name, linkedRules))
+    }
+
+    private fun logRemoveEvent(author: AuthorizedUser, roleDao: RoleDao, linkedRules: List<LinkedRuleInputDto>) {
+        val authorDao = UserDao[author.id]
+        SystemEventModel.logResettableEvent(roleDao.getRulesPatchEvent(authorDao.name, linkedRules, remove = true))
     }
 
 //    fun getAllRoles(): List<RoleOutputDto> = transaction { RoleDao.find { Op.nullOp() }.map { it.toOutputDto() } }
@@ -110,7 +114,7 @@ class RbacService(di: DI) : KodeinService(di) {
             validateRule(it.ruleId, it.stockId)
         }.appendToRole(roleDao).run {
             if (needLog)
-                logUpdateEvent(authorizedUser, roleDao.name, roleDao.name)
+                logUpdateEvent(authorizedUser, roleDao, linkedRules)
             this
         }
         RbacModel.expandAppendedRules(roleId, appendedRules)
@@ -122,11 +126,12 @@ class RbacService(di: DI) : KodeinService(di) {
         appendedRules
     }
 
-    fun removeRulesFromRole(authorizedUser: AuthorizedUser, roleId: Int, linkedRules: List<LinkedRuleInputDto>) = transaction {
+    fun removeRulesFromRole(authorizedUser: AuthorizedUser, roleId: Int, linkedRules: List<LinkedRuleInputDto>, needLog: Boolean = true) = transaction {
         val roleDao = RoleDao[roleId]
 
         RbacModel.unlinkRules(RbacModel.role eq roleDao.idValue, linkedRules)
-        logUpdateEvent(authorizedUser, roleDao.name, roleDao.name)
+        if (needLog)
+            logRemoveEvent(authorizedUser, roleDao, linkedRules)
         RbacModel.removeExpandedRules(roleId, linkedRules)
         commit()
 
