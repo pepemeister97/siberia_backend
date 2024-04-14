@@ -48,6 +48,10 @@ dependencies {
     implementation(ktorServer("websockets"))
     implementation(ktorServer("netty"))
 
+    //Xls lib
+    implementation("org.apache.poi:poi:5.2.3")
+    implementation("org.apache.poi:poi-ooxml:5.2.3")
+
     //Crypto
     implementation("org.mindrot:jbcrypt:$jbcryptVersion")
 
