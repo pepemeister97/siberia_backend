@@ -21,8 +21,8 @@ import siberia.modules.product.data.dto.systemevents.ProductCreateEvent
 import siberia.modules.product.data.dto.systemevents.ProductMassiveCreateEvent
 import siberia.modules.product.data.models.ProductModel
 import siberia.modules.product.data.models.ProductToImageModel
-import siberia.modules.product.data.models.ProductToGroupModel
-import siberia.modules.product.data.models.ProductGroupModel
+import siberia.modules.category.data.models.CategoryModel
+import siberia.modules.collection.data.models.CollectionModel
 import siberia.modules.brand.data.models.BrandModel
 
 import siberia.modules.rbac.data.dao.RoleDao.Companion.createNullableRangeCond
@@ -173,7 +173,9 @@ class ProductService(di: DI) : KodeinService(di) {
         } else{
             listOf(ProductModel.id to SortOrder.ASC)
         }
-        val search = searchFilterDto.filters ?: throw IllegalStateException("must not be null")
+
+        val search = searchFilterDto.filters ?: ProductSearchFilterDto()
+
         val ids = ProductModel.slice(ProductModel.id).select {
             convertToOperator(search)
         }.map { it[ProductModel.id] }
@@ -266,32 +268,31 @@ class ProductService(di: DI) : KodeinService(di) {
     fun getSliceBasedOnDto(demandDto: ProductFieldsDemandDto): MutableList<Column<*>> {
         val slice = mutableListOf<Column<*>>()
 
-        if (demandDto.id) slice.add(ProductModel.id)
-        if (demandDto.vendorCode) slice.add(ProductModel.vendorCode)
-        if (demandDto.barcode) slice.add(ProductModel.barcode)
-        if (demandDto.brand) slice.add(ProductModel.brand)
-        if (demandDto.name) slice.add(ProductModel.name)
-        if (demandDto.description) slice.add(ProductModel.description)
-        if (demandDto.lastPurchasePrice) slice.add(ProductModel.lastPurchasePrice)
-        if (demandDto.cost) slice.add(ProductModel.cost)
-        if (demandDto.lastPurchaseDate) slice.add(ProductModel.lastPurchaseDate)
-        if (demandDto.distributorPrice) slice.add(ProductModel.distributorPrice)
-        if (demandDto.professionalPrice) slice.add(ProductModel.professionalPrice)
-        if (demandDto.commonPrice) slice.add(ProductModel.commonPrice)
-        if (demandDto.category) slice.add(ProductModel.category)
-        if (demandDto.collection) slice.add(ProductModel.collection)
-        if (demandDto.color) slice.add(ProductModel.color)
-        if (demandDto.amountInBox) slice.add(ProductModel.amountInBox)
-        if (demandDto.expirationDate) slice.add(ProductModel.expirationDate)
-        if (demandDto.link) slice.add(ProductModel.link)
-        if (demandDto.distributorPercent) slice.add(ProductModel.distributorPercent)
-        if (demandDto.professionalPercent) slice.add(ProductModel.professionalPercent)
-        if (demandDto.quantity) slice.add(ProductModel.eanCode)
-        if (demandDto.offerPrice) slice.add(ProductModel.offertaPrice)
+        if (demandDto.id == true) slice.add(ProductModel.id)
+        if (demandDto.vendorCode == true) slice.add(ProductModel.vendorCode)
+        if (demandDto.barcode == true) slice.add(ProductModel.barcode)
+        if (demandDto.brand == true) slice.add(BrandModel.name)
+        if (demandDto.name == true) slice.add(ProductModel.name)
+        if (demandDto.description == true) slice.add(ProductModel.description)
+        if (demandDto.lastPurchasePrice == true) slice.add(ProductModel.lastPurchasePrice)
+        if (demandDto.cost == true) slice.add(ProductModel.cost)
+        if (demandDto.lastPurchaseDate == true) slice.add(ProductModel.lastPurchaseDate)
+        if (demandDto.distributorPrice == true) slice.add(ProductModel.distributorPrice)
+        if (demandDto.professionalPrice == true) slice.add(ProductModel.professionalPrice)
+        if (demandDto.commonPrice == true) slice.add(ProductModel.commonPrice)
+        if (demandDto.category == true) slice.add(CategoryModel.name)
+        if (demandDto.collection == true) slice.add(CollectionModel.name)
+        if (demandDto.color == true) slice.add(ProductModel.color)
+        if (demandDto.amountInBox == true) slice.add(ProductModel.amountInBox)
+        if (demandDto.expirationDate == true) slice.add(ProductModel.expirationDate)
+        if (demandDto.link == true) slice.add(ProductModel.link)
+        if (demandDto.distributorPercent == true) slice.add(ProductModel.distributorPercent)
+        if (demandDto.professionalPercent == true) slice.add(ProductModel.professionalPercent)
+        if (demandDto.quantity == true) slice.add(ProductModel.eanCode)
+        if (demandDto.offerPrice == true) slice.add(ProductModel.offertaPrice)
 
         return slice
     }
-
 
     fun getAvailableByFilter(
         authorizedUser: AuthorizedUser? = null,
@@ -304,7 +305,7 @@ class ProductService(di: DI) : KodeinService(di) {
             listOf(ProductModel.id to SortOrder.ASC)
         }
 
-        val search = searchFilterDto.filters ?: throw IllegalStateException("must not be null")
+        val search = searchFilterDto.filters ?: ProductSearchFilterDto()
 
         val slice = mutableListOf(
             ProductModel.id,
@@ -409,27 +410,21 @@ class ProductService(di: DI) : KodeinService(di) {
         var rowIndex = 1
         ProductModel
             .join(
-                ProductToImageModel,
+                CategoryModel,
                 JoinType.LEFT,
-                additionalConstraint = { ProductModel.id eq ProductToImageModel.product })
+                additionalConstraint = { ProductModel.category eq CategoryModel.id }
+            )
             .join(
-                GalleryModel,
+                CollectionModel,
                 JoinType.LEFT,
-                additionalConstraint = { ProductToImageModel.photo eq GalleryModel.id })
-            .join(
-                ProductToGroupModel,
-                JoinType.LEFT,
-                additionalConstraint = { ProductModel.id eq ProductToGroupModel.product })
-            .join(
-                ProductGroupModel,
-                JoinType.LEFT,
-                additionalConstraint = { ProductToGroupModel.group eq ProductGroupModel.id })
+                additionalConstraint = { ProductModel.collection eq CollectionModel.id }
+            )
             .join(
                 BrandModel,
                 JoinType.LEFT,
                 additionalConstraint = { ProductModel.brand eq BrandModel.id })
             . join(
-                StockToProductModel,
+                StockToProductModel,         //без связки со складами ломается билдер запосов и кидает сервер еррор, поэтому этот джоин оставил
                 JoinType.LEFT,
                 additionalConstraint = { ProductModel.id eq StockToProductModel.product and (StockToProductModel.stock eq authorizedUser?.stockId) }
             )
