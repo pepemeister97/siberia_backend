@@ -8,10 +8,7 @@ import io.ktor.server.routing.*
 import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.exceptions.BadRequestException
-import siberia.modules.product.data.dto.ProductCreateDto
-import siberia.modules.product.data.dto.ProductListItemOutputDto
-import siberia.modules.product.data.dto.ProductSearchDto
-import siberia.modules.product.data.dto.ProductUpdateDto
+import siberia.modules.product.data.dto.*
 import siberia.modules.product.service.ProductEventService
 import siberia.modules.product.service.ProductMassiveEventService
 import siberia.modules.product.service.ProductParseService
@@ -34,6 +31,16 @@ class ProductController(override val di: DI) : KodeinController() {
                     val searchFilterDto = call.receive<ProductSearchDto>()
 
                     call.respond(productService.getByFilter(searchFilterDto))
+                }
+                post("getXls") {
+
+                    val productGetXlsDto = call.receive<ProductGetXlsDto>()
+                    val authorizedUser = call.getAuthorized()
+
+                    val searchFilters = productGetXlsDto.searchFilters
+                    val fieldsDemand = productGetXlsDto.fieldsDemand
+
+                    call.respond(productService.getXls(authorizedUser, searchFilters, fieldsDemand))
                 }
             }
             authenticate("products-managing") {

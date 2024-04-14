@@ -21,6 +21,10 @@ import siberia.modules.product.data.dto.systemevents.ProductCreateEvent
 import siberia.modules.product.data.dto.systemevents.ProductMassiveCreateEvent
 import siberia.modules.product.data.models.ProductModel
 import siberia.modules.product.data.models.ProductToImageModel
+import siberia.modules.category.data.models.CategoryModel
+import siberia.modules.collection.data.models.CollectionModel
+import siberia.modules.brand.data.models.BrandModel
+
 import siberia.modules.rbac.data.dao.RoleDao.Companion.createNullableRangeCond
 import siberia.modules.rbac.data.dao.RuleCategoryDao.Companion.createNullableListCond
 import siberia.modules.stock.data.dao.StockDao
@@ -36,6 +40,11 @@ import siberia.utils.database.idValue
 import siberia.utils.kodein.KodeinService
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import org.apache.poi.ss.usermodel.CellType
+import siberia.plugins.Logger
+import java.io.ByteArrayOutputStream
 
 class ProductService(di: DI) : KodeinService(di) {
     private val galleryService: GalleryService by instance()
@@ -135,10 +144,7 @@ class ProductService(di: DI) : KodeinService(di) {
         )
     }
 
-    private fun SqlExpressionBuilder.convertToOperator(productSearchDto: ProductSearchDto): Op<Boolean> {
-
-        val searchFilterDto = productSearchDto.filters
-
+    private fun SqlExpressionBuilder.convertToOperator(searchFilterDto: ProductSearchFilterDto): Op<Boolean> {
         return createRangeCond(searchFilterDto?.amountInBox, (ProductModel.id neq 0), ProductModel.amountInBox, -1, Int.MAX_VALUE) and
             createRangeCond(searchFilterDto?.commonPrice, (ProductModel.id neq 0), ProductModel.commonPrice, -1.0, Double.MAX_VALUE) and
             createNullableRangeCond(searchFilterDto?.purchasePrice, (ProductModel.id neq 0), ProductModel.lastPurchasePrice, -1.0, Double.MAX_VALUE) and
@@ -170,8 +176,10 @@ class ProductService(di: DI) : KodeinService(di) {
             listOf(ProductModel.id to SortOrder.ASC)
         }
 
+        val search = searchFilterDto.filters ?: ProductSearchFilterDto()
+
         val ids = ProductModel.slice(ProductModel.id).select {
-            convertToOperator(searchFilterDto)
+            convertToOperator(search)
         }.map { it[ProductModel.id] }
 
         val photosMapped: MutableMap<Int, MutableList<String>> = mutableMapOf()
@@ -217,7 +225,7 @@ class ProductService(di: DI) : KodeinService(di) {
             else
                 this
         }.select {
-            convertToOperator(searchFilterDto)
+            convertToOperator(search)
         }.orderBy(*ordering.toTypedArray()).map {
             val amount = try { it[StockToProductModel.amount].toDouble() } catch (_: Exception) { 0.0 }
 
@@ -259,6 +267,35 @@ class ProductService(di: DI) : KodeinService(di) {
         StockDao.find { StockModel.id inList stocks }.map { it.toOutputDto() }
     }
 
+    fun getSliceBasedOnDto(demandDto: ProductFieldsDemandDto): MutableList<Column<*>> {
+        val slice = mutableListOf<Column<*>>()
+
+        if (demandDto.id == true) slice.add(ProductModel.id)
+        if (demandDto.vendorCode == true) slice.add(ProductModel.vendorCode)
+        if (demandDto.barcode == true) slice.add(ProductModel.barcode)
+        if (demandDto.brand == true) slice.add(BrandModel.name)
+        if (demandDto.name == true) slice.add(ProductModel.name)
+        if (demandDto.description == true) slice.add(ProductModel.description)
+        if (demandDto.lastPurchasePrice == true) slice.add(ProductModel.lastPurchasePrice)
+        if (demandDto.cost == true) slice.add(ProductModel.cost)
+        if (demandDto.lastPurchaseDate == true) slice.add(ProductModel.lastPurchaseDate)
+        if (demandDto.distributorPrice == true) slice.add(ProductModel.distributorPrice)
+        if (demandDto.professionalPrice == true) slice.add(ProductModel.professionalPrice)
+        if (demandDto.commonPrice == true) slice.add(ProductModel.commonPrice)
+        if (demandDto.category == true) slice.add(CategoryModel.name)
+        if (demandDto.collection == true) slice.add(CollectionModel.name)
+        if (demandDto.color == true) slice.add(ProductModel.color)
+        if (demandDto.amountInBox == true) slice.add(ProductModel.amountInBox)
+        if (demandDto.expirationDate == true) slice.add(ProductModel.expirationDate)
+        if (demandDto.link == true) slice.add(ProductModel.link)
+        if (demandDto.distributorPercent == true) slice.add(ProductModel.distributorPercent)
+        if (demandDto.professionalPercent == true) slice.add(ProductModel.professionalPercent)
+        if (demandDto.quantity == true) slice.add(ProductModel.eanCode)
+        if (demandDto.offerPrice == true) slice.add(ProductModel.offertaPrice)
+
+        return slice
+    }
+
     fun getAvailableByFilter(
         authorizedUser: AuthorizedUser? = null,
         searchFilterDto: ProductSearchDto
@@ -269,6 +306,8 @@ class ProductService(di: DI) : KodeinService(di) {
         } else{
             listOf(ProductModel.id to SortOrder.ASC)
         }
+
+        val search = searchFilterDto.filters ?: ProductSearchFilterDto()
 
         val slice = mutableListOf(
             ProductModel.id,
@@ -315,7 +354,7 @@ class ProductService(di: DI) : KodeinService(di) {
                 slice
             )
             .select {
-                convertToOperator(searchFilterDto)
+                convertToOperator(search)
             }
             .orderBy(*ordering.toTypedArray())
             .forEach {
@@ -345,6 +384,63 @@ class ProductService(di: DI) : KodeinService(di) {
             }
         resultMap.values.toList()
     }
+
+    fun getXls(
+        authorizedUser: AuthorizedUser? = null,
+        searchFilterDto: ProductSearchFilterDto,
+        productFieldsDemandDto: ProductFieldsDemandDto
+    ): ByteArray = transaction {
+
+        val workbook = XSSFWorkbook()
+        val sheet = workbook.createSheet("Products")
+
+        val slice = getSliceBasedOnDto(productFieldsDemandDto)
+
+        // Создание заголовков
+        val headerRow = sheet.createRow(0)
+        slice.forEachIndexed { index, column ->
+            headerRow.createCell(index).setCellValue(column.name)
+        }
+
+        var rowIndex = 1
+        ProductModel
+            .join(
+                CategoryModel,
+                JoinType.LEFT,
+                additionalConstraint = { ProductModel.category eq CategoryModel.id }
+            )
+            .join(
+                CollectionModel,
+                JoinType.LEFT,
+                additionalConstraint = { ProductModel.collection eq CollectionModel.id }
+            )
+            .join(
+                BrandModel,
+                JoinType.LEFT,
+                additionalConstraint = { ProductModel.brand eq BrandModel.id })
+
+
+            .slice(slice)
+            .select { convertToOperator(searchFilterDto) }
+            .orderBy(ProductModel.id to SortOrder.ASC)
+            .forEach { row ->
+                val dataRow = sheet.createRow(rowIndex++)
+                Logger.debug(slice, "main")
+                slice.forEachIndexed { index, column ->
+                    val cell = dataRow.createCell(index, CellType.STRING)
+                    val value = row[column]?.toString() ?: ""
+                    cell.setCellValue(value)
+                }
+            }
+
+        val outputStream = ByteArrayOutputStream()
+        workbook.write(outputStream)
+        workbook.close()
+
+        outputStream.toByteArray()
+    }
+
+
 
     fun getByBarCode(barCode: String): List<ProductListItemOutputDto> = transaction {
         ProductDao.find {
