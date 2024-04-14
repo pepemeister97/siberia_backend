@@ -393,18 +393,11 @@ class ProductService(di: DI) : KodeinService(di) {
         val sheet = workbook.createSheet("Products")
 
         val slice = getSliceBasedOnDto(productFieldsDemandDto)
-        if (authorizedUser != null) slice.add(StockToProductModel.amount)
 
         // Создание заголовков
         val headerRow = sheet.createRow(0)
         slice.forEachIndexed { index, column ->
             headerRow.createCell(index).setCellValue(column.name)
-        }
-
-        val ordering = if (authorizedUser != null && searchFilterDto.availability != null && searchFilterDto.availability){
-            listOf(StockToProductModel.amount to SortOrder.DESC_NULLS_LAST, ProductModel.id to SortOrder.ASC)
-        } else{
-            listOf(ProductModel.id to SortOrder.ASC)
         }
 
         var rowIndex = 1
@@ -423,16 +416,11 @@ class ProductService(di: DI) : KodeinService(di) {
                 BrandModel,
                 JoinType.LEFT,
                 additionalConstraint = { ProductModel.brand eq BrandModel.id })
-            . join(
-                StockToProductModel,         //без связки со складами ломается билдер запосов и кидает сервер еррор, поэтому этот джоин оставил
-                JoinType.LEFT,
-                additionalConstraint = { ProductModel.id eq StockToProductModel.product and (StockToProductModel.stock eq authorizedUser?.stockId) }
-            )
 
 
             .slice(slice)
             .select { convertToOperator(searchFilterDto) }
-            .orderBy(*ordering.toTypedArray())
+            .orderBy(ProductModel.id to SortOrder.ASC)
             .forEach { row ->
                 val dataRow = sheet.createRow(rowIndex++)
                 Logger.debug(slice, "main")
