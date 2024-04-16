@@ -33,14 +33,12 @@ class ProductController(override val di: DI) : KodeinController() {
                     call.respond(productService.getByFilter(searchFilterDto))
                 }
                 post("getXls") {
-
                     val productGetXlsDto = call.receive<ProductGetXlsDto>()
-                    val authorizedUser = call.getAuthorized()
 
                     val searchFilters = productGetXlsDto.searchFilters
                     val fieldsDemand = productGetXlsDto.fieldsDemand
 
-                    call.respond(productService.getXls(authorizedUser, searchFilters, fieldsDemand))
+                    call.respond(productService.getXls(searchFilters, fieldsDemand))
                 }
             }
             authenticate("products-managing") {

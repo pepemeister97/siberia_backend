@@ -145,19 +145,19 @@ class ProductService(di: DI) : KodeinService(di) {
     }
 
     private fun SqlExpressionBuilder.convertToOperator(searchFilterDto: ProductSearchFilterDto): Op<Boolean> {
-        return createRangeCond(searchFilterDto?.amountInBox, (ProductModel.id neq 0), ProductModel.amountInBox, -1, Int.MAX_VALUE) and
-            createRangeCond(searchFilterDto?.commonPrice, (ProductModel.id neq 0), ProductModel.commonPrice, -1.0, Double.MAX_VALUE) and
-            createNullableRangeCond(searchFilterDto?.purchasePrice, (ProductModel.id neq 0), ProductModel.lastPurchasePrice, -1.0, Double.MAX_VALUE) and
-            createRangeCond(searchFilterDto?.distributorPrice, (ProductModel.id neq 0), ProductModel.distributorPrice, -1.0, Double.MAX_VALUE) and
-            createRangeCond(searchFilterDto?.professionalPrice, (ProductModel.id neq 0), ProductModel.professionalPrice, -1.0, Double.MAX_VALUE) and
-            createNullableListCond(searchFilterDto?.brand, (ProductModel.id neq 0), ProductModel.brand) and
-            createNullableListCond(searchFilterDto?.category, (ProductModel.id neq 0), ProductModel.category) and
-            createNullableListCond(searchFilterDto?.collection, (ProductModel.id neq 0), ProductModel.collection) and
-            createLikeCond(searchFilterDto?.name, (ProductModel.id neq 0), ProductModel.name) and
-            createLikeCond(searchFilterDto?.color, (ProductModel.id neq 0), ProductModel.color) and
-            createLikeCond(searchFilterDto?.vendorCode, (ProductModel.id neq 0), ProductModel.vendorCode) and
-            createLikeCond(searchFilterDto?.description, (ProductModel.id neq 0), ProductModel.description) and
-            createRangeCond(searchFilterDto?.offertaPrice, (ProductModel.id neq 0), ProductModel.offertaPrice, -1.0, Double.MAX_VALUE)
+        return createRangeCond(searchFilterDto.amountInBox, (ProductModel.id neq 0), ProductModel.amountInBox, -1, Int.MAX_VALUE) and
+            createRangeCond(searchFilterDto.commonPrice, (ProductModel.id neq 0), ProductModel.commonPrice, -1.0, Double.MAX_VALUE) and
+            createNullableRangeCond(searchFilterDto.purchasePrice, (ProductModel.id neq 0), ProductModel.lastPurchasePrice, -1.0, Double.MAX_VALUE) and
+            createRangeCond(searchFilterDto.distributorPrice, (ProductModel.id neq 0), ProductModel.distributorPrice, -1.0, Double.MAX_VALUE) and
+            createRangeCond(searchFilterDto.professionalPrice, (ProductModel.id neq 0), ProductModel.professionalPrice, -1.0, Double.MAX_VALUE) and
+            createNullableListCond(searchFilterDto.brand, (ProductModel.id neq 0), ProductModel.brand) and
+            createNullableListCond(searchFilterDto.category, (ProductModel.id neq 0), ProductModel.category) and
+            createNullableListCond(searchFilterDto.collection, (ProductModel.id neq 0), ProductModel.collection) and
+            createLikeCond(searchFilterDto.name, (ProductModel.id neq 0), ProductModel.name) and
+            createLikeCond(searchFilterDto.color, (ProductModel.id neq 0), ProductModel.color) and
+            createLikeCond(searchFilterDto.vendorCode, (ProductModel.id neq 0), ProductModel.vendorCode) and
+            createLikeCond(searchFilterDto.description, (ProductModel.id neq 0), ProductModel.description) and
+            createRangeCond(searchFilterDto.offertaPrice, (ProductModel.id neq 0), ProductModel.offertaPrice, -1.0, Double.MAX_VALUE)
 
 //            Future iterations
 //            createRangeCond(searchFilterDto.size, (ProductModel.id neq 0), ProductModel.size, -1.0, Double.MAX_VALUE) and
@@ -386,7 +386,6 @@ class ProductService(di: DI) : KodeinService(di) {
     }
 
     fun getXls(
-        authorizedUser: AuthorizedUser? = null,
         searchFilterDto: ProductSearchFilterDto,
         productFieldsDemandDto: ProductFieldsDemandDto
     ): ByteArray = transaction {
@@ -396,7 +395,7 @@ class ProductService(di: DI) : KodeinService(di) {
 
         val slice = getSliceBasedOnDto(productFieldsDemandDto)
 
-        // Создание заголовков
+        // Headers creation
         val headerRow = sheet.createRow(0)
         slice.forEachIndexed { index, column ->
             headerRow.createCell(index).setCellValue(column.name)
