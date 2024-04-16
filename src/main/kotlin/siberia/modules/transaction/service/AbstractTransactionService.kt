@@ -23,6 +23,7 @@ import siberia.utils.kodein.KodeinService
 
 abstract class AbstractTransactionService(di: DI) : KodeinService(di) {
     protected val userAccessControlService: UserAccessControlService by instance()
+    protected val transactionSocketService: TransactionSocketService by instance()
 
     protected fun checkAccessToStatusForTransaction(userDao: UserDao, transactionId: Int, targetStockId: Int, statusId: Int): Boolean {
         val transactionDao = TransactionDao[transactionId]
@@ -71,6 +72,7 @@ abstract class AbstractTransactionService(di: DI) : KodeinService(di) {
         transactionDao.status = TransactionStatusDao[statusId]
         transactionDao.flush()
         TransactionRelatedUserModel.addRelated(userDao.idValue, transactionId)
+        transactionSocketService.updateStatus(transactionDao.fullOutput())
 
         transactionDao
     }

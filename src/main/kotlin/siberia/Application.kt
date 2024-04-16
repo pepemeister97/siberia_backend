@@ -105,6 +105,7 @@ fun Application.module() {
         bindSingleton { StockService(it) }
         bindSingleton { StockEventService(it) }
         bindSingleton { TransactionService(it) }
+        bindSingleton { TransactionSocketService(it) }
         bindSingleton { IncomeTransactionService(it) }
         bindSingleton { OutcomeTransactionService(it) }
         bindSingleton { TransferTransactionService(it) }
