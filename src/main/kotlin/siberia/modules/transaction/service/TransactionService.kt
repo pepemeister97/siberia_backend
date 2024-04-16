@@ -3,6 +3,8 @@ package siberia.modules.transaction.service
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.neq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.notInList
 import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.conf.AppConf
@@ -67,6 +69,19 @@ class TransactionService(di: DI) : KodeinService(di) {
             TransactionModel.status eq requestStatus.open
         else
             TransactionModel.to inList availableStocks
+
+        val showClosed = if (!transactionSearchFilter.showClosed)
+            TransactionModel.status notInList listOf(
+                requestStatus.creationCancelled,
+                requestStatus.delivered,
+                requestStatus.processed,
+                requestStatus.processingCancelled,
+                requestStatus.failed,
+                requestStatus.notDelivered,
+            ).filter { !(transactionSearchFilter.status?.contains(it) ?: false) }
+        else //If show closed just add "trash" query
+            TransactionModel.id neq 0
+
         TransactionModel.select {
             (
                     TransactionModel.hidden eq false and (
@@ -74,6 +89,7 @@ class TransactionService(di: DI) : KodeinService(di) {
                     (TransactionModel.to inList availableStocks) or
                     processQuery)
             ) and
+            showClosed and
             createNullableListCond(transactionSearchFilter.to, TransactionModel.id.isNotNull(), TransactionModel.to) and
             createNullableListCond(transactionSearchFilter.from, TransactionModel.id.isNotNull(), TransactionModel.from) and
             createListCond(transactionSearchFilter.status, TransactionModel.id.isNotNull(), TransactionModel.status) and
