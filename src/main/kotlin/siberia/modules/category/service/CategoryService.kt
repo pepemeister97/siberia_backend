@@ -49,6 +49,8 @@ class CategoryService(di: DI) : KodeinService(di) {
         val userDao = UserDao[authorizedUser.id]
         val categoryDao = CategoryDao[categoryId]
 
+        CategoryCache.makeInvalid()
+
         categoryDao.loadAndFlush(userDao.login, categoryUpdateDto)
         commit()
 

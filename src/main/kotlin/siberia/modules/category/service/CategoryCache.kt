@@ -15,4 +15,7 @@ object CategoryCache: CacheProvider() {
             valid = true
             categoryFullTree
         }
+    fun makeInvalid(){
+        valid = false
+    }
 }
