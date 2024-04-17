@@ -18,8 +18,10 @@ import io.ktor.server.plugins.BadRequestException as BadRequestExceptionKtor
 fun rollbackAndClose() {
     try {
         transaction {
-            rollback()
-            close()
+            if (outerTransaction != null) {
+                rollback()
+                close()
+            }
         }
     } catch (_: Exception) {}
 }
