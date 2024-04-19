@@ -32,7 +32,7 @@ class CategoryDao(id: EntityID<Int>) : BaseIntEntity<CategoryOutputDto>(id, Cate
                 else "$name (${this@CategoryDao.name})"
             },
             idValue,
-            createEncodedRollbackUpdateDto<CategoryOutputDto, CategoryUpdateDto>(categoryUpdateDto)
+            createEncodedRollbackUpdateDto<CategoryOutputDto, CategoryUpdateDto>(categoryUpdateDto.apply { if (parent == 0) parent = 1 })
         )
         SystemEventModel.logResettableEvent(event)
 
