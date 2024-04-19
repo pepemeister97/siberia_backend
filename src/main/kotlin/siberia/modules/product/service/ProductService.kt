@@ -270,7 +270,7 @@ class ProductService(di: DI) : KodeinService(di) {
     fun getSliceBasedOnDto(demandDto: ProductFieldsDemandDto): MutableList<Column<*>> {
         val slice = mutableListOf<Column<*>>()
 
-        if (demandDto.id == true) slice.add(ProductModel.id)
+        slice.add(ProductModel.id)    // id must be in every selection
         if (demandDto.vendorCode == true) slice.add(ProductModel.vendorCode)
         if (demandDto.barcode == true) slice.add(ProductModel.barcode)
         if (demandDto.brand == true) slice.add(BrandModel.name)
@@ -395,10 +395,13 @@ class ProductService(di: DI) : KodeinService(di) {
 
         val slice = getSliceBasedOnDto(productFieldsDemandDto)
 
-        // Headers creation
-        val headerRow = sheet.createRow(0)
+        val headerRow = sheet.createRow(0) // Table headers creation
         slice.forEachIndexed { index, column ->
             headerRow.createCell(index).setCellValue(column.name)
+        }
+
+        headerRow.forEach { cell ->
+            Logger.debug("Header Cell Value: ${cell.stringCellValue}", "main")
         }
 
         var rowIndex = 1
@@ -424,7 +427,6 @@ class ProductService(di: DI) : KodeinService(di) {
             .orderBy(ProductModel.id to SortOrder.ASC)
             .forEach { row ->
                 val dataRow = sheet.createRow(rowIndex++)
-                Logger.debug(slice, "main")
                 slice.forEachIndexed { index, column ->
                     val cell = dataRow.createCell(index, CellType.STRING)
                     val value = row[column]?.toString() ?: ""
@@ -438,7 +440,6 @@ class ProductService(di: DI) : KodeinService(di) {
 
         outputStream.toByteArray()
     }
-
 
 
     fun getByBarCode(barCode: String): List<ProductListItemOutputDto> = transaction {
