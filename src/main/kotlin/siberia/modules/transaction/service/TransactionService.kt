@@ -187,18 +187,29 @@ class TransactionService(di: DI) : KodeinService(di) {
         if (!checkAccessToTransaction(authorizedUser, transactionId))
             throw ForbiddenException()
 
-        if (
-            (
-                !listOf(
-                    requestStatus.inProgress, requestStatus.open
-                ).contains(transactionDao.statusId) && transactionDao.typeId == AppConf.requestTypes.transfer
-            ) ||
-            (
-                !listOf(
-                    requestStatus.open
-                ).contains(transactionDao.statusId) && transactionDao.typeId == AppConf.requestTypes.outcome
-            )
+        val transferAvailableStatuses = listOf(
+            requestStatus.inProgress, requestStatus.open
         )
+
+        val outcomeAvailableStatuses = listOf(
+            requestStatus.open
+        )
+
+        val incomeAvailableStatuses = listOf<Int>()
+
+        val transferForbidden =
+            transactionDao.typeId == AppConf.requestTypes.transfer &&
+            !transferAvailableStatuses.contains(transactionDao.statusId)
+
+        val outcomeForbidden =
+            transactionDao.typeId == AppConf.requestTypes.outcome &&
+            !outcomeAvailableStatuses.contains(transactionDao.statusId)
+
+        val incomeForbidden =
+            transactionDao.typeId == AppConf.requestTypes.income &&
+            !incomeAvailableStatuses.contains(transactionDao.statusId)
+
+        if (transferForbidden || outcomeForbidden || incomeForbidden)
             throw ForbiddenException()
 
         transactionDao

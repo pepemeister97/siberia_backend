@@ -66,9 +66,6 @@ class TransactionController(override val di: DI) : KodeinController() {
                     }
                 }
             }
-            route("transfer") {
-            }
-
         }
     }
 }
