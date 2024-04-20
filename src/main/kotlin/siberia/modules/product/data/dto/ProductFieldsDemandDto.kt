@@ -1,34 +1,31 @@
 package siberia.modules.product.data.dto
 
 import kotlinx.serialization.Serializable
-import siberia.modules.brand.data.dto.BrandOutputDto
-import siberia.modules.category.data.dto.CategoryOutputDto
-import siberia.modules.collection.data.dto.CollectionOutputDto
-import siberia.utils.database.FieldFilterWrapper
 
 @Serializable
 data class ProductFieldsDemandDto (
-    val id: Boolean?,
-    val photo: Boolean?,
-    val vendorCode: Boolean?,
-    val barcode: Boolean?,
-    val brand: Boolean?,
-    val name: Boolean?,
-    val description: Boolean?,
-    val lastPurchasePrice: Boolean?,
-    val cost: Boolean?,
-    val lastPurchaseDate: Boolean?,
-    val distributorPrice: Boolean?,
-    val professionalPrice: Boolean?,
-    val distributorPercent: Boolean?,
-    val professionalPercent: Boolean?,
-    val commonPrice: Boolean?,
-    val category: Boolean?,
-    val collection: Boolean?,
-    val color: Boolean?,
-    val amountInBox: Boolean?,
-    val expirationDate: Boolean?,
-    val link: Boolean?,
-    val quantity: Boolean?,
-    val offerPrice: Boolean?
+    val id: Boolean? = null,
+    val photo: Boolean? = null,
+    val vendorCode: Boolean? = null,
+    val eanCode: Boolean? = null,
+    val barcode: Boolean? = null,
+    val brand: Boolean? = null,
+    val name: Boolean? = null,
+    val description: Boolean? = null,
+    val lastPurchasePrice: Boolean? = null,
+    val cost: Boolean? = null,
+    val lastPurchaseDate: Boolean? = null,
+    val distributorPrice: Boolean? = null,
+    val professionalPrice: Boolean? = null,
+    val distributorPercent: Boolean? = null,
+    val professionalPercent: Boolean? = null,
+    val commonPrice: Boolean? = null,
+    val category: Boolean? = null,
+    val collection: Boolean? = null,
+    val color: Boolean? = null,
+    val amountInBox: Boolean? = null,
+    val expirationDate: Boolean? = null,
+    val link: Boolean? = null,
+    val quantity: Boolean? = null,
+    val offertaPrice: Boolean? = null
 )
