@@ -1,11 +1,14 @@
 package siberia.utils.database
 
+import kotlinx.coroutines.*
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.sql.Query
+import org.jetbrains.exposed.sql.ResultRow
 import siberia.plugins.Logger
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty
@@ -136,3 +139,25 @@ abstract class BaseIntEntity<OutputDto : SerializableAny>(id: EntityID<Int>, tab
 
 val BaseIntEntity<*>.idValue: Int
     get() = this.id.value
+
+suspend fun <T> parallelQueryProcessing(query: Query, batchSize: Int, processor: ResultRow.() -> T): List<T> {
+    return withContext(Dispatchers.Default) {
+        val queryResult = query.toList()
+        val querySize = queryResult.size
+        val batches = querySize / batchSize + 1
+        val deferred = mutableListOf<Deferred<List<T>>>()
+        repeat(batches) {
+            deferred.add(async {
+                val batchProcessResult = mutableListOf<T>()
+                repeat(batchSize) { batchIndex ->
+                    if (it * batchSize + batchIndex <= querySize - 1)
+                        batchProcessResult.add(processor(queryResult[it * batchSize + batchIndex]))
+                    else
+                        return@async batchProcessResult
+                }
+                batchProcessResult
+            })
+        }
+        deferred
+    }.awaitAll().flatten()
+}

@@ -27,10 +27,10 @@ class ProductController(override val di: DI) : KodeinController() {
     override fun Routing.registerRoutes() {
         route("product") {
             authenticate("default") {
-                post("all") {
+                post("all/{batchSize}") {
                     val searchFilterDto = call.receive<ProductSearchDto>()
 
-                    call.respond(productService.getByFilter(searchFilterDto))
+                    call.respond(productService.getByFilter(searchFilterDto).await())
                 }
                 post("xls") {
                     val productGetXlsDto = call.receive<ProductGetXlsDto>()

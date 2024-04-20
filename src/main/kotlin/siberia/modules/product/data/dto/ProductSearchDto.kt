@@ -6,5 +6,6 @@ import siberia.utils.database.PaginationDto
 @Serializable
 data class ProductSearchDto (
     val pagination: PaginationDto? = null,
-    val filters: ProductSearchFilterDto? = null
+    val filters: ProductSearchFilterDto? = null,
+    val needImages: Boolean = false
 )
