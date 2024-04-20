@@ -13,8 +13,6 @@ import siberia.modules.stock.service.StockCache
 import siberia.modules.stock.service.StockEventService
 import siberia.modules.stock.service.StockService
 import siberia.utils.kodein.KodeinController
-import org.apache.poi.xssf.usermodel.XSSFWorkbook
-import io.ktor.http.content.*
 import siberia.modules.transaction.service.OutcomeTransactionService
 
 class StockController(override val di: DI) : KodeinController() {
@@ -41,24 +39,6 @@ class StockController(override val di: DI) : KodeinController() {
                     val authorizedUser = call.getAuthorized()
 
                     call.respond(stockService.getOne(authorizedUser, stockId))
-                }
-                post ("generateSale/{stockId}"){
-
-                    val stockId = call.parameters.getInt("stockId", "Stock id must be INT")
-                    val authorizedUser = call.getAuthorized()
-                    val multipart = call.receiveMultipart()
-                    multipart.forEachPart { part ->
-                        when (part) {
-                            is PartData.FileItem -> {
-                                val inputStream = part.streamProvider()
-                                val workbook = XSSFWorkbook(inputStream)
-                                inputStream.close()
-                                call.respond(outcomeTransactionService.generateSale(authorizedUser, workbook, stockId))
-                            }
-                            else -> {}
-                        }
-                        part.dispose()
-                    }
                 }
             }
             authenticate ("stock-managing") {

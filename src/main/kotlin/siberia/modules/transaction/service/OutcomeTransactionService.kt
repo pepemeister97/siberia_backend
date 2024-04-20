@@ -116,7 +116,7 @@ class OutcomeTransactionService(di: DI) : AbstractTransactionService(di) {
         transactionDao.toOutputDto()
     }
 
-    fun generateSale(authorizedUser: AuthorizedUser, workbook: XSSFWorkbook, stockId: Int):TransactionInputDto  {
+    fun create(authorizedUser: AuthorizedUser, workbook: XSSFWorkbook, stockId: Int):TransactionInputDto  {
         val sheet = workbook.getSheetAt(0)
 
         val headerRow1 = sheet.getRow(0)
