@@ -1,5 +1,4 @@
 package siberia.modules.stock.controller
-
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
@@ -16,9 +15,11 @@ import siberia.modules.stock.service.StockService
 import siberia.utils.kodein.KodeinController
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import io.ktor.http.content.*
+import siberia.modules.transaction.service.OutcomeTransactionService
 
 class StockController(override val di: DI) : KodeinController() {
     private val stockService: StockService by instance()
+    private val outcomeTransactionService: OutcomeTransactionService by instance()
     private val stockEventService: StockEventService by instance()
 
     override fun Routing.registerRoutes() {
@@ -46,20 +47,18 @@ class StockController(override val di: DI) : KodeinController() {
                     val stockId = call.parameters.getInt("stockId", "Stock id must be INT")
                     val authorizedUser = call.getAuthorized()
                     val multipart = call.receiveMultipart()
-                    //var workbook: XSSFWorkbook
                     multipart.forEachPart { part ->
                         when (part) {
                             is PartData.FileItem -> {
                                 val inputStream = part.streamProvider()
                                 val workbook = XSSFWorkbook(inputStream)
                                 inputStream.close()
-                                call.respond(stockService.generateSale(authorizedUser, workbook, stockId))
+                                call.respond(outcomeTransactionService.generateSale(authorizedUser, workbook, stockId))
                             }
                             else -> {}
                         }
                         part.dispose()
                     }
-                    //call.respond(stockService.generateSale(authorizedUser, workbook, stockId))
                 }
             }
             authenticate ("stock-managing") {
