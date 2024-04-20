@@ -20,7 +20,7 @@ class CategoryService(di: DI) : KodeinService(di) {
 
         val createdCategory = CategoryModel.new(categoryInputDto, parentCategoryId)
 
-        val event = CategoryCreateEvent(userDao.login, createdCategory.name)
+        val event = CategoryCreateEvent(userDao.login, createdCategory.name, createdCategory.id)
         SystemEventModel.logEvent(event)
 
         commit()
@@ -48,6 +48,8 @@ class CategoryService(di: DI) : KodeinService(di) {
     fun update(authorizedUser: AuthorizedUser, categoryId: Int, categoryUpdateDto: CategoryUpdateDto): CategoryOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
         val categoryDao = CategoryDao[categoryId]
+
+        CategoryCache.makeInvalid()
 
         categoryDao.loadAndFlush(userDao.login, categoryUpdateDto)
         commit()

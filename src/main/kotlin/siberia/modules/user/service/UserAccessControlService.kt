@@ -35,31 +35,29 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
     }
 
     private fun logUpdateRoles(author: AuthorizedUser, target: UserDao, updateDirection: UpdateDirection, updated: List<Int>) = transaction {
-        val description = "User roles were updated"
         val authorDao = UserDao[author.id]
         val authorName: String = authorDao.login
 
         val rollbackInstance = authorDao.rolesUpdateRollbackDto(updated)
 
         val event = if (updateDirection == UpdateDirection.CREATED)
-            UserRolesCreatedEvent(authorName, target.login, description, target.idValue, rollbackInstance)
+            UserRolesCreatedEvent(authorName, target.login, target.idValue, rollbackInstance)
         else
-            UserRolesRemovedEvent(authorName, target.login, description, target.idValue, rollbackInstance)
+            UserRolesRemovedEvent(authorName, target.login, target.idValue, rollbackInstance)
 
         SystemEventModel.logResettableEvent(event)
     }
 
     private fun logUpdateRules(author: AuthorizedUser, target: UserDao, updateDirection: UpdateDirection, updated: List<LinkedRuleInputDto>) = transaction {
-        val description = "User rules were updated"
         val authorDao = UserDao[author.id]
         val authorName: String = authorDao.login
 
         val rollbackInstance = authorDao.rulesUpdateRollbackDto(updated)
 
         val event = if (updateDirection == UpdateDirection.CREATED)
-            UserRulesCreatedEvent(authorName, target.login, description, target.idValue, rollbackInstance)
+            UserRulesCreatedEvent(authorName, target.login, target.idValue, rollbackInstance)
         else
-            UserRulesRemovedEvent(authorName, target.login, description, target.idValue, rollbackInstance)
+            UserRulesRemovedEvent(authorName, target.login, target.idValue, rollbackInstance)
 
         SystemEventModel.logResettableEvent(event)
     }

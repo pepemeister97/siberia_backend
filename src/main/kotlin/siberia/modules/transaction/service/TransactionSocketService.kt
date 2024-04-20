@@ -1,28 +1,24 @@
-package siberia.modules.auth.service
+package siberia.modules.transaction.service
 
 import org.kodein.di.DI
 import org.kodein.di.instance
+import siberia.modules.transaction.data.dto.TransactionFullOutputDto
 import siberia.utils.kodein.KodeinService
 import siberia.utils.websockets.WebSocketRegister
 import siberia.utils.websockets.dto.WebSocketResponseDto
 
-class AuthSocketService(di: DI) : KodeinService(di) {
+class TransactionSocketService(di: DI) : KodeinService(di) {
     private val webSocketRegister: WebSocketRegister by instance()
-    fun updateRules(
-        users: List<Int>
+    fun updateStatus(
+        transactionOutputDto: TransactionFullOutputDto
     ) {
         webSocketRegister.emit { connectionsRegister ->
-            val connectionsByUser = connectionsRegister[users]
-            connectionsByUser.forEach {
+            connectionsRegister.all().forEach {
                 it.value.forEach { connection ->
                     if (connection.isActive)
-                        connection.send(WebSocketResponseDto.wrap("update-rules", ""))
+                        connection.send(WebSocketResponseDto.wrap<TransactionFullOutputDto>("update-transaction", transactionOutputDto))
                 }
             }
         }
     }
-
-    fun updateRules(
-        userId: Int
-    ) = updateRules(listOf(userId))
 }

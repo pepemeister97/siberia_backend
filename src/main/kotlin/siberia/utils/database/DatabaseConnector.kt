@@ -10,7 +10,7 @@ class DatabaseConnector(vararg tables: Table, initializer: Transaction.() -> Uni
 
     init {
         connect()
-        transaction {
+        transactionOverride {
             tables.forEach {
                 SchemaUtils.create(it)
             }

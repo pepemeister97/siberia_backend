@@ -1,6 +1,7 @@
 package siberia.modules.user.service
 
 import io.ktor.util.date.*
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.exceptions.BadRequestException
@@ -9,7 +10,6 @@ import siberia.modules.logger.data.dto.SystemEventOutputDto
 import siberia.modules.user.data.dao.UserDao
 import siberia.modules.user.data.dto.UserRollbackOutputDto
 import siberia.modules.user.data.dto.UserUpdateDto
-import siberia.utils.database.transaction
 import siberia.utils.kodein.KodeinEventService
 import siberia.utils.security.bcrypt.CryptoUtil
 

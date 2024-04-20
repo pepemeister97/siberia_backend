@@ -20,6 +20,7 @@ import siberia.modules.stock.data.models.StockToProductModel
 import siberia.utils.database.BaseIntEntity
 import siberia.utils.database.BaseIntEntityClass
 import siberia.utils.database.idValue
+import kotlin.math.round
 
 class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, ProductModel) {
 
@@ -120,8 +121,10 @@ class ProductDao(id: EntityID<Int>): BaseIntEntity<ProductOutputDto>(id, Product
         id = idValue, name = name, vendorCode = vendorCode, price = commonPrice
     )
 
-    private fun getPrice(base: Double, percent: Double): Double
-            = base * (percent / 100)
+    private fun getPrice(base: Double, percent: Double): Double {
+        val price = base * (percent / 100)
+        return round(price * 100) / 100
+    }
 
 
     fun loadUpdateDto(productUpdateDto: ProductUpdateDto) {

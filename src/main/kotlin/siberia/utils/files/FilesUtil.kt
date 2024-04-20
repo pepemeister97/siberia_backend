@@ -37,4 +37,8 @@ object FilesUtil {
     fun encodeBytes(bytes: ByteArray?): String {
         return Base64.getEncoder().encodeToString(bytes)
     }
+
+    fun removeFile(fileName: String): Boolean {
+        return Path("${AppConf.server.fileLocation}/$fileName").deleteIfExists()
+    }
 }

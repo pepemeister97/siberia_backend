@@ -4,10 +4,9 @@ import siberia.conf.AppConf
 
 data class CollectionCreateEvent(
     override val author: String,
-    val createdCollectionName: String
-) : CollectionEvent() {
+    val createdCollectionName: String,
     override val eventObjectId: Int
-        get() = 0
+) : CollectionEvent() {
     override val rollbackInstance: String
         get() = ""
     override val eventType: Int

@@ -24,6 +24,8 @@ abstract class BaseIntEntity<OutputDto : SerializableAny>(id: EntityID<Int>, tab
     abstract fun toOutputDto(): OutputDto
     val json = Json { ignoreUnknownKeys = true }
 
+    var noUpdate: Boolean = true
+
     companion object {
         inline fun <reified T: Any> createRollbackInstanceTemplate(instanceKlass: KClass<T>): T {
             val args = List(instanceKlass.primaryConstructor?.parameters?.size ?: 0) { null }
@@ -51,6 +53,7 @@ abstract class BaseIntEntity<OutputDto : SerializableAny>(id: EntityID<Int>, tab
         val updateDtoKlass = Update::class
         val outputDtoKlass = Output::class
         val rollbackInstance = createRollbackInstanceTemplate(updateDtoKlass)
+        noUpdate = true
         updateDtoKlass.primaryConstructor?.parameters?.forEach { param ->
             val prop = updateDtoKlass.memberProperties.first { it.name == param.name }
             val currentProp = try { outputDtoKlass.memberProperties.first { it.name == param.name } } catch (_: Exception) { null }
@@ -66,12 +69,12 @@ abstract class BaseIntEntity<OutputDto : SerializableAny>(id: EntityID<Int>, tab
                 onUpdateValue != defaultValue &&
                 prop.name != "id"
             ) {
-                if (prop is KMutableProperty<*>)
+                if (prop is KMutableProperty<*>) {
+                    noUpdate = false
                     prop.setter.call(rollbackInstance, currentValue)
+                }
             }
         }
-
-        Logger.debug(rollbackInstance, "main")
 
         return rollbackInstance
     }
@@ -87,6 +90,16 @@ abstract class BaseIntEntity<OutputDto : SerializableAny>(id: EntityID<Int>, tab
     inline fun <reified Output : SerializableAny, reified Update : SerializableAny> createEncodedRollbackUpdateDto(onUpdate: Update, output: SerializableAny = toOutputDto()): String {
         val updateDtoKlass = Update::class
         val rollbackDto = initRollbackInstance<Output, Update>(onUpdate, output)
+
+        if (noUpdate) {
+            return json.encodeToString(
+                EventInstance.serializer(
+                    EMPTY::class.serializer(),
+                    EMPTY::class.serializer()
+                ),
+                EventInstance(EMPTY(), EMPTY())
+            )
+        }
 
         val eventInstance = EventInstance(
             rollbackDto, onUpdate

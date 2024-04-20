@@ -36,6 +36,7 @@ import siberia.modules.transaction.data.dto.TransactionFullOutputDto
 import siberia.modules.user.data.dao.UserDao
 import siberia.utils.database.BaseIntEntity
 import siberia.utils.database.EMPTY
+import siberia.utils.database.idValue
 import siberia.utils.kodein.KodeinService
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -81,11 +82,12 @@ class ProductService(di: DI) : KodeinService(di) {
     }
     fun create(authorizedUser: AuthorizedUser, productCreateDto: ProductCreateDto): ProductFullOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
-        val event = ProductCreateEvent(userDao.login, productCreateDto.name!!, productCreateDto.vendorCode!!)
 
         productCreateDto.photoList = galleryService.filterExists( productCreateDto.photoList ?: listOf())
 
         val productDao = createDao(productCreateDto)
+
+        val event = ProductCreateEvent(userDao.login, productCreateDto.name!!, productDao.vendorCode, productDao.idValue)
 
         SystemEventModel.logEvent(event)
 
@@ -143,19 +145,19 @@ class ProductService(di: DI) : KodeinService(di) {
     }
 
     private fun SqlExpressionBuilder.convertToOperator(searchFilterDto: ProductSearchFilterDto): Op<Boolean> {
-        return createRangeCond(searchFilterDto?.amountInBox, (ProductModel.id neq 0), ProductModel.amountInBox, -1, Int.MAX_VALUE) and
-            createRangeCond(searchFilterDto?.commonPrice, (ProductModel.id neq 0), ProductModel.commonPrice, -1.0, Double.MAX_VALUE) and
-            createNullableRangeCond(searchFilterDto?.purchasePrice, (ProductModel.id neq 0), ProductModel.lastPurchasePrice, -1.0, Double.MAX_VALUE) and
-            createRangeCond(searchFilterDto?.distributorPrice, (ProductModel.id neq 0), ProductModel.distributorPrice, -1.0, Double.MAX_VALUE) and
-            createRangeCond(searchFilterDto?.professionalPrice, (ProductModel.id neq 0), ProductModel.professionalPrice, -1.0, Double.MAX_VALUE) and
-            createNullableListCond(searchFilterDto?.brand, (ProductModel.id neq 0), ProductModel.brand) and
-            createNullableListCond(searchFilterDto?.category, (ProductModel.id neq 0), ProductModel.category) and
-            createNullableListCond(searchFilterDto?.collection, (ProductModel.id neq 0), ProductModel.collection) and
-            createLikeCond(searchFilterDto?.name, (ProductModel.id neq 0), ProductModel.name) and
-            createLikeCond(searchFilterDto?.color, (ProductModel.id neq 0), ProductModel.color) and
-            createLikeCond(searchFilterDto?.vendorCode, (ProductModel.id neq 0), ProductModel.vendorCode) and
-            createLikeCond(searchFilterDto?.description, (ProductModel.id neq 0), ProductModel.description) and
-            createRangeCond(searchFilterDto?.offertaPrice, (ProductModel.id neq 0), ProductModel.offertaPrice, -1.0, Double.MAX_VALUE)
+        return createRangeCond(searchFilterDto.amountInBox, (ProductModel.id neq 0), ProductModel.amountInBox, -1, Int.MAX_VALUE) and
+            createRangeCond(searchFilterDto.commonPrice, (ProductModel.id neq 0), ProductModel.commonPrice, -1.0, Double.MAX_VALUE) and
+            createNullableRangeCond(searchFilterDto.purchasePrice, (ProductModel.id neq 0), ProductModel.lastPurchasePrice, -1.0, Double.MAX_VALUE) and
+            createRangeCond(searchFilterDto.distributorPrice, (ProductModel.id neq 0), ProductModel.distributorPrice, -1.0, Double.MAX_VALUE) and
+            createRangeCond(searchFilterDto.professionalPrice, (ProductModel.id neq 0), ProductModel.professionalPrice, -1.0, Double.MAX_VALUE) and
+            createNullableListCond(searchFilterDto.brand, (ProductModel.id neq 0), ProductModel.brand) and
+            createNullableListCond(searchFilterDto.category, (ProductModel.id neq 0), ProductModel.category) and
+            createNullableListCond(searchFilterDto.collection, (ProductModel.id neq 0), ProductModel.collection) and
+            createLikeCond(searchFilterDto.name, (ProductModel.id neq 0), ProductModel.name) and
+            createLikeCond(searchFilterDto.color, (ProductModel.id neq 0), ProductModel.color) and
+            createLikeCond(searchFilterDto.vendorCode, (ProductModel.id neq 0), ProductModel.vendorCode) and
+            createLikeCond(searchFilterDto.description, (ProductModel.id neq 0), ProductModel.description) and
+            createRangeCond(searchFilterDto.offertaPrice, (ProductModel.id neq 0), ProductModel.offertaPrice, -1.0, Double.MAX_VALUE)
 
 //            Future iterations
 //            createRangeCond(searchFilterDto.size, (ProductModel.id neq 0), ProductModel.size, -1.0, Double.MAX_VALUE) and
@@ -268,7 +270,7 @@ class ProductService(di: DI) : KodeinService(di) {
     fun getSliceBasedOnDto(demandDto: ProductFieldsDemandDto): MutableList<Column<*>> {
         val slice = mutableListOf<Column<*>>()
 
-        if (demandDto.id == true) slice.add(ProductModel.id)
+        slice.add(ProductModel.id)    // id must be in every selection
         if (demandDto.vendorCode == true) slice.add(ProductModel.vendorCode)
         if (demandDto.barcode == true) slice.add(ProductModel.barcode)
         if (demandDto.brand == true) slice.add(BrandModel.name)
@@ -384,7 +386,6 @@ class ProductService(di: DI) : KodeinService(di) {
     }
 
     fun getXls(
-        authorizedUser: AuthorizedUser? = null,
         searchFilterDto: ProductSearchFilterDto,
         productFieldsDemandDto: ProductFieldsDemandDto
     ): ByteArray = transaction {
@@ -394,10 +395,13 @@ class ProductService(di: DI) : KodeinService(di) {
 
         val slice = getSliceBasedOnDto(productFieldsDemandDto)
 
-        // Создание заголовков
-        val headerRow = sheet.createRow(0)
+        val headerRow = sheet.createRow(0) // Table headers creation
         slice.forEachIndexed { index, column ->
             headerRow.createCell(index).setCellValue(column.name)
+        }
+
+        headerRow.forEach { cell ->
+            Logger.debug("Header Cell Value: ${cell.stringCellValue}", "main")
         }
 
         var rowIndex = 1
@@ -423,7 +427,6 @@ class ProductService(di: DI) : KodeinService(di) {
             .orderBy(ProductModel.id to SortOrder.ASC)
             .forEach { row ->
                 val dataRow = sheet.createRow(rowIndex++)
-                Logger.debug(slice, "main")
                 slice.forEachIndexed { index, column ->
                     val cell = dataRow.createCell(index, CellType.STRING)
                     val value = row[column]?.toString() ?: ""
@@ -437,7 +440,6 @@ class ProductService(di: DI) : KodeinService(di) {
 
         outputStream.toByteArray()
     }
-
 
 
     fun getByBarCode(barCode: String): List<ProductListItemOutputDto> = transaction {

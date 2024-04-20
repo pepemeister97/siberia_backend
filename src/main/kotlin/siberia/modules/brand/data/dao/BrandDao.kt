@@ -18,7 +18,7 @@ class BrandDao(id: EntityID<Int>) : BaseIntEntity<BrandOutputDto>(id, BrandModel
     companion object : BaseIntEntityClass<BrandOutputDto, BrandDao>(BrandModel) {
         fun new(authorName: String, init: BrandDao.() -> Unit): BrandDao {
             val brandDao = super.new(init)
-            val event = BrandCreateEvent(authorName, brandDao.name)
+            val event = BrandCreateEvent(authorName, brandDao.name, brandDao.idValue)
             SystemEventModel.logEvent(event)
             return brandDao
         }

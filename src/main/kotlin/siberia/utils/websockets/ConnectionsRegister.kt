@@ -52,4 +52,7 @@ class ConnectionsRegister (
     fun forEach(handler: (Map.Entry<Int, MutableList<WebSocketSession>>) -> Unit) {
         connections.forEach(handler)
     }
+
+    fun all(): Map<Int, MutableList<WebSocketSession>> =
+        connections
 }

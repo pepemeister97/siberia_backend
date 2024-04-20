@@ -27,8 +27,8 @@ data class ProductUpdateDto (
     var expirationDate: Long? = null,
     var link: String? = null,
     var isFileAlreadyUploaded: Boolean? = null,
-    val distributorPercent: Double? = null,
-    val professionalPercent: Double? = null,
+    var distributorPercent: Double? = null,
+    var professionalPercent: Double? = null,
     var id: Int? = null,
     val offertaPrice: Double? = null
 

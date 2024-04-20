@@ -3,10 +3,10 @@ package siberia.modules.brand.data.dto.systemevents
 import siberia.conf.AppConf
 
 data class BrandCreateEvent(
-    override val author: String, val createdBrandName: String
-) : BrandEvent() {
+    override val author: String,
+    val createdBrandName: String,
     override val eventObjectId: Int
-        get() = 0
+) : BrandEvent() {
     override val rollbackInstance: String
         get() = ""
     override val eventType: Int
