@@ -271,28 +271,28 @@ class ProductService(di: DI) : KodeinService(di) {
     fun getSliceBasedOnDto(demandDto: ProductFieldsDemandDto): MutableList<Column<*>> {
         val slice = mutableListOf<Column<*>>()
 
-        if (demandDto.id == true) slice.add(ProductModel.id)
-        if (demandDto.vendorCode == true) slice.add(ProductModel.vendorCode)
-        if (demandDto.eanCode == true) slice.add(ProductModel.eanCode)
-        if (demandDto.barcode == true) slice.add(ProductModel.barcode)
-        if (demandDto.brand == true) slice.add(BrandModel.name)
-        if (demandDto.name == true) slice.add(ProductModel.name)
-        if (demandDto.description == true) slice.add(ProductModel.description)
-        if (demandDto.lastPurchasePrice == true) slice.add(ProductModel.lastPurchasePrice)
-        if (demandDto.cost == true) slice.add(ProductModel.cost)
-        if (demandDto.lastPurchaseDate == true) slice.add(ProductModel.lastPurchaseDate)
-        if (demandDto.distributorPrice == true) slice.add(ProductModel.distributorPrice)
-        if (demandDto.professionalPrice == true) slice.add(ProductModel.professionalPrice)
-        if (demandDto.commonPrice == true) slice.add(ProductModel.commonPrice)
-        if (demandDto.category == true) slice.add(CategoryModel.name)
-        if (demandDto.collection == true) slice.add(CollectionModel.name)
-        if (demandDto.color == true) slice.add(ProductModel.color)
-        if (demandDto.amountInBox == true) slice.add(ProductModel.amountInBox)
-        if (demandDto.expirationDate == true) slice.add(ProductModel.expirationDate)
-        if (demandDto.link == true) slice.add(ProductModel.link)
-        if (demandDto.distributorPercent == true) slice.add(ProductModel.distributorPercent)
-        if (demandDto.professionalPercent == true) slice.add(ProductModel.professionalPercent)
-        if (demandDto.offertaPrice == true) slice.add(ProductModel.offertaPrice)
+        if (demandDto.id != null) slice.add(ProductModel.id)
+        if (demandDto.vendorCode != null) slice.add(ProductModel.vendorCode)
+        if (demandDto.eanCode != null) slice.add(ProductModel.eanCode)
+        if (demandDto.barcode != null) slice.add(ProductModel.barcode)
+        if (demandDto.brand != null) slice.add(BrandModel.name)
+        if (demandDto.name != null) slice.add(ProductModel.name)
+        if (demandDto.description != null) slice.add(ProductModel.description)
+        if (demandDto.lastPurchasePrice != null) slice.add(ProductModel.lastPurchasePrice)
+        if (demandDto.cost != null) slice.add(ProductModel.cost)
+        if (demandDto.lastPurchaseDate != null) slice.add(ProductModel.lastPurchaseDate)
+        if (demandDto.distributorPrice != null) slice.add(ProductModel.distributorPrice)
+        if (demandDto.professionalPrice != null) slice.add(ProductModel.professionalPrice)
+        if (demandDto.commonPrice != null) slice.add(ProductModel.commonPrice)
+        if (demandDto.category != null) slice.add(CategoryModel.name)
+        if (demandDto.collection != null) slice.add(CollectionModel.name)
+        if (demandDto.color != null) slice.add(ProductModel.color)
+        if (demandDto.amountInBox != null) slice.add(ProductModel.amountInBox)
+        if (demandDto.expirationDate != null) slice.add(ProductModel.expirationDate)
+        if (demandDto.link != null) slice.add(ProductModel.link)
+        if (demandDto.distributorPercent != null) slice.add(ProductModel.distributorPercent)
+        if (demandDto.professionalPercent != null) slice.add(ProductModel.professionalPercent)
+        if (demandDto.offertaPrice != null) slice.add(ProductModel.offertaPrice)
 
         return slice
     }
@@ -398,8 +398,8 @@ class ProductService(di: DI) : KodeinService(di) {
 
         // Headers creation
         val headerRow = sheet.createRow(0)
-        slice.forEachIndexed { index, column ->
-            headerRow.createCell(index).setCellValue(column.name)
+        for ((index, item) in slice.withIndex()){
+            headerRow.createCell(index).setCellValue(item.toString())
         }
 
         var rowIndex = 1
@@ -425,7 +425,6 @@ class ProductService(di: DI) : KodeinService(di) {
             .orderBy(ProductModel.id to SortOrder.ASC)
             .forEach { row ->
                 val dataRow = sheet.createRow(rowIndex++)
-                Logger.debug(slice, "main")
                 slice.forEachIndexed { index, column ->
                     val cell = dataRow.createCell(index, CellType.STRING)
                     val value = row[column]?.toString() ?: ""
@@ -439,8 +438,6 @@ class ProductService(di: DI) : KodeinService(di) {
 
         FilesUtil.encodeBytes(outputStream.toByteArray())
     }
-
-
 
     fun getByBarCode(barCode: String): List<ProductListItemOutputDto> = transaction {
         ProductDao.find {
