@@ -44,6 +44,7 @@ import java.time.ZoneOffset
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.apache.poi.ss.usermodel.CellType
 import siberia.plugins.Logger
+import siberia.utils.files.FilesUtil
 import java.io.ByteArrayOutputStream
 
 class ProductService(di: DI) : KodeinService(di) {
@@ -272,6 +273,7 @@ class ProductService(di: DI) : KodeinService(di) {
 
         if (demandDto.id == true) slice.add(ProductModel.id)
         if (demandDto.vendorCode == true) slice.add(ProductModel.vendorCode)
+        if (demandDto.eanCode == true) slice.add(ProductModel.eanCode)
         if (demandDto.barcode == true) slice.add(ProductModel.barcode)
         if (demandDto.brand == true) slice.add(BrandModel.name)
         if (demandDto.name == true) slice.add(ProductModel.name)
@@ -290,8 +292,7 @@ class ProductService(di: DI) : KodeinService(di) {
         if (demandDto.link == true) slice.add(ProductModel.link)
         if (demandDto.distributorPercent == true) slice.add(ProductModel.distributorPercent)
         if (demandDto.professionalPercent == true) slice.add(ProductModel.professionalPercent)
-        if (demandDto.quantity == true) slice.add(ProductModel.eanCode)
-        if (demandDto.offerPrice == true) slice.add(ProductModel.offertaPrice)
+        if (demandDto.offertaPrice == true) slice.add(ProductModel.offertaPrice)
 
         return slice
     }
@@ -388,7 +389,7 @@ class ProductService(di: DI) : KodeinService(di) {
     fun getXls(
         searchFilterDto: ProductSearchFilterDto,
         productFieldsDemandDto: ProductFieldsDemandDto
-    ): ByteArray = transaction {
+    ): String = transaction {
 
         val workbook = XSSFWorkbook()
         val sheet = workbook.createSheet("Products")
@@ -436,7 +437,7 @@ class ProductService(di: DI) : KodeinService(di) {
         workbook.write(outputStream)
         workbook.close()
 
-        outputStream.toByteArray()
+        FilesUtil.encodeBytes(outputStream.toByteArray())
     }
 
 

@@ -32,7 +32,7 @@ class ProductController(override val di: DI) : KodeinController() {
 
                     call.respond(productService.getByFilter(searchFilterDto))
                 }
-                post("getXls") {
+                post("xls") {
                     val productGetXlsDto = call.receive<ProductGetXlsDto>()
 
                     val searchFilters = productGetXlsDto.searchFilters
