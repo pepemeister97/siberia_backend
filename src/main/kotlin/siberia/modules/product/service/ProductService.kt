@@ -43,6 +43,7 @@ import java.time.ZoneOffset
 
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.apache.poi.ss.usermodel.CellType
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.firstValue
 import siberia.plugins.Logger
 import siberia.utils.files.FilesUtil
 import java.io.ByteArrayOutputStream
@@ -268,31 +269,31 @@ class ProductService(di: DI) : KodeinService(di) {
         StockDao.find { StockModel.id inList stocks }.map { it.toOutputDto() }
     }
 
-    fun getSliceBasedOnDto(demandDto: ProductFieldsDemandDto): MutableList<Column<*>> {
-        val slice = mutableListOf<Column<*>>()
+    fun getSliceBasedOnDto(demandDto: ProductFieldsDemandDto): MutableList<Pair<Column<*>, String>> {
+        var slice = mutableListOf<Pair<Column<*>, String>>()
 
-        if (demandDto.id != null) slice.add(ProductModel.id)
-        if (demandDto.vendorCode != null) slice.add(ProductModel.vendorCode)
-        if (demandDto.eanCode != null) slice.add(ProductModel.eanCode)
-        if (demandDto.barcode != null) slice.add(ProductModel.barcode)
-        if (demandDto.brand != null) slice.add(BrandModel.name)
-        if (demandDto.name != null) slice.add(ProductModel.name)
-        if (demandDto.description != null) slice.add(ProductModel.description)
-        if (demandDto.lastPurchasePrice != null) slice.add(ProductModel.lastPurchasePrice)
-        if (demandDto.cost != null) slice.add(ProductModel.cost)
-        if (demandDto.lastPurchaseDate != null) slice.add(ProductModel.lastPurchaseDate)
-        if (demandDto.distributorPrice != null) slice.add(ProductModel.distributorPrice)
-        if (demandDto.professionalPrice != null) slice.add(ProductModel.professionalPrice)
-        if (demandDto.commonPrice != null) slice.add(ProductModel.commonPrice)
-        if (demandDto.category != null) slice.add(CategoryModel.name)
-        if (demandDto.collection != null) slice.add(CollectionModel.name)
-        if (demandDto.color != null) slice.add(ProductModel.color)
-        if (demandDto.amountInBox != null) slice.add(ProductModel.amountInBox)
-        if (demandDto.expirationDate != null) slice.add(ProductModel.expirationDate)
-        if (demandDto.link != null) slice.add(ProductModel.link)
-        if (demandDto.distributorPercent != null) slice.add(ProductModel.distributorPercent)
-        if (demandDto.professionalPercent != null) slice.add(ProductModel.professionalPercent)
-        if (demandDto.offertaPrice != null) slice.add(ProductModel.offertaPrice)
+        if (demandDto.id != null) slice.add (ProductModel.id to demandDto.id)
+        if (demandDto.vendorCode != null) slice.add(ProductModel.vendorCode to demandDto.vendorCode)
+        if (demandDto.eanCode != null) slice.add(ProductModel.eanCode to demandDto.eanCode)
+        if (demandDto.barcode != null) slice.add(ProductModel.barcode to demandDto.barcode)
+        if (demandDto.brand != null) slice.add(BrandModel.name to demandDto.brand)
+        if (demandDto.name != null) slice.add(ProductModel.name to demandDto.name)
+        if (demandDto.description != null) slice.add(ProductModel.description to demandDto.description)
+        if (demandDto.lastPurchasePrice != null) slice.add(ProductModel.lastPurchasePrice to demandDto.lastPurchasePrice)
+        if (demandDto.cost != null) slice.add(ProductModel.cost to demandDto.cost)
+        if (demandDto.lastPurchaseDate != null) slice.add(ProductModel.lastPurchaseDate to demandDto.lastPurchaseDate)
+        if (demandDto.distributorPrice != null) slice.add(ProductModel.distributorPrice to demandDto.distributorPrice)
+        if (demandDto.professionalPrice != null) slice.add(ProductModel.professionalPrice to demandDto.professionalPrice)
+        if (demandDto.commonPrice != null) slice.add(ProductModel.commonPrice to demandDto.commonPrice)
+        if (demandDto.category != null) slice.add(CategoryModel.name to demandDto.category)
+        if (demandDto.collection != null) slice.add(CollectionModel.name to demandDto.collection)
+        if (demandDto.color != null) slice.add(ProductModel.color to demandDto.color)
+        if (demandDto.amountInBox != null) slice.add(ProductModel.amountInBox to demandDto.amountInBox)
+        if (demandDto.expirationDate != null) slice.add(ProductModel.expirationDate to demandDto.expirationDate)
+        if (demandDto.link != null) slice.add(ProductModel.link to demandDto.link)
+        if (demandDto.distributorPercent != null) slice.add(ProductModel.distributorPercent to demandDto.distributorPercent)
+        if (demandDto.professionalPercent != null) slice.add(ProductModel.professionalPercent to demandDto.professionalPercent)
+        if (demandDto.offertaPrice != null) slice.add(ProductModel.offertaPrice to demandDto.offertaPrice)
 
         return slice
     }
@@ -394,12 +395,24 @@ class ProductService(di: DI) : KodeinService(di) {
         val workbook = XSSFWorkbook()
         val sheet = workbook.createSheet("Products")
 
-        val slice = getSliceBasedOnDto(productFieldsDemandDto)
+        val slicePairs = getSliceBasedOnDto(productFieldsDemandDto)
+        val slice = slicePairs.map { it.first }
+        val headers = slicePairs.map { it.second }
+        
+        val headerRow = sheet.createRow(0) // Table headers creation
+        headers.forEachIndexed { index, header ->
+            headerRow.createCell(index).setCellValue( header )
+        }
 
-        // Headers creation
-        val headerRow = sheet.createRow(0)
-        for ((index, item) in slice.withIndex()){
-            headerRow.createCell(index).setCellValue(item.toString())
+        val transforms = mutableMapOf<Column<*>, Any?.() -> String>(
+            ProductModel.expirationDate to {
+                val result = (this?. toString()?.toLong() ?: 0) * 1000 * 60 * 24
+                result.toString()
+            }
+        )
+
+        headerRow.forEach { cell ->
+            Logger.debug("Header Cell Value: ${cell.stringCellValue}", "main")
         }
 
         var rowIndex = 1
@@ -427,7 +440,10 @@ class ProductService(di: DI) : KodeinService(di) {
                 val dataRow = sheet.createRow(rowIndex++)
                 slice.forEachIndexed { index, column ->
                     val cell = dataRow.createCell(index, CellType.STRING)
-                    val value = row[column]?.toString() ?: ""
+                    val value = if (transforms.containsKey(column))
+                        transforms[column]?.invoke(row[column])
+                    else
+                        row[column]?.toString() ?: ""
                     cell.setCellValue(value)
                 }
             }
