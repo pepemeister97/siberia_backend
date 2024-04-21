@@ -19,9 +19,12 @@ import siberia.modules.user.data.dao.UserDao
 import siberia.modules.user.service.UserAccessControlService
 import siberia.utils.database.idValue
 import siberia.utils.kodein.KodeinService
+import siberia.modules.product.service.ProductService
+
 
 class StockService(di: DI) : KodeinService(di) {
     private val userAccessControlService: UserAccessControlService by instance()
+    private val productService: ProductService by instance()
     fun create(authorizedUser: AuthorizedUser, stockCreateDto: StockCreateDto): StockOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
 

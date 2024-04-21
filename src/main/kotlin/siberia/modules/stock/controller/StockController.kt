@@ -1,5 +1,4 @@
 package siberia.modules.stock.controller
-
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
@@ -14,9 +13,11 @@ import siberia.modules.stock.service.StockCache
 import siberia.modules.stock.service.StockEventService
 import siberia.modules.stock.service.StockService
 import siberia.utils.kodein.KodeinController
+import siberia.modules.transaction.service.OutcomeTransactionService
 
 class StockController(override val di: DI) : KodeinController() {
     private val stockService: StockService by instance()
+    private val outcomeTransactionService: OutcomeTransactionService by instance()
     private val stockEventService: StockEventService by instance()
 
     override fun Routing.registerRoutes() {
