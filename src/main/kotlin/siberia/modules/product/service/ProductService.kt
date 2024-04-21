@@ -398,7 +398,7 @@ class ProductService(di: DI) : KodeinService(di) {
         val slicePairs = getSliceBasedOnDto(productFieldsDemandDto)
         val slice = slicePairs.map { it.first }
         val headers = slicePairs.map { it.second }
-        
+
         val headerRow = sheet.createRow(0) // Table headers creation
         headers.forEachIndexed { index, header ->
             headerRow.createCell(index).setCellValue( header )
