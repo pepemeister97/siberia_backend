@@ -27,7 +27,7 @@ class ProductController(override val di: DI) : KodeinController() {
     override fun Routing.registerRoutes() {
         route("product") {
             authenticate("default") {
-                post("all/{batchSize}") {
+                post("all") {
                     val searchFilterDto = call.receive<ProductSearchDto>()
 
                     call.respond(productService.getByFilter(searchFilterDto).await())
