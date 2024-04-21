@@ -35,17 +35,29 @@ class StockDao(id: EntityID<Int>): BaseIntEntity<StockOutputDto>(id, StockModel)
     }
 
     fun fullOutput(): StockFullOutputDto {
-        val stockToProduct = StockToProductModel.leftJoin(ProductModel).select {
-            StockToProductModel.stock eq this@StockDao.id
-        }.orderBy(StockToProductModel.product)
+        val stockToProduct = StockToProductModel
+            .leftJoin(ProductModel)
+            .slice(
+                StockToProductModel.amount,
+                ProductModel.id,
+                ProductModel.name,
+                ProductModel.vendorCode,
+                ProductModel.eanCode,
+                ProductModel.commonPrice
+            )
+            .select {
+                StockToProductModel.stock eq this@StockDao.id
+            }
+            .orderBy(StockToProductModel.product)
 
         val products = stockToProduct.map {
             ProductListItemOutputDto(
                 id = it[ProductModel.id].value,
                 name = it[ProductModel.name],
                 vendorCode = it[ProductModel.vendorCode],
+                eanCode = it[ProductModel.eanCode],
                 quantity = it[StockToProductModel.amount],
-                price = it[StockToProductModel.price]
+                price = it[ProductModel.commonPrice]
             )
         }
 

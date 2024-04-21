@@ -18,7 +18,8 @@ data class ProductSearchFilterDto (
     val collection: List<Int>? = null,
     val color: String? = null,
     val amountInBox: FieldFilterWrapper<Int>? = null,
-    val offertaPrice: FieldFilterWrapper<Double>? = null
+    val offertaPrice: FieldFilterWrapper<Double>? = null,
+    val ids: List<Int>? = null
     
 //    Future iterations
 //    val size: FieldFilterWrapper<Double>? = null,

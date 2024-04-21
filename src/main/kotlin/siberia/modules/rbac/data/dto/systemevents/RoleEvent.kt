@@ -5,7 +5,7 @@ import siberia.modules.logger.data.dto.resettable.ResettableSystemEventCreateDto
 
 abstract class RoleEvent : ResettableSystemEventCreateDto() {
     override val rollbackRoute: String
-        get() = "roles"
+        get() = "rbac/roles"
     override val eventObjectType: Int
         get() = AppConf.objectTypes.roleEvent
 }

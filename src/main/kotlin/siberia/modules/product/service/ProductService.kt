@@ -42,6 +42,7 @@ import java.time.ZoneOffset
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.apache.poi.ss.usermodel.CellType
 import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
+import siberia.modules.brand.data.dao.BrandDao.Companion.createListCond
 import siberia.plugins.Logger
 import siberia.utils.database.*
 import siberia.utils.files.FilesUtil
@@ -158,7 +159,8 @@ class ProductService(di: DI) : KodeinService(di) {
             createLikeCond(searchFilterDto.color, (ProductModel.id neq 0), ProductModel.color) and
             createLikeCond(searchFilterDto.vendorCode, (ProductModel.id neq 0), ProductModel.vendorCode) and
             createLikeCond(searchFilterDto.description, (ProductModel.id neq 0), ProductModel.description) and
-            createRangeCond(searchFilterDto.offertaPrice, (ProductModel.id neq 0), ProductModel.offertaPrice, -1.0, Double.MAX_VALUE)
+            createRangeCond(searchFilterDto.offertaPrice, (ProductModel.id neq 0), ProductModel.offertaPrice, -1.0, Double.MAX_VALUE) and
+            createListCond(searchFilterDto.ids, (ProductModel.id neq 0), ProductModel.id)
 
 //            Future iterations
 //            createRangeCond(searchFilterDto.size, (ProductModel.id neq 0), ProductModel.size, -1.0, Double.MAX_VALUE) and

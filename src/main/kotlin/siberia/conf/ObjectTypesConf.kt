@@ -13,4 +13,5 @@ data class ObjectTypesConf (
     val productGroupEvent: Int,
     val productBulkCreate: Int,
     val userRightsEvent: Int,
+    val galleryEvent: Int,
 )

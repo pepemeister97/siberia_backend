@@ -79,10 +79,13 @@ class UserDao(id: EntityID<Int>): BaseIntEntity<UserOutputDto>(id, UserModel) {
         if (userUpdateDto.password != null)
             hash = CryptoUtil.hash(userUpdateDto.password!!)
         if (userUpdateDto.hash != null)
-            hash = CryptoUtil.hash(userUpdateDto.hash!!)
+            hash = userUpdateDto.hash!!
     }
 
     fun loadAndFlush(authorName: String, userUpdateDto: UserUpdateDto): Boolean {
+        if (userUpdateDto.password != null)
+            userUpdateDto.hash =  CryptoUtil.hash(userUpdateDto.password!!)
+
         val event = UserUpdateEvent(
             authorName,
             with(userUpdateDto) {
@@ -92,6 +95,7 @@ class UserDao(id: EntityID<Int>): BaseIntEntity<UserOutputDto>(id, UserModel) {
             idValue,
             createEncodedRollbackUpdateDto<UserOutputDto, UserUpdateDto>(userUpdateDto, toOutputWithHash())
         )
+
         SystemEventModel.logResettableEvent(event)
 
         loadPatch(userUpdateDto)

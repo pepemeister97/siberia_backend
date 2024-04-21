@@ -32,7 +32,7 @@ object CategoryModel: BaseIntIdTable() {
             .slice(CategoryModel.id, name, CategoryToCategoryModel.child)
             .select {
                 CategoryToCategoryModel.parent eq categoryOutputDto.id
-            }.map {
+            }.orderBy(Pair(name, SortOrder.ASC)).map {
                 CategoryOutputDto(
                     id = it[CategoryModel.id].value, name = it[name]
                 ).apply {

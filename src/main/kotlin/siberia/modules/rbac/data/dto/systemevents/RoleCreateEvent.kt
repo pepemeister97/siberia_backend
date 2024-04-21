@@ -4,8 +4,8 @@ import siberia.conf.AppConf
 
 class RoleCreateEvent (
         override val eventObjectId: Int,
+        private val createdRoleName: String,
         override val author: String,
-        private val createdRoleName: String
 ) : RoleEvent() {
 
         override val rollbackInstance: String

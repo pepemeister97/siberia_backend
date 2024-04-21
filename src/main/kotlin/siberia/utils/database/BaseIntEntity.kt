@@ -121,7 +121,11 @@ abstract class BaseIntEntity<OutputDto : SerializableAny>(id: EntityID<Int>, tab
         val outputDtoKlass = Output::class
         val outputDto = toOutputDto()
 
-        return json.encodeToString(outputDtoKlass.serializer(), outputDto as Output)
+        val eventInstance = EventInstance(
+            outputDto as Output, EMPTY()
+        )
+
+        return json.encodeToString(EventInstance.serializer(outputDtoKlass.serializer(), EMPTY.serializer()), eventInstance)
     }
 
     @OptIn(InternalSerializationApi::class)

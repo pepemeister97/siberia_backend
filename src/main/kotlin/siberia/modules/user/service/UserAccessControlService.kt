@@ -95,9 +95,10 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
         appendedRules
     }
 
-    fun addRules(authorizedUser: AuthorizedUser, targetId: Int, newRules: List<LinkedRuleInputDto>): List<LinkedRuleOutputDto> = transaction {
+    fun addRules(authorizedUser: AuthorizedUser, targetId: Int, newRules: List<LinkedRuleInputDto>, shadowed: Boolean = false): List<LinkedRuleOutputDto> = transaction {
         val userDao = UserDao[targetId]
-        logUpdateRules(authorizedUser, userDao, UpdateDirection.CREATED, newRules)
+        if (!shadowed)
+            logUpdateRules(authorizedUser, userDao, UpdateDirection.CREATED, newRules)
         val addedRules = addRules(userDao, newRules)
         if (userDao.idValue != authorizedUser.id)
             authSocketService.updateRules(userDao.idValue)
@@ -112,9 +113,10 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
         appendedRoles
     }
 
-    fun addRoles(authorizedUser: AuthorizedUser, targetId: Int, newRoles: List<Int>): List<RoleOutputDto> = transaction {
+    fun addRoles(authorizedUser: AuthorizedUser, targetId: Int, newRoles: List<Int>, shadowed: Boolean = false): List<RoleOutputDto> = transaction {
         val userDao = UserDao[targetId]
-        logUpdateRoles(authorizedUser, userDao, UpdateDirection.CREATED, newRoles)
+        if (!shadowed)
+            logUpdateRoles(authorizedUser, userDao, UpdateDirection.CREATED, newRoles)
         val addedRoles = addRoles(userDao, newRoles)
         if (userDao.idValue != authorizedUser.id)
             authSocketService.updateRules(userDao.idValue)

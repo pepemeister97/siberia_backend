@@ -14,14 +14,15 @@ import siberia.utils.database.idValue
 import siberia.utils.kodein.KodeinService
 
 class CategoryService(di: DI) : KodeinService(di) {
-    fun create(authorizedUser: AuthorizedUser, categoryInputDto: CategoryInputDto): CategoryOutputDto = transaction {
+    fun create(authorizedUser: AuthorizedUser, categoryInputDto: CategoryInputDto, shadowed: Boolean = false): CategoryOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
         val parentCategoryId = categoryInputDto.parent ?: 1
 
         val createdCategory = CategoryModel.new(categoryInputDto, parentCategoryId)
 
         val event = CategoryCreateEvent(userDao.login, createdCategory.name, createdCategory.id)
-        SystemEventModel.logEvent(event)
+        if (!shadowed)
+            SystemEventModel.logEvent(event)
 
         commit()
 

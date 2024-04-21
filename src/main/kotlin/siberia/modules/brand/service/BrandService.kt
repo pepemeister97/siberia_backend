@@ -1,5 +1,6 @@
 package siberia.modules.brand.service
 
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import siberia.modules.auth.data.dto.AuthorizedUser
@@ -8,6 +9,7 @@ import siberia.modules.brand.data.dto.BrandOutputDto
 import siberia.modules.brand.data.dto.BrandInputDto
 import siberia.modules.brand.data.dto.BrandRemoveResultDto
 import siberia.modules.brand.data.dto.BrandUpdateDto
+import siberia.modules.brand.data.models.BrandModel
 import siberia.modules.user.data.dao.UserDao
 import siberia.utils.kodein.KodeinService
 
@@ -44,7 +46,7 @@ class BrandService(di: DI) : KodeinService(di) {
     }
 
     fun getAll(): List<BrandOutputDto> = transaction {
-        BrandDao.all().map { it.toOutputDto() }
+        BrandDao.all().orderBy(Pair(BrandModel.name, SortOrder.ASC)).map { it.toOutputDto() }
     }
 
     fun getOne(brandId: Int): BrandOutputDto = transaction {

@@ -125,7 +125,7 @@ object SystemEventModel: BaseIntIdTable() {
         }
     }
 
-    fun <T : ResettableSystemEventCreateDto> logResettableEvent(event: T) {
+    fun <T : ResettableSystemEventCreateDto> logResettableEvent(event: T): Int {
         //If we could decode rollback as two empty models, rollback is empty update
         //If we get an exception during decoding rollback is not empty
         val emptyRollback = try {
@@ -136,9 +136,9 @@ object SystemEventModel: BaseIntIdTable() {
         }
 
         if (event.rollbackInstance == "" || emptyRollback)
-            return
+            return 0
 
-        SystemEventModel.insert {
+        return SystemEventModel.insert {
             it[author] = event.author
             it[eventObjectName] = event.eventObjectName
             it[eventObjectType] = event.eventObjectType
@@ -148,6 +148,6 @@ object SystemEventModel: BaseIntIdTable() {
             it[rollbackRoute] = event.rollbackRoute
             it[rollbackInstance] = event.rollbackInstance
             it[canBeReset] = true
-        }
+        }[SystemEventModel.id].value
     }
 }
