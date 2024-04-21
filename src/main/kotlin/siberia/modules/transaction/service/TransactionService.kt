@@ -197,6 +197,8 @@ class TransactionService(di: DI) : KodeinService(di) {
 
         val incomeAvailableStatuses = listOf<Int>()
 
+        val writeOffAvailableStatuses = listOf<Int>()
+
         val transferForbidden =
             transactionDao.typeId == AppConf.requestTypes.transfer &&
             !transferAvailableStatuses.contains(transactionDao.statusId)
@@ -209,7 +211,11 @@ class TransactionService(di: DI) : KodeinService(di) {
             transactionDao.typeId == AppConf.requestTypes.income &&
             !incomeAvailableStatuses.contains(transactionDao.statusId)
 
-        if (transferForbidden || outcomeForbidden || incomeForbidden)
+        val writeOffForbidden =
+            transactionDao.typeId == AppConf.requestTypes.writeOff &&
+            !writeOffAvailableStatuses.contains(transactionDao.statusId)
+
+        if (transferForbidden || outcomeForbidden || incomeForbidden || writeOffForbidden)
             throw ForbiddenException()
 
         transactionDao
