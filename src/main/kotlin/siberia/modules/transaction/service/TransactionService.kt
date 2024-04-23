@@ -2,7 +2,6 @@ package siberia.modules.transaction.service
 
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.neq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.notInList
 import org.kodein.di.DI
@@ -61,6 +60,7 @@ class TransactionService(di: DI) : KodeinService(di) {
         userAccessControlService.filterAvailable(authorizedUser.id, transactionStocks).isNotEmpty() || transactionDao.typeId == AppConf.requestTypes.transfer
     }
 
+
     fun getAvailableTransactions(authorizedUser: AuthorizedUser, transactionSearchFilter: TransactionSearchFilter): List<TransactionListItemOutputDto> = transaction {
         val availableStocksWithRules = userAccessControlService.getAvailableStocksByOperations(authorizedUser.id)
         val availableStocks = availableStocksWithRules.map { it.key }
@@ -68,7 +68,7 @@ class TransactionService(di: DI) : KodeinService(di) {
         val processQuery = if (authorizedUser.rules.map { rule -> rule.ruleId }.contains(AppConf.rules.manageTransferRequest))
             TransactionModel.status eq requestStatus.open
         else
-            TransactionModel.to inList availableStocks
+            TransactionModel.id neq 0
 
         val showClosed = if (!transactionSearchFilter.showClosed)
             TransactionModel.status notInList listOf(
@@ -82,16 +82,20 @@ class TransactionService(di: DI) : KodeinService(di) {
         else //If show closed just add "trash" query
             TransactionModel.id neq 0
 
+        val restricted = TransactionModel.select {
+            (TransactionModel.from notInList availableStocks) and
+            (TransactionModel.to notInList availableStocks)
+        }.map { it[TransactionModel.id] }
+
         TransactionModel.select {
-            (
-                    TransactionModel.hidden eq false and (
-                    (TransactionModel.from inList availableStocks) or
-                    (TransactionModel.to inList availableStocks) or
-                    processQuery)
-            ) and
+            TransactionModel.hidden eq false and
+            (TransactionModel.id notInList restricted) and
+            processQuery and
             showClosed and
-            createNullableListCond(transactionSearchFilter.to, TransactionModel.id.isNotNull(), TransactionModel.to) and
-            createNullableListCond(transactionSearchFilter.from, TransactionModel.id.isNotNull(), TransactionModel.from) and
+            (
+                createNullableListCond(transactionSearchFilter.to, TransactionModel.id.isNotNull(), TransactionModel.to) or
+                createNullableListCond(transactionSearchFilter.from, TransactionModel.id.isNotNull(), TransactionModel.from)
+            ) and
             createListCond(transactionSearchFilter.status, TransactionModel.id.isNotNull(), TransactionModel.status) and
             createListCond(transactionSearchFilter.type, TransactionModel.id.isNotNull(), TransactionModel.type)
         }.orderBy(Pair(TransactionModel.updatedAt, SortOrder.DESC_NULLS_FIRST), Pair(TransactionModel.status, SortOrder.ASC)).map {
@@ -186,6 +190,13 @@ class TransactionService(di: DI) : KodeinService(di) {
         val transactionDao = TransactionDao[transactionId]
         if (!checkAccessToTransaction(authorizedUser, transactionId))
             throw ForbiddenException()
+
+        //Additional check for transfers
+        if (transactionDao.statusId == requestStatus.inProgress) {
+            val statuses = getAvailableStatuses(authorizedUser, transactionId)
+            if (!statuses.map { it.id }.contains(requestStatus.delivered))
+                throw ForbiddenException()
+        }
 
         val transferAvailableStatuses = listOf(
             requestStatus.inProgress, requestStatus.open

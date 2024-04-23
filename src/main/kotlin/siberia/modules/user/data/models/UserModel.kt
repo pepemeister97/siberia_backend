@@ -6,5 +6,4 @@ object UserModel: BaseIntIdTable() {
     val name = text("name")
     val login = text("login")
     val hash = text("hash")
-    val lastLogin = long("lastLogin")
 }

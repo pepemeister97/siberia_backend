@@ -1,6 +1,9 @@
 package siberia.modules.auth.service
 
 import io.ktor.util.date.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
@@ -9,10 +12,10 @@ import siberia.conf.AppConf
 import siberia.exceptions.ForbiddenException
 import siberia.exceptions.UnauthorizedException
 import siberia.modules.auth.data.dto.*
+import siberia.modules.auth.data.models.UserLoginModel
 import siberia.modules.rbac.data.models.RbacModel
 import siberia.modules.stock.service.StockService
 import siberia.modules.transaction.data.dao.TransactionDao
-import siberia.modules.user.data.dao.UserDao
 import siberia.modules.user.data.dto.UserOutputDto
 import siberia.modules.user.data.models.UserModel
 import siberia.modules.user.service.UserAccessControlService
@@ -27,38 +30,35 @@ class AuthService(override val di: DI) : KodeinService(di) {
     private val userAccessControlService: UserAccessControlService by instance()
     private val stockService: StockService by instance()
     private val authQrService: AuthQrService by instance()
-    private fun generateTokenPair(userDao: UserDao, refreshTime: Long): TokenOutputDto {
-        val accessToken = JwtUtil.createToken(userDao)
-        val refreshToken = JwtUtil.createToken(userDao, lastLogin = refreshTime)
+    private fun generateTokenPair(userId: Int, refreshTime: Long): TokenOutputDto {
+        val accessToken = JwtUtil.createToken(userId)
+        val refreshToken = JwtUtil.createToken(userId, lastLogin = refreshTime)
 
         return TokenOutputDto(accessToken, refreshToken)
     }
 
+    private fun updateUserLastLogin(userId: Int, lastLogin: Long) {
+        UserLoginModel.deleteWhere {
+            UserLoginModel.userId eq userId
+        }
+
+        UserLoginModel.insert {
+            it[UserLoginModel.userId] = userId
+            it[UserLoginModel.lastLogin] = lastLogin
+        }
+    }
+
     fun refreshUser(refreshTokenDto: RefreshTokenDto): TokenOutputDto = transaction {
         try {
-            UserModel.select { UserModel.id eq refreshTokenDto.id }.map {
-                Logger.debug("Log from array", "main")
-                Logger.debug(it[UserModel.lastLogin], "main")
-            }
-            val users = UserDao.wrapRows(UserModel.select { UserModel.id eq refreshTokenDto.id })
-            if (users.empty()) throw ForbiddenException()
-            val userDao = users.first()
-            UserDao.removeFromCache(userDao)
-            Logger.debug(refreshTokenDto, "main")
-            Logger.debug(userDao.toOutputDto(), "main")
-            Logger.debug(userDao.id, "main")
-            Logger.debug(userDao.lastLogin, "main")
-
-            if (userDao.lastLogin != refreshTokenDto.lastLogin)
+            val selected = UserModel.select { UserModel.id eq refreshTokenDto.id }
+            if (selected.count() == 0L)
                 throw ForbiddenException()
-            val lastLogin = getTimeMillis()
-            userDao.lastLogin = lastLogin
-            userDao.flush()
+            val user = selected.first()[UserModel.id].value
+            val newLastLogin = getTimeMillis()
+            updateUserLastLogin(user, newLastLogin)
+            val tokenPair = generateTokenPair(user, newLastLogin)
             commit()
-            Logger.debug(userDao.lastLogin, "main")
-            Logger.debug(lastLogin, "main")
-
-            generateTokenPair(userDao, lastLogin)
+            tokenPair
         } catch (e: Exception) {
             Logger.debugException("Exception during refresh", e, "main")
             throw ForbiddenException()
@@ -66,23 +66,24 @@ class AuthService(override val di: DI) : KodeinService(di) {
     }
 
     fun auth(authInputDto: AuthInputDto): TokenOutputDto = transaction {
-        val search = UserDao.find {
+        val search = UserModel.select {
             UserModel.login eq authInputDto.login
         }
-        val userDao = if (search.empty())
+        val user = if (search.empty())
             throw UnauthorizedException()
         else
             search.first()
 
-        if (!CryptoUtil.compare(authInputDto.password, userDao.hash))
+        if (!CryptoUtil.compare(authInputDto.password, user[UserModel.hash]))
             throw ForbiddenException()
 
+        val userId = user[UserModel.id].value
         val lastLogin = getTimeMillis()
-        userDao.lastLogin = lastLogin
-        userDao.flush()
-        commit()
+        updateUserLastLogin(userId, lastLogin)
 
-        generateTokenPair(userDao, lastLogin)
+        val tokenPair = generateTokenPair(userId, lastLogin)
+        commit()
+        tokenPair
     }
 
     fun getAuthorized(authorizedUser: AuthorizedUser): UserOutputDto {
