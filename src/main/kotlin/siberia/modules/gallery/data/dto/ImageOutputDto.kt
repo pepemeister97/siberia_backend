@@ -9,4 +9,5 @@ data class ImageOutputDto(
     val url : String,
     val author : String?,
     val description : String?,
+    val original : String?
 )

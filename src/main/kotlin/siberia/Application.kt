@@ -28,7 +28,8 @@ import siberia.modules.collection.controller.CollectionController
 import siberia.modules.collection.data.models.CollectionModel
 import siberia.modules.collection.service.CollectionEventService
 import siberia.modules.collection.service.CollectionService
-import siberia.modules.files.FilesController
+import siberia.modules.files.controller.FilesController
+import siberia.modules.files.service.FilesService
 import siberia.modules.gallery.controller.GalleryController
 import siberia.modules.gallery.service.GalleryService
 import siberia.modules.gallery.data.models.GalleryModel
@@ -116,6 +117,7 @@ fun Application.module() {
         bindSingleton { ProductGroupEventService(it) }
         bindSingleton { BugReportService(it) }
         bindSingleton { GalleryService(it) }
+        bindSingleton { FilesService(it) }
 
 
         bindSingleton { AuthController(it) }

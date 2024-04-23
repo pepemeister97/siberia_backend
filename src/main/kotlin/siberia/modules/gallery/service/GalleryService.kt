@@ -25,7 +25,10 @@ class GalleryService(di: DI) : KodeinService(di) {
         val userDao = UserDao[authorizedUser.id]
         val returnList = mutableListOf<ImageOutputDto>()
         images.forEach {
+
             val photoName = FilesUtil.buildName(it.photoName)
+            val compressImageName = FilesUtil.buildName("shakal" + it.photoName)
+
             returnList.add(
                 GalleryDao.new {
                     url = photoName
@@ -34,7 +37,15 @@ class GalleryService(di: DI) : KodeinService(di) {
                     description = it.description
                 }.toOutputDto()
             )
-            FilesUtil.upload(it.imageBase64, photoName)
+            GalleryDao.new {
+                url = compressImageName
+                name = it.name
+                author = userDao
+                description = it.description
+                original = photoName
+            }.toOutputDto()
+            FilesUtil.upload(it.imageBase64, photoName, compressImageName)
+
         }
 
         commit()
@@ -51,7 +62,15 @@ class GalleryService(di: DI) : KodeinService(di) {
         commit()
 
         FilesUtil.removeFile(fileName)
-
+        val files = GalleryModel.select {
+            GalleryModel.original eq fileName
+        }.filterNotNull()
+        .map{
+            it[GalleryModel.url]
+        }
+        files.forEach {
+            FilesUtil.removeFile(it)
+        }
         ProductRemoveResultDto(
             success = true,
             message = "Image $imageId (${galleryDao.name}) successfully removed"
@@ -64,7 +83,8 @@ class GalleryService(di: DI) : KodeinService(di) {
             image.name,
             image.url,
             image.author?.login,
-            image.description
+            image.description,
+            image.original
         )
     }
     fun getAll(filter: ImageSearchFilterDto?) : List<ImageOutputDto> = transaction {
@@ -73,6 +93,9 @@ class GalleryService(di: DI) : KodeinService(di) {
             .select {
                 createLikeCond(filter?.name, GalleryModel.id neq 0, GalleryModel.name) and
                 timeCond(Pair(filter?.rangeStart, filter?.rangeEnd), GalleryModel.createdAt)
+
+            }.filter {
+                it[GalleryModel.original] != null
             }
             .map {
                 ImageOutputDto(
@@ -80,7 +103,8 @@ class GalleryService(di: DI) : KodeinService(di) {
                    name = it[GalleryModel.name],
                    url = it[GalleryModel.url],
                    author = it[UserModel.login],
-                   description = null
+                   description = null,
+                   original = null
                )
             }
     }
