@@ -41,13 +41,13 @@ import java.time.ZoneOffset
 
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.apache.poi.ss.usermodel.CellType
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.firstValue
 import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 import siberia.modules.brand.data.dao.BrandDao.Companion.createListCond
 import siberia.plugins.Logger
 import siberia.utils.database.*
 import siberia.utils.files.FilesUtil
 import java.io.ByteArrayOutputStream
+import kotlin.reflect.full.memberProperties
 
 class ProductService(di: DI) : KodeinService(di) {
     private val galleryService: GalleryService by instance()
@@ -173,12 +173,64 @@ class ProductService(di: DI) : KodeinService(di) {
         getList(searchFilterDto = productSearchDto).await()
     }
 
-    suspend fun getList(authorizedUser: AuthorizedUser? = null, searchFilterDto: ProductSearchDto): Deferred<List<ProductListItemOutputDto>> = suspendedTransactionAsync {
-        val ordering = if (authorizedUser != null && searchFilterDto.filters?.availability != null && searchFilterDto.filters.availability){
+    private fun getOrdering(authorizedUser: AuthorizedUser? = null, searchFilterDto: ProductSearchDto) =
+        if (authorizedUser != null && searchFilterDto.filters?.availability != null && searchFilterDto.filters.availability){
             listOf(StockToProductModel.amount to SortOrder.DESC_NULLS_LAST, ProductModel.id to SortOrder.ASC)
         } else{
             listOf(ProductModel.id to SortOrder.ASC)
         }
+
+    suspend fun getUnminifiedList(searchFilterDto: ProductSearchDto): Deferred<List<ProductExportPreviewDto>> = suspendedTransactionAsync {
+        val query = ProductModel
+            .join(
+                CategoryModel,
+                JoinType.LEFT,
+                additionalConstraint = { ProductModel.category eq CategoryModel.id }
+            )
+            .join(
+                CollectionModel,
+                JoinType.LEFT,
+                additionalConstraint = { ProductModel.collection eq CollectionModel.id }
+            )
+            .join(
+                BrandModel,
+                JoinType.LEFT,
+                additionalConstraint = { ProductModel.brand eq BrandModel.id })
+            .select { convertToOperator(searchFilterDto.filters ?: ProductSearchFilterDto()) }
+            .orderBy(ProductModel.id to SortOrder.ASC)
+
+        parallelQueryProcessing(query, 400) {
+            ProductExportPreviewDto(
+                id = this[ProductModel.id].value,
+                photo = listOf(),
+                photoIds = listOf(),
+                vendorCode = this[ProductModel.vendorCode],
+                barcode = this[ProductModel.vendorCode],
+                brand = if (this[ProductModel.brand] != null) this[BrandModel.name] else null,
+                name = this[ProductModel.vendorCode],
+                description = this[ProductModel.description],
+                lastPurchasePrice = this[ProductModel.lastPurchasePrice],
+                distributorPrice = this[ProductModel.distributorPrice],
+                professionalPrice = this[ProductModel.professionalPrice],
+                cost = this[ProductModel.cost],
+                lastPurchaseDate = this[ProductModel.lastPurchaseDate],
+                commonPrice = this[ProductModel.commonPrice],
+                category = if (this[ProductModel.category] != null) this[CategoryModel.name] else null,
+                collection = if (this[ProductModel.collection] != null) this[CollectionModel.name] else null,
+                color = this[ProductModel.color],
+                amountInBox = this[ProductModel.amountInBox],
+                expirationDate = this[ProductModel.expirationDate],
+                link = this[ProductModel.link],
+                distributorPercent = this[ProductModel.distributorPercent],
+                professionalPercent = this[ProductModel.professionalPercent],
+                eanCode = this[ProductModel.eanCode],
+                offertaPrice = this[ProductModel.offertaPrice],
+            )
+        }
+    }
+
+    suspend fun getList(authorizedUser: AuthorizedUser? = null, searchFilterDto: ProductSearchDto): Deferred<List<ProductListItemOutputDto>> = suspendedTransactionAsync {
+        val ordering = getOrdering(authorizedUser, searchFilterDto)
 
         val search = searchFilterDto.filters ?: ProductSearchFilterDto()
 
@@ -280,31 +332,22 @@ class ProductService(di: DI) : KodeinService(di) {
         StockDao.find { StockModel.id inList stocks }.map { it.toOutputDto() }
     }
 
-    fun getSliceBasedOnDto(demandDto: ProductFieldsDemandDto): MutableList<Pair<Column<*>, String>> {
-        var slice = mutableListOf<Pair<Column<*>, String>>()
+    private fun getSliceBasedOnDto(demandDto: ProductFieldsDemandDto): MutableList<Pair<Column<*>, String>> {
+        val slice = mutableListOf<Pair<Column<*>, String>>()
 
-        if (demandDto.id != null) slice.add (ProductModel.id to demandDto.id)
-        if (demandDto.vendorCode != null) slice.add(ProductModel.vendorCode to demandDto.vendorCode)
-        if (demandDto.eanCode != null) slice.add(ProductModel.eanCode to demandDto.eanCode)
-        if (demandDto.barcode != null) slice.add(ProductModel.barcode to demandDto.barcode)
-        if (demandDto.brand != null) slice.add(BrandModel.name to demandDto.brand)
-        if (demandDto.name != null) slice.add(ProductModel.name to demandDto.name)
-        if (demandDto.description != null) slice.add(ProductModel.description to demandDto.description)
-        if (demandDto.lastPurchasePrice != null) slice.add(ProductModel.lastPurchasePrice to demandDto.lastPurchasePrice)
-        if (demandDto.cost != null) slice.add(ProductModel.cost to demandDto.cost)
-        if (demandDto.lastPurchaseDate != null) slice.add(ProductModel.lastPurchaseDate to demandDto.lastPurchaseDate)
-        if (demandDto.distributorPrice != null) slice.add(ProductModel.distributorPrice to demandDto.distributorPrice)
-        if (demandDto.professionalPrice != null) slice.add(ProductModel.professionalPrice to demandDto.professionalPrice)
-        if (demandDto.commonPrice != null) slice.add(ProductModel.commonPrice to demandDto.commonPrice)
-        if (demandDto.category != null) slice.add(CategoryModel.name to demandDto.category)
-        if (demandDto.collection != null) slice.add(CollectionModel.name to demandDto.collection)
-        if (demandDto.color != null) slice.add(ProductModel.color to demandDto.color)
-        if (demandDto.amountInBox != null) slice.add(ProductModel.amountInBox to demandDto.amountInBox)
-        if (demandDto.expirationDate != null) slice.add(ProductModel.expirationDate to demandDto.expirationDate)
-        if (demandDto.link != null) slice.add(ProductModel.link to demandDto.link)
-        if (demandDto.distributorPercent != null) slice.add(ProductModel.distributorPercent to demandDto.distributorPercent)
-        if (demandDto.professionalPercent != null) slice.add(ProductModel.professionalPercent to demandDto.professionalPercent)
-        if (demandDto.offertaPrice != null) slice.add(ProductModel.offertaPrice to demandDto.offertaPrice)
+        demandDto::class.memberProperties.forEach { demandProp ->
+            val demandPropValue = demandProp.call(demandDto)
+            if (demandPropValue != null) {
+                val productModelProp = ProductModel::class.memberProperties.firstOrNull {
+                    it.name == demandProp.name
+                } ?: return@forEach
+
+                val productColumn = productModelProp.call(ProductModel) as Column<*>
+                slice.add(productColumn to demandPropValue.toString())
+            }
+        }
+
+        slice.add(ProductModel.id to "ID")
 
         return slice
     }
@@ -466,7 +509,6 @@ class ProductService(di: DI) : KodeinService(di) {
         FilesUtil.encodeBytes(outputStream.toByteArray())
     }
 
-    
     fun getByBarCode(barCode: String): List<ProductListItemOutputDto> = transaction {
         ProductDao.find {
             ProductModel.barcode eq barCode

@@ -1,5 +1,6 @@
 package siberia.modules.product.service
 
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.modules.auth.data.dto.AuthorizedUser
@@ -18,7 +19,7 @@ class ProductEventService(di: DI) : KodeinEventService(di) {
         productService.update(authorizedUser, updateEventDto.objectId, updateEventDto.objectDto)
     }
 
-    override fun rollbackRemove(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {
+    override fun rollbackRemove(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) = transaction {
         val createProductEvent = event.getRollbackData<ProductRollbackDto>()
         val productDto = productService.create(authorizedUser, createProductEvent.objectDto.createDto)
         val productDao = ProductDao[productDto.id]
