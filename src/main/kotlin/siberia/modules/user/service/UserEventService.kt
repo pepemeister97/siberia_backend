@@ -1,5 +1,6 @@
 package siberia.modules.user.service
 
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import org.kodein.di.instance
@@ -9,23 +10,31 @@ import siberia.modules.logger.data.dto.SystemEventOutputDto
 import siberia.modules.user.data.dao.UserDao
 import siberia.modules.user.data.dto.UserRollbackOutputDto
 import siberia.modules.user.data.dto.UserUpdateDto
+import siberia.modules.user.data.models.UserModel
 import siberia.utils.kodein.KodeinEventService
 import siberia.utils.security.bcrypt.CryptoUtil
 
 class UserEventService(di: DI) : KodeinEventService(di) {
     private val userAccessControlService: UserAccessControlService by instance()
 
-    override fun rollbackUpdate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) = transaction {
+    override fun rollbackUpdate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) : Unit = transaction {
         val updateEventDto = event.getRollbackData<UserUpdateDto>()
-        val authorName = UserDao[authorizedUser.id].login
-        val userDao = UserDao[updateEventDto.objectId]
-
-        userDao.loadAndFlush(authorName, updateEventDto.objectDto)
-
-        return@transaction
+        with(
+            UserModel.select {
+                UserModel.id eq updateEventDto.objectId
+            }.map {
+                it[UserModel.id]
+            }
+        ){
+            if (this.isNotEmpty()) {
+                val authorName = UserDao[authorizedUser.id].login
+                val userDao = UserDao[updateEventDto.objectId]
+                userDao.loadAndFlush(authorName, updateEventDto.objectDto)
+            }
+        }
     }
 
-    override fun rollbackRemove(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) = transaction {
+    override fun rollbackRemove(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) : Unit = transaction {
         val createEventDto = event.getRollbackData<UserRollbackOutputDto>()
         val createUserDto = createEventDto.objectDto
         UserDao.checkUnique(createUserDto.login)
@@ -43,7 +52,6 @@ class UserEventService(di: DI) : KodeinEventService(di) {
 
             userAccessControlService.addRoles(userDao, createUserDto.roles)
 
-            return@transaction
         } catch (e: Exception) {
             rollback()
             throw BadRequestException("Bad rules or roles provided")
