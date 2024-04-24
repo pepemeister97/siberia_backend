@@ -47,6 +47,7 @@ dependencies {
     implementation(ktor("serialization", "kotlinx-json"))
     implementation(ktorServer("websockets"))
     implementation(ktorServer("netty"))
+    implementation(ktorServer("compression"))
 
     //Xls lib
     implementation("org.apache.poi:poi:5.2.3")
@@ -68,6 +69,7 @@ dependencies {
 //    implementation("mysql:mysql-connector-java:8.0.31")
     implementation("org.postgresql:postgresql:42.7.1")
     implementation("io.ktor:ktor-server-cors-jvm:2.3.6")
+    implementation("io.ktor:ktor-server-compression-jvm:2.3.6")
 
     //Kotlinx coroutines
     runtimeOnly(kotlin("reflect", kotlinVersion))

@@ -9,4 +9,5 @@ object GalleryModel : BaseIntIdTable() {
     val name = text("image_name")
     val authorId = reference("author", UserModel, ReferenceOption.SET_NULL, ReferenceOption.SET_NULL).nullable()
     val description = text("description")
+    val original = text("url_original").nullable()
 }

@@ -17,6 +17,7 @@ class GalleryDao(id: EntityID<Int>): BaseIntEntity<ImageOutputDto>(id, GalleryMo
     var url by GalleryModel.url
     var name by GalleryModel.name
     var description by GalleryModel.description
+    var original by GalleryModel.original
 
     var author by UserDao optionalReferencedOn GalleryModel.authorId
     override fun toOutputDto(): ImageOutputDto =
@@ -25,7 +26,8 @@ class GalleryDao(id: EntityID<Int>): BaseIntEntity<ImageOutputDto>(id, GalleryMo
             name,
             url,
             author?.login,
-            description
+            description,
+            original
         )
 
     fun loadUpdate(imageUpdateDto: ImageUpdateDto) {
