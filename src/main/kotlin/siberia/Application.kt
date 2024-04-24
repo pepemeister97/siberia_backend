@@ -6,6 +6,7 @@ import io.ktor.server.netty.*
 import siberia.conf.AppConf
 import siberia.conf.DatabaseInitializer
 import siberia.modules.auth.controller.AuthController
+import siberia.modules.auth.data.models.UserLoginModel
 import siberia.modules.auth.service.AuthQrService
 import siberia.modules.rbac.data.models.role.RoleModel
 import siberia.modules.rbac.data.models.rule.RuleCategoryModel
@@ -141,7 +142,7 @@ fun Application.module() {
     }
 
     DatabaseConnector(
-        UserModel,
+        UserModel, UserLoginModel,
         RbacModel, RoleModel, RuleModel, RuleCategoryModel,
         StockModel, StockToProductModel,
         BrandModel, CollectionModel,
@@ -150,7 +151,7 @@ fun Application.module() {
         ProductGroupModel, ProductToGroupModel,
         SystemEventModel, SystemEventTypeModel, SystemEventObjectTypeModel,
         TransactionModel, TransactionToProductModel, TransactionRelatedUserModel, TransactionStatusModel, TransactionTypeModel,
-        BugReportModel, GalleryModel
+        BugReportModel, GalleryModel,
     ) {
         DatabaseInitializer.initRules()
         DatabaseInitializer.initEventTypes()

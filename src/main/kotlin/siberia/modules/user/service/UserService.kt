@@ -1,6 +1,5 @@
 package siberia.modules.user.service
 
-import io.ktor.util.date.*
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
@@ -29,7 +28,6 @@ class UserService(di: DI) : KodeinService(di) {
             name = createUserDto.params.name
             login = createUserDto.params.login
             hash = CryptoUtil.hash(createUserDto.params.password)
-            lastLogin = getTimeMillis()
         }
 
         try {

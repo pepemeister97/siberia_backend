@@ -11,11 +11,9 @@ import siberia.exceptions.ForbiddenException
 import siberia.modules.rbac.data.dto.LinkedRuleOutputDto
 import siberia.modules.auth.data.dto.RefreshTokenDto
 import siberia.modules.rbac.data.models.RbacModel
-import siberia.modules.user.data.dao.UserDao
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.auth.data.dto.QrTokenDto
 import siberia.plugins.Logger
-import siberia.utils.database.idValue
 import java.util.*
 
 typealias EncodedRules = MutableMap<Int, MutableList<Int>>
@@ -49,7 +47,7 @@ object JwtUtil {
         return decoded
     }
 
-    fun createToken(userDao: UserDao, lastLogin: Long? = null): String {
+    fun createToken(userId: Int, lastLogin: Long? = null): String {
         return JWT.create()
             .withIssuer(AppConf.jwt.domain)
             .withIssuedAt(Date(System.currentTimeMillis()))
@@ -60,9 +58,9 @@ object JwtUtil {
                 )
             )
             .apply {
-                withClaim("id", userDao.idValue)
+                withClaim("id", userId)
                 val rules = RbacModel.userToRuleLinks(
-                    userDao.idValue, expanded = true
+                    userId, expanded = true
                 )
                 if (lastLogin != null) {
                     withClaim("lastLogin", lastLogin)

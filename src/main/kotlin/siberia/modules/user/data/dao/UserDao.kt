@@ -1,9 +1,11 @@
 package siberia.modules.user.data.dao
 
 import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.sql.select
 import siberia.exceptions.BadRequestException
 import org.jetbrains.exposed.sql.transactions.transaction
 import siberia.conf.AppConf
+import siberia.modules.auth.data.models.UserLoginModel
 import siberia.modules.rbac.data.dto.LinkedRuleOutputDto
 import siberia.modules.rbac.data.dto.RoleOutputDto
 import siberia.modules.rbac.data.models.RbacModel
@@ -22,6 +24,7 @@ import siberia.utils.database.BaseIntEntity
 import siberia.utils.database.BaseIntEntityClass
 import siberia.utils.database.idValue
 import siberia.utils.security.bcrypt.CryptoUtil
+import java.util.NoSuchElementException
 
 class UserDao(id: EntityID<Int>): BaseIntEntity<UserOutputDto>(id, UserModel) {
     companion object : BaseIntEntityClass<UserOutputDto, UserDao>(UserModel) {
@@ -44,7 +47,14 @@ class UserDao(id: EntityID<Int>): BaseIntEntity<UserOutputDto>(id, UserModel) {
     var name by UserModel.name
     var login by UserModel.login
     var hash by UserModel.hash
-    var lastLogin by UserModel.lastLogin
+
+    val lastLogin: Long?
+        get() = try {
+            val gotItem = UserLoginModel.slice(UserLoginModel.lastLogin).select { UserLoginModel.userId eq idValue }.first()
+            gotItem[UserLoginModel.lastLogin]
+        } catch (e: NoSuchElementException) {
+            null
+        }
 
     val rolesWithRules: List<RoleOutputDto>
         get() = RbacModel.userToRoleLinks(idValue, withRules = true, withStock = true)
@@ -58,10 +68,10 @@ class UserDao(id: EntityID<Int>): BaseIntEntity<UserOutputDto>(id, UserModel) {
         }
 
     override fun toOutputDto(): UserOutputDto =
-        UserOutputDto(idValue, name, login, null, lastLogin)
+        UserOutputDto(idValue, name, login, null, lastLogin ?: 0L)
 
     private fun toOutputWithHash(): UserOutputDto =
-        UserOutputDto(idValue, name, login, hash, lastLogin)
+        UserOutputDto(idValue, name, login, hash, lastLogin ?: 0L)
 
     private fun outputForRollback(): UserRollbackOutputDto {
         val rules = RbacModel.userToRuleLinks(idValue, withStock = true, expanded = false).map { LinkedRuleInputDto(it.ruleId, it.stockId) }

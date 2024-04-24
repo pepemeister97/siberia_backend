@@ -303,7 +303,6 @@ object DatabaseInitializer {
             it[name] = "Admin User"
             it[login] = "admin"
             it[hash] = CryptoUtil.hash("admin")
-            it[lastLogin] = getTimeMillis()
         }
 
         if (!RoleModel.selectAll().empty())
