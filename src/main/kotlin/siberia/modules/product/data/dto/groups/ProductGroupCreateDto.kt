@@ -5,5 +5,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ProductGroupCreateDto (
     val name: String,
-    val products: List<Int> = listOf()
+    var products: List<Int> = listOf()
 )

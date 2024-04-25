@@ -34,7 +34,7 @@ class UserRolesEventService(di: DI) : KodeinEventService(di) {
         )
     }
 
-    override fun rollbackCreate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) = transaction {
+    override fun rollbackCreate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) : Unit = transaction {
         val updateEventDto = event.getRollbackData<UserRolesRollbackDto>()
 
         val listOfExisting = RoleModel.select {

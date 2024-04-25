@@ -1,8 +1,10 @@
 package siberia.modules.rbac.service
 
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import org.kodein.di.instance
+import siberia.exceptions.BadRequestException
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.logger.data.dto.SystemEventOutputDto
 import siberia.modules.rbac.data.dto.RoleRollbackDto
@@ -15,10 +17,10 @@ import siberia.utils.kodein.KodeinEventService
 class RoleEventService(di: DI) : KodeinEventService(di) {
     private val rbacService: RbacService by instance()
     private val userAccessControlService: UserAccessControlService by instance()
-    override fun rollbackUpdate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {
+    override fun rollbackUpdate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) : Unit = transaction {
         val updateEventData = event.getRollbackData<RoleUpdateDto>()
         with(
-            RoleModel.select {
+            RoleModel.slice(RoleModel.id).select {
                 RoleModel.id eq updateEventData.objectId
             }.map {
                 it[RoleModel.id]
@@ -26,10 +28,11 @@ class RoleEventService(di: DI) : KodeinEventService(di) {
         ){
             if (this.isNotEmpty())
                 rbacService.updateRole(authorizedUser, updateEventData.objectId, updateEventData.objectDto)
+            else throw BadRequestException("rollback failed model removed")
         }
     }
 
-    override fun rollbackRemove(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {
+    override fun rollbackRemove(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) : Unit = transaction {
         val createEventData = event.getRollbackData<RoleRollbackDto>()
         rbacService.createRole(authorizedUser, createEventData.objectDto)
 
@@ -37,7 +40,7 @@ class RoleEventService(di: DI) : KodeinEventService(di) {
         createEventData.objectDto.relatedUsers.forEach {
             userIdList.add(it.first)
         }
-        UserModel.select {
+        UserModel.slice(UserModel.id).select {
             UserModel.id inList userIdList
         }.map {
             it[UserModel.id].value
