@@ -2,17 +2,25 @@ package siberia.modules.product.service
 
 import kotlinx.coroutines.Deferred
 import kotlinx.serialization.json.Json
+import org.apache.poi.ss.usermodel.CellType
+import org.apache.poi.xssf.usermodel.XSSFSheet
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.Table.Dual.join
+import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.conf.AppConf
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.brand.data.dao.BrandDao
+import siberia.modules.brand.data.dao.BrandDao.Companion.createListCond
 import siberia.modules.brand.data.dao.BrandDao.Companion.createRangeCond
+import siberia.modules.brand.data.models.BrandModel
 import siberia.modules.category.data.dao.CategoryDao
+import siberia.modules.category.data.models.CategoryModel
 import siberia.modules.collection.data.dao.CollectionDao
+import siberia.modules.collection.data.models.CollectionModel
 import siberia.modules.gallery.data.models.GalleryModel
 import siberia.modules.gallery.service.GalleryService
 import siberia.modules.logger.data.models.SystemEventModel
@@ -22,10 +30,6 @@ import siberia.modules.product.data.dto.systemevents.ProductCreateEvent
 import siberia.modules.product.data.dto.systemevents.ProductMassiveCreateEvent
 import siberia.modules.product.data.models.ProductModel
 import siberia.modules.product.data.models.ProductToImageModel
-import siberia.modules.category.data.models.CategoryModel
-import siberia.modules.collection.data.models.CollectionModel
-import siberia.modules.brand.data.models.BrandModel
-
 import siberia.modules.rbac.data.dao.RoleDao.Companion.createNullableRangeCond
 import siberia.modules.rbac.data.dao.RuleCategoryDao.Companion.createNullableListCond
 import siberia.modules.stock.data.dao.StockDao.Companion.createLikeCond
@@ -34,19 +38,15 @@ import siberia.modules.stock.data.models.StockModel
 import siberia.modules.stock.data.models.StockToProductModel
 import siberia.modules.transaction.data.dto.TransactionFullOutputDto
 import siberia.modules.user.data.dao.UserDao
-import siberia.utils.kodein.KodeinService
-import java.time.LocalDateTime
-import java.time.ZoneOffset
-
-import org.apache.poi.xssf.usermodel.XSSFWorkbook
-import org.apache.poi.ss.usermodel.CellType
-import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
-import siberia.modules.brand.data.dao.BrandDao.Companion.createListCond
 import siberia.plugins.Logger
 import siberia.utils.database.*
 import siberia.utils.files.FilesUtil
+import siberia.utils.kodein.KodeinService
 import java.io.ByteArrayOutputStream
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import kotlin.reflect.full.memberProperties
+
 
 class ProductService(di: DI) : KodeinService(di) {
     private val galleryService: GalleryService by instance()
@@ -361,7 +361,7 @@ class ProductService(di: DI) : KodeinService(di) {
 
     fun getAvailableByFilter(
         authorizedUser: AuthorizedUser? = null,
-        searchFilterDto: ProductSearchDto
+        searchFilterDto: ProductSearchDto,
     ): List<ProductListItemOutputDto> = transaction {
 
         val ordering = if (authorizedUser != null && searchFilterDto.filters?.availability != null && searchFilterDto.filters.availability){
@@ -450,7 +450,7 @@ class ProductService(di: DI) : KodeinService(di) {
 
     fun getXls(
         searchFilterDto: ProductSearchFilterDto,
-        productFieldsDemandDto: ProductFieldsDemandDto
+        productFieldsDemandDto: ProductFieldsDemandDto,
     ): String = transaction {
 
         val workbook = XSSFWorkbook()
@@ -520,5 +520,64 @@ class ProductService(di: DI) : KodeinService(di) {
         ProductDao.wrapRows(ProductModel.select {
             ProductModel.barcode eq barCode
         }).map { el -> el.listItemDto }
+    }
+    fun getAssortmentData() = transaction {
+        val brands = BrandModel.slice(BrandModel.id, BrandModel.name).selectAll().map {
+            Pair(it[BrandModel.id].value, it[BrandModel.name])
+        }
+        val collections = CollectionModel.slice(CollectionModel.id, CollectionModel.name).selectAll().map {
+            Pair(it[CollectionModel.id].value, it[CollectionModel.name])
+        }
+        val categories = CategoryModel.slice(CategoryModel.id, CategoryModel.name).selectAll().map {
+            Pair(it[CategoryModel.id].value, it[CategoryModel.name])
+        }
+        val workbook = XSSFWorkbook()
+        val brandsSheet = workbook.createSheet("Brands")
+        val collectionsSheet = workbook.createSheet("Collections")
+        val categoriesSheet = workbook.createSheet("Categories")
+
+        val sheets = listOf(brandsSheet, collectionsSheet, categoriesSheet)
+
+        createHeadersForSheets(sheets)
+
+        brands.forEachIndexed { index, brand ->
+            val row = brandsSheet.createRow(index + 1)
+            row.createCell(0, CellType.NUMERIC).setCellValue(brand.first.toDouble())
+            row.createCell(1, CellType.STRING).setCellValue(brand.second)
+        }
+        collections.forEachIndexed {index, collection ->
+        val row = collectionsSheet.createRow(index + 1)
+            row.createCell(0, CellType.NUMERIC).setCellValue(collection.first.toDouble())
+            row.createCell(1, CellType.STRING).setCellValue(collection.second)
+        }
+        categories.forEachIndexed { index, category ->
+            val row = categoriesSheet.createRow(index + 1)
+            row.createCell(0, CellType.NUMERIC).setCellValue(category.first.toDouble())
+            row.createCell(1, CellType.STRING).setCellValue(category.second)
+        }
+
+        val productsSheet = workbook.createSheet("Products")
+        productsSheet.createRow(0)
+
+        val namesOfFields = ProductCreateDto::class.java.declaredFields.map { it.name }.dropLast(1)
+
+        val productsHeader = productsSheet.createRow(0)
+
+        namesOfFields.forEachIndexed{ index, fieldName ->
+            productsHeader.createCell(index).setCellValue(fieldName)
+        }
+
+        val outputStream = ByteArrayOutputStream()
+        workbook.write(outputStream)
+        workbook.close()
+
+        FilesUtil.encodeBytes(outputStream.toByteArray())
+    }
+    private fun createHeadersForSheets(sheets : List<XSSFSheet>) {
+        sheets.forEach {
+            val header = it.createRow(0)
+            header.createCell(0, CellType.STRING).setCellValue("ID")
+            header.createCell(1, CellType.STRING).setCellValue("Name")
+        }
     }
 }
