@@ -1,8 +1,10 @@
 package siberia.modules.category.service
 
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import org.kodein.di.instance
+import siberia.exceptions.BadRequestException
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.category.data.dto.CategoryOutputDto
 import siberia.modules.category.data.dto.CategoryUpdateDto
@@ -13,10 +15,23 @@ import siberia.utils.kodein.KodeinEventService
 
 class CategoryEventService(di: DI) : KodeinEventService(di) {
     private val categoryService: CategoryService by instance()
-    override fun rollbackUpdate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {
+    override fun rollbackUpdate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) : Unit = transaction {
         val updateEventDto = event.getRollbackData<CategoryUpdateDto>()
+
         with(
-            CategoryModel.select {
+            CategoryModel.slice(CategoryModel.id).select {
+                CategoryModel.id eq updateEventDto.objectId
+            }
+            .map {
+                it[CategoryModel.id]
+            }
+        ){
+            if (this.isEmpty())
+                throw BadRequestException("rollback failed model removed")
+        }
+
+        with(
+            CategoryModel.slice(CategoryModel.id).select {
                 CategoryModel.id eq updateEventDto.objectDto.parent
             }
             .map {
@@ -41,11 +56,11 @@ class CategoryEventService(di: DI) : KodeinEventService(di) {
         }
     }
 
-    override fun rollbackRemove(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {
+    override fun rollbackRemove(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) : Unit = transaction {
         val createEventDto = event.getRollbackData<CategoryOutputDto>()
 
         with(
-            CategoryModel.select {
+            CategoryModel.slice(CategoryModel.id).select {
                 CategoryModel.id eq createEventDto.objectDto.parent
             }.map {
                 it[CategoryModel.id]

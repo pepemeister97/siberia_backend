@@ -4,6 +4,7 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import org.kodein.di.instance
+import siberia.exceptions.BadRequestException
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.auth.service.AuthSocketService
 import siberia.modules.logger.data.dto.SystemEventOutputDto
@@ -25,15 +26,19 @@ class StockEventService(di: DI) : KodeinEventService(di) {
     private val userAccessControlService: UserAccessControlService by instance()
     private val authSocketService: AuthSocketService by instance()
 
-    override fun rollbackUpdate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {
+    override fun rollbackUpdate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) : Unit = transaction {
         val updateEventDto = event.getRollbackData<StockUpdateDto>()
-        with (StockModel.select {
-            StockModel.id eq updateEventDto.objectId
-        }.map {
-            it[StockModel.id]
-        }) {
+        with (
+            StockModel.slice(StockModel.id).select {
+                StockModel.id eq updateEventDto.objectId
+            }
+            .map {
+                it[StockModel.id]
+            }
+        ){
             if (this.isNotEmpty())
                 stockService.update(authorizedUser, updateEventDto.objectId, updateEventDto.objectDto)
+            else throw BadRequestException("rollback failed model removed")
         }
     }
 
@@ -67,11 +72,11 @@ class StockEventService(di: DI) : KodeinEventService(di) {
                 listOfExistProducts.contains(it.id)
             }
             .map {
-            TransactionInputDto.TransactionProductInputDto(
-                it.id, it.quantity, it.price
-            )
-        })
-
+                TransactionInputDto.TransactionProductInputDto(
+                    it.id, it.quantity, it.price
+                )
+            }
+        )
         authSocketService.updateRules(RbacModel.getUsersRelatedToStock(stockDto.id))
     }
 

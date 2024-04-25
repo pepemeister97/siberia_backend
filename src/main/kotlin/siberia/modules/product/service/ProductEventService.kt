@@ -1,9 +1,11 @@
 package siberia.modules.product.service
 
+
 import org.jetbrains.exposed.dao.exceptions.EntityNotFoundException
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import org.kodein.di.instance
+import siberia.exceptions.BadRequestException
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.brand.data.dao.BrandDao
 import siberia.modules.category.data.dao.CategoryDao
@@ -18,33 +20,35 @@ import siberia.utils.kodein.KodeinEventService
 
 class ProductEventService(di: DI) : KodeinEventService(di) {
     private val productService: ProductService by instance()
-    override fun rollbackUpdate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {
+    override fun rollbackUpdate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) : Unit = transaction {
         val updateEventDto = event.getRollbackData<ProductUpdateDto>()
         try {
             ProductDao[updateEventDto.objectId]
             productService.update(authorizedUser, updateEventDto.objectId, updateEventDto.objectDto)
-        } catch (_: EntityNotFoundException) {}
+        } catch (_: EntityNotFoundException) {
+            throw BadRequestException("rollback failed model removed")
+        }
     }
 
-    override fun rollbackRemove(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) = transaction {
+    override fun rollbackRemove(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) : Unit = transaction {
         val createProductEvent = event.getRollbackData<ProductRollbackDto>()
         createProductEvent.objectDto.brand = try {
             BrandDao[createProductEvent.objectDto.brand ?: 0]
             createProductEvent.objectDto.brand
         } catch (_: EntityNotFoundException) {
-            null
+            throw BadRequestException("rollback failed model removed")
         }
         createProductEvent.objectDto.collection = try {
             CollectionDao[createProductEvent.objectDto.collection ?: 0]
             createProductEvent.objectDto.collection
         } catch (_: EntityNotFoundException) {
-            null
+            throw BadRequestException("rollback failed model removed")
         }
         createProductEvent.objectDto.category = try {
             CategoryDao[createProductEvent.objectDto.category ?: 0]
             createProductEvent.objectDto.category
         } catch (_: EntityNotFoundException) {
-            null
+            throw BadRequestException("rollback failed model removed")
         }
         val productDto = productService.create(authorizedUser, createProductEvent.objectDto.createDto)
         val productDao = ProductDao[productDto.id]
