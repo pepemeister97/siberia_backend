@@ -31,6 +31,7 @@ class UserEventService(di: DI) : KodeinEventService(di) {
                 val userDao = UserDao[updateEventDto.objectId]
                 userDao.loadAndFlush(authorName, updateEventDto.objectDto)
             }
+            else throw BadRequestException("rollback failed model removed")
         }
     }
 

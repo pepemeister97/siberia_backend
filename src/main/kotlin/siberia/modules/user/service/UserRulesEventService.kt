@@ -26,7 +26,7 @@ class UserRulesEventService(di: DI) : KodeinEventService(di) {
         )
     }
 
-    override fun rollbackCreate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) = transaction {
+    override fun rollbackCreate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) : Unit = transaction {
         val updateEventDto = event.getRollbackData<UserRulesRollbackDto>()
 
         userAccessControlService.removeRules(

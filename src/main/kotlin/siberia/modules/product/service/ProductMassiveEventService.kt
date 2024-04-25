@@ -2,6 +2,7 @@ package siberia.modules.product.service
 
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import siberia.modules.auth.data.dto.AuthorizedUser
@@ -13,13 +14,23 @@ import siberia.modules.product.data.models.ProductModel
 import siberia.utils.kodein.KodeinEventService
 
 class ProductMassiveEventService(di: DI) : KodeinEventService(di) {
-    override fun rollbackUpdate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) = transaction {
+    override fun rollbackUpdate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) : Unit = transaction {
         val rollbackMassiveUpdate = event.getRollbackData<MassiveUpdateRollbackDto>().objectDto
-        rollbackMassiveUpdate.productsData.forEach {
-            val product = ProductDao[it.first.id!!]
-            product.loadUpdateDto(it.first)
-            product.flush()
+
+        val listOfExistProducts = ProductModel.slice(ProductModel.id).select {
+            ProductModel.id inList rollbackMassiveUpdate.productsData.map { it.first.id!! }
+        }.map {
+            it[ProductModel.id].value
         }
+
+        rollbackMassiveUpdate.productsData
+            .filter {
+                listOfExistProducts.contains(it.first.id) }
+            .forEach {
+                val product = ProductDao[it.first.id!!]
+                product.loadUpdateDto(it.first)
+                product.flush()
+            }
     }
 
     override fun rollbackRemove(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {
