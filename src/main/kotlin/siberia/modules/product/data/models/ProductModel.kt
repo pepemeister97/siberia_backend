@@ -1,6 +1,7 @@
 package siberia.modules.product.data.models
 
 import org.jetbrains.exposed.sql.ReferenceOption
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import siberia.modules.brand.data.models.BrandModel
@@ -41,9 +42,9 @@ object ProductModel: BaseIntIdTable() {
 //    val volume = double("volume").default(1.0)
 
     fun updateBatch(products: List<Int>, massiveUpdateDto: MassiveUpdateDto): List<Pair<ProductUpdateDto, ProductOutputDto>> = transaction {
-        val rollbackList = ProductDao.find {
+        val rollbackList = ProductDao.wrapRows(ProductModel.select {
             ProductModel.id inList products
-        }.map {
+        }).map {
             val outputDto = it.toOutputDto()
             val updateDto = it.getRollbackInstance<ProductOutputDto, ProductUpdateDto>(massiveUpdateDto.productUpdateDto(it.idValue), outputDto)
             updateDto.id = it.idValue

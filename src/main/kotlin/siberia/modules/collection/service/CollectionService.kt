@@ -1,6 +1,7 @@
 package siberia.modules.collection.service
 
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import siberia.modules.auth.data.dto.AuthorizedUser
@@ -46,7 +47,14 @@ class CollectionService(di: DI) : KodeinService(di) {
     }
 
     fun getAll(): List<CollectionOutputDto> = transaction {
-        CollectionDao.all().orderBy(Pair(CollectionModel.name, SortOrder.ASC)).map { it.toOutputDto() }
+        CollectionModel.selectAll()
+            .orderBy(CollectionModel.name to SortOrder.ASC)
+            .map {
+                CollectionOutputDto(
+                    id = it[CollectionModel.id].value,
+                    name = it[CollectionModel.name]
+                )
+            }
     }
 
     fun getOne(collectionId: Int): CollectionOutputDto = transaction {

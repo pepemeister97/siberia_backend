@@ -1,9 +1,7 @@
 package siberia.modules.rbac.service
 
-import org.jetbrains.exposed.sql.Op
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import org.kodein.di.instance
@@ -45,15 +43,25 @@ class RbacService(di: DI) : KodeinService(di) {
 //    fun getAllRoles(): List<RoleOutputDto> = transaction { RoleDao.find { Op.nullOp() }.map { it.toOutputDto() } }
 
     fun getFiltered(roleFilterDto: RoleFilterDto): List<RoleOutputDto> = transaction {
-        RoleDao.find {
-            createLikeCond(roleFilterDto.name, RoleModel.id neq 0, RoleModel.name)
-        }.map { it.withRelatedUsers }
+        RoleModel
+            .select {
+                createLikeCond(roleFilterDto.name, RoleModel.id neq 0, RoleModel.name)
+            }
+            .orderBy(RoleModel.name to SortOrder.ASC)
+            .map {
+                RoleOutputDto(
+                    id = it[RoleModel.id].value,
+                    name = it[RoleModel.name],
+                    description = it[RoleModel.description],
+                    relatedUsersCount = RbacModel.getRelatedUsers(it[RoleModel.id].value).count()
+                )
+            }
     }
 
     fun getRole(roleId: Int): RoleOutputDto = transaction { RoleDao[roleId].outputWithChildren }
 
     fun getAllRules(): List<RuleOutputDto> = transaction {
-        RuleDao.wrapRows(RuleModel.selectAll()).map { it.toOutputDto() }
+        RuleDao.wrapRows(RuleModel.selectAll().orderBy(RuleModel.name to SortOrder.ASC)).map { it.toOutputDto() }
     }
 
 
@@ -108,7 +116,7 @@ class RbacService(di: DI) : KodeinService(di) {
         RoleOutputDto(roleDao.idValue, roleDao.name, roleDao.description, linkedRules)
     }
 
-    fun appendRulesToRole(authorizedUser: AuthorizedUser, roleId: Int, linkedRules: List<LinkedRuleInputDto>, needLog: Boolean = true): List<LinkedRuleOutputDto> = transaction {
+    fun appendRulesToRole(authorizedUser: AuthorizedUser, roleId: Int, linkedRules: List<LinkedRuleInputDto>, needLog: Boolean = true, autoCommit: Boolean = true): List<LinkedRuleOutputDto> = transaction {
         val roleDao = RoleDao[roleId]
         val appendedRules = linkedRules.map {
             validateRule(it.ruleId, it.stockId)
@@ -118,7 +126,9 @@ class RbacService(di: DI) : KodeinService(di) {
             this
         }
         RbacModel.expandAppendedRules(roleId, appendedRules)
-        commit()
+
+        if (autoCommit)
+            commit()
 
         val relatedUsers = RbacModel.getRelatedUsers(roleId).map { it[UserModel.id].value }.filter { it != authorizedUser.id }
         authSocketService.updateRules(relatedUsers)

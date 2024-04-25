@@ -1,5 +1,6 @@
 package siberia.modules.product.service
 
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import siberia.modules.auth.data.dto.AuthorizedUser
@@ -9,6 +10,7 @@ import siberia.modules.product.data.dto.groups.MassiveUpdateDto
 import siberia.modules.product.data.dto.groups.*
 import siberia.modules.product.data.dto.groups.systemevents.ProductGroupCreateEvent
 import siberia.modules.product.data.dto.groups.systemevents.ProductMassiveUpdateEvent
+import siberia.modules.product.data.models.ProductGroupModel
 import siberia.modules.product.data.models.ProductModel
 import siberia.modules.product.data.models.ProductToGroupModel
 import siberia.modules.user.data.dao.UserDao
@@ -17,7 +19,14 @@ import siberia.utils.kodein.KodeinService
 
 class ProductGroupService(di: DI) : KodeinService(di) {
     fun getAll(): List<ProductGroupOutputDto> = transaction {
-        ProductGroupDao.all().map { it.toOutputDto() }
+        ProductGroupModel
+            .selectAll()
+            .map {
+                ProductGroupOutputDto(
+                    id = it[ProductGroupModel.id].value,
+                    name = it[ProductGroupModel.name]
+                )
+            }
     }
 
     fun getOne(groupId: Int): ProductGroupFullOutputDto = transaction {

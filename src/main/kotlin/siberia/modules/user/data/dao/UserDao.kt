@@ -29,7 +29,7 @@ import java.util.NoSuchElementException
 class UserDao(id: EntityID<Int>): BaseIntEntity<UserOutputDto>(id, UserModel) {
     companion object : BaseIntEntityClass<UserOutputDto, UserDao>(UserModel) {
         fun checkUnique(login: String) = transaction {
-            val search = UserDao.find {
+            val search = UserModel.select {
                 UserModel.login eq login
             }
             if (!search.empty())

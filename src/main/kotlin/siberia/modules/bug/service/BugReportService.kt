@@ -1,6 +1,8 @@
 package siberia.modules.bug.service
 
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import siberia.modules.auth.data.dto.AuthorizedUser
@@ -26,12 +28,18 @@ class BugReportService(di: DI) : KodeinService(di) {
     }
     fun getByFilter(filter : BugReportSearchFilterDto?) : List<BugReportOutputDto> = transaction {
         if (filter == null) {
-            BugReportDao.all()
+            BugReportModel.selectAll()
         } else {
-            BugReportDao.find {
+            BugReportModel.select {
                 createLikeCond(filter.author, BugReportModel.id neq 0, BugReportModel.user) and
-                        timeCond(Pair(filter.rangeStart, filter.rangeEnd), BugReportModel.createdAt)
+                timeCond(Pair(filter.rangeStart, filter.rangeEnd), BugReportModel.createdAt)
             }
         }
-    }.map { it.toOutputDto() }
+    }.map {
+        BugReportOutputDto(
+            id = it[BugReportModel.id].value,
+            user = it[BugReportModel.user],
+            description = it[BugReportModel.description]
+        )
+    }
 }

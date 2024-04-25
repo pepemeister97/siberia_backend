@@ -28,7 +28,6 @@ import siberia.modules.brand.data.models.BrandModel
 
 import siberia.modules.rbac.data.dao.RoleDao.Companion.createNullableRangeCond
 import siberia.modules.rbac.data.dao.RuleCategoryDao.Companion.createNullableListCond
-import siberia.modules.stock.data.dao.StockDao
 import siberia.modules.stock.data.dao.StockDao.Companion.createLikeCond
 import siberia.modules.stock.data.dto.StockOutputDto
 import siberia.modules.stock.data.models.StockModel
@@ -329,7 +328,15 @@ class ProductService(di: DI) : KodeinService(di) {
             .select { StockToProductModel.product eq productId }
             .map { it[StockToProductModel.stock] }
 
-        StockDao.find { StockModel.id inList stocks }.map { it.toOutputDto() }
+        StockModel
+            .select { StockModel.id inList stocks }
+            .map {
+                StockOutputDto(
+                    id = it[StockModel.id].value,
+                    name = it[StockModel.name],
+                    address = it[StockModel.address]
+                )
+            }
     }
 
     private fun getSliceBasedOnDto(demandDto: ProductFieldsDemandDto): MutableList<Pair<Column<*>, String>> {
@@ -510,8 +517,8 @@ class ProductService(di: DI) : KodeinService(di) {
     }
 
     fun getByBarCode(barCode: String): List<ProductListItemOutputDto> = transaction {
-        ProductDao.find {
+        ProductDao.wrapRows(ProductModel.select {
             ProductModel.barcode eq barCode
-        }.map { el -> el.listItemDto }
+        }).map { el -> el.listItemDto }
     }
 }
