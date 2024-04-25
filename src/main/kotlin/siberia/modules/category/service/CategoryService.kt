@@ -59,7 +59,7 @@ class CategoryService(di: DI) : KodeinService(di) {
     }
 
     fun getAll(): List<CategoryOutputDto> {
-        return CategoryModel.getFullTree()
+        return CategoryModel.getFullTree().sortedBy { it.name }
     }
 
     fun getOne(categoryId: Int): CategoryOutputDto = transaction {

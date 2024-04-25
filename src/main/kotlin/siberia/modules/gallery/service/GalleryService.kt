@@ -1,6 +1,7 @@
 package siberia.modules.gallery.service
 
 
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -94,7 +95,7 @@ class GalleryService(di: DI) : KodeinService(di) {
                 createLikeCond(filter?.name, GalleryModel.id neq 0, GalleryModel.name) and
                 timeCond(Pair(filter?.rangeStart, filter?.rangeEnd), GalleryModel.createdAt)
 
-            }.filter {
+            }.orderBy(GalleryModel.name to SortOrder.ASC).filter {
                 it[GalleryModel.original] != null
             }
             .map {
