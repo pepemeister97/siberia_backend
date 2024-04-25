@@ -1,10 +1,13 @@
 package siberia.modules.rbac.service
 
+import org.jetbrains.exposed.sql.select
 import org.kodein.di.DI
 import org.kodein.di.instance
+import siberia.exceptions.BadRequestException
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.logger.data.dto.SystemEventOutputDto
 import siberia.modules.rbac.data.dto.RoleRollbackDto
+import siberia.modules.rbac.data.models.role.RoleModel
 import siberia.utils.kodein.KodeinEventService
 
 class RoleRulesEventService(di: DI) : KodeinEventService(di) {
@@ -12,10 +15,23 @@ class RoleRulesEventService(di: DI) : KodeinEventService(di) {
 
     override fun rollbackUpdate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {
         val updateEventData = event.getRollbackData<RoleRollbackDto>()
-        if (updateEventData.objectDto.remove)
-            rbacService.appendRulesToRole(authorizedUser, event.eventObjectId!!, updateEventData.objectDto.rules, needLog = false)
-        else
-            rbacService.removeRulesFromRole(authorizedUser, event.eventObjectId!!, updateEventData.objectDto.rules, needLog = false)
+
+        with(
+            RoleModel.select {
+                RoleModel.id eq event.eventObjectId
+            }.map {
+                it[RoleModel.id].value
+            }
+        ){
+            if (this.isNotEmpty()){
+                if (updateEventData.objectDto.remove)
+                    rbacService.appendRulesToRole(authorizedUser, event.eventObjectId!!, updateEventData.objectDto.rules, needLog = false)
+                else
+                    rbacService.removeRulesFromRole(authorizedUser, event.eventObjectId!!, updateEventData.objectDto.rules, needLog = false)
+            } else {
+                throw BadRequestException("role was removed and must be rollbacked first")
+            }
+        }
     }
 
     override fun rollbackRemove(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {

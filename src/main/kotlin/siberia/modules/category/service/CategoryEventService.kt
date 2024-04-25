@@ -1,10 +1,12 @@
 package siberia.modules.category.service
 
+import org.jetbrains.exposed.sql.select
 import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.category.data.dto.CategoryOutputDto
 import siberia.modules.category.data.dto.CategoryUpdateDto
+import siberia.modules.category.data.models.CategoryModel
 import siberia.modules.logger.data.dto.SystemEventOutputDto
 import siberia.plugins.Logger
 import siberia.utils.kodein.KodeinEventService
@@ -13,7 +15,18 @@ class CategoryEventService(di: DI) : KodeinEventService(di) {
     private val categoryService: CategoryService by instance()
     override fun rollbackUpdate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {
         val updateEventDto = event.getRollbackData<CategoryUpdateDto>()
-        categoryService.update(authorizedUser, updateEventDto.objectId, updateEventDto.objectDto)
+        with(
+            CategoryModel.select {
+                CategoryModel.id eq updateEventDto.objectDto.parent
+            }
+            .map {
+                it[CategoryModel.id]
+            }
+        ){
+            if (this.isEmpty())
+                updateEventDto.objectDto.parent = 1
+            categoryService.update(authorizedUser, updateEventDto.objectId, updateEventDto.objectDto)
+        }
     }
 
     private fun createRecursive(authorizedUser: AuthorizedUser, categories: List<CategoryOutputDto>, parent: Int) {
@@ -30,11 +43,26 @@ class CategoryEventService(di: DI) : KodeinEventService(di) {
 
     override fun rollbackRemove(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {
         val createEventDto = event.getRollbackData<CategoryOutputDto>()
-        val categoryDto = categoryService.create(authorizedUser, createEventDto.objectDto.createDto, shadowed = true)
-        Logger.debug("create main: $categoryDto", "main")
-        if (createEventDto.objectDto.childrenRemoved) {
-            Logger.debug("start creating children ${createEventDto.objectDto.children}", "main")
-            createRecursive(authorizedUser, createEventDto.objectDto.children, categoryDto.id)
+
+        with(
+            CategoryModel.select {
+                CategoryModel.id eq createEventDto.objectDto.parent
+            }.map {
+                it[CategoryModel.id]
+            }
+        ){
+            if (this.isEmpty()) {
+                createEventDto.objectDto.parent = 1
+            }
+            val categoryDto = categoryService.create(
+                authorizedUser,
+                createEventDto.objectDto.createDto,
+                shadowed = true)
+            Logger.debug("create main: $categoryDto", "main")
+            if (createEventDto.objectDto.childrenRemoved) {
+                Logger.debug("start creating children ${createEventDto.objectDto.children}", "main")
+                createRecursive(authorizedUser, createEventDto.objectDto.children, categoryDto.id)
+            }
         }
     }
 
