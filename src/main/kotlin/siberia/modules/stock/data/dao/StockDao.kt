@@ -6,8 +6,10 @@ import siberia.modules.logger.data.models.SystemEventModel
 import siberia.modules.product.data.dao.ProductDao
 import siberia.modules.product.data.dto.ProductListItemOutputDto
 import siberia.modules.product.data.models.ProductModel
+import siberia.modules.rbac.data.models.RbacModel
 import siberia.modules.stock.data.dto.StockFullOutputDto
 import siberia.modules.stock.data.dto.StockOutputDto
+import siberia.modules.stock.data.dto.StockRollbackRemoveDto
 import siberia.modules.stock.data.dto.StockUpdateDto
 import siberia.modules.stock.data.dto.systemevents.StockRemoveEvent
 import siberia.modules.stock.data.dto.systemevents.StockUpdateEvent
@@ -64,6 +66,12 @@ class StockDao(id: EntityID<Int>): BaseIntEntity<StockOutputDto>(id, StockModel)
         return StockFullOutputDto(idValue, name, address, products)
     }
 
+    val removeRollbackDto: StockRollbackRemoveDto
+        get() {
+            val related = RbacModel.getRelatedToStock(idValue)
+            return this.fullOutput().toRollbackDto(related.first, related.second)
+        }
+
     fun loadAndFlush(authorName: String, stockUpdateDto: StockUpdateDto): Boolean {
         val event = StockUpdateEvent(
             authorName,
@@ -85,7 +93,7 @@ class StockDao(id: EntityID<Int>): BaseIntEntity<StockOutputDto>(id, StockModel)
             authorName,
             name,
             idValue,
-            createRollbackRemoveDto<StockFullOutputDto>(fullOutput())
+            createRollbackRemoveDto<StockRollbackRemoveDto>(removeRollbackDto)
         )
         SystemEventModel.logResettableEvent(event)
 

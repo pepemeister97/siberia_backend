@@ -1,12 +1,16 @@
 package siberia.modules.stock.service
 
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.DI
 import org.kodein.di.instance
 import siberia.conf.AppConf
 import siberia.exceptions.ForbiddenException
 import siberia.modules.auth.data.dto.AuthorizedUser
+import siberia.modules.auth.service.AuthSocketService
 import siberia.modules.logger.data.models.SystemEventModel
 import siberia.modules.rbac.data.dto.LinkedRuleInputDto
 import siberia.modules.stock.data.dto.StockFullOutputDto
@@ -19,13 +23,14 @@ import siberia.modules.user.data.dao.UserDao
 import siberia.modules.user.service.UserAccessControlService
 import siberia.utils.database.idValue
 import siberia.utils.kodein.KodeinService
-import siberia.modules.product.service.ProductService
+import siberia.modules.rbac.data.models.RbacModel
 
 
 class StockService(di: DI) : KodeinService(di) {
     private val userAccessControlService: UserAccessControlService by instance()
-    private val productService: ProductService by instance()
-    fun create(authorizedUser: AuthorizedUser, stockCreateDto: StockCreateDto): StockOutputDto = transaction {
+    private val authSocketService: AuthSocketService by instance()
+
+    fun create(authorizedUser: AuthorizedUser, stockCreateDto: StockCreateDto, autoCommit: Boolean = true): StockOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
 
         val stockDao = StockDao.new {
@@ -34,7 +39,9 @@ class StockService(di: DI) : KodeinService(di) {
         }
         val event = StockCreateEvent(userDao.login, stockCreateDto.name, stockDao.idValue)
         SystemEventModel.logEvent(event)
-        commit()
+
+        if (autoCommit)
+            commit()
 
         userAccessControlService.addRules(authorizedUser, userDao.idValue, listOf(LinkedRuleInputDto(AppConf.rules.concreteStockView, stockDao.idValue)))
 
@@ -55,9 +62,12 @@ class StockService(di: DI) : KodeinService(di) {
         val userDao = UserDao[authorizedUser.id]
         val stockDao = StockDao[stockId]
         val stockName = stockDao.name
+        val relatedUser = RbacModel.getUsersRelatedToStock(stockId)
         stockDao.delete(userDao.login)
 
         commit()
+
+        authSocketService.updateRules(relatedUser)
 
         StockRemoveResultDto(
             success = true,
@@ -65,33 +75,40 @@ class StockService(di: DI) : KodeinService(di) {
         )
     }
 
-//    fun getByFilter(stockSearchDto: StockSearchDto): List<StockOutputDto> = transaction {
-//        StockDao.find {
-//            createLikeCond(stockSearchDto.filters?.name, (StockModel.id neq 0), StockModel.name) and
-//            createLikeCond(stockSearchDto.filters?.address, (StockModel.id neq 0), StockModel.address)
-//        }.let {
-//            if (stockSearchDto.pagination == null)
-//                it
-//            else
-//                it.limit(stockSearchDto.pagination.n, stockSearchDto.pagination.offset)
-//        }.map { it.toOutputDto() }
-//    }
-
     fun getAvailableByFilter(authorizedUser: AuthorizedUser, stockSearchDto: StockSearchDto): List<StockOutputDto> = transaction {
-        StockDao.find {
-            StockModel.id inList (userAccessControlService.getAvailableStocks(authorizedUser.id).map { it.key }) and
-            createLikeCond(stockSearchDto.filters?.name, (StockModel.id neq 0), StockModel.name) and
-            createLikeCond(stockSearchDto.filters?.address, (StockModel.id neq 0), StockModel.address)
-        }.let {
-            if(stockSearchDto.pagination == null)
-                it
-            else
-                it.limit(stockSearchDto.pagination.n, stockSearchDto.pagination.offset)
-        }.map { it.toOutputDto() }
+        StockModel
+            .select {
+                StockModel.id inList (userAccessControlService.getAvailableStocks(authorizedUser.id).map { it.key }) and
+                createLikeCond(stockSearchDto.filters?.name, (StockModel.id neq 0), StockModel.name) and
+                createLikeCond(stockSearchDto.filters?.address, (StockModel.id neq 0), StockModel.address)
+            }
+            .orderBy(StockModel.name to SortOrder.ASC)
+            .let {
+                if(stockSearchDto.pagination == null)
+                    it
+                else
+                    it.limit(stockSearchDto.pagination.n, stockSearchDto.pagination.offset)
+            }
+            .map {
+                StockOutputDto(
+                    id = it[StockModel.id].value,
+                    name = it[StockModel.name],
+                    address = it[StockModel.address]
+                )
+            }
     }
 
     fun getAll(): List<StockOutputDto> = transaction {
-        StockDao.all().map { it.toOutputDto() }
+        StockModel
+            .selectAll()
+            .orderBy(StockModel.name to SortOrder.ASC)
+            .map {
+                StockOutputDto(
+                    id = it[StockModel.id].value,
+                    name = it[StockModel.name],
+                    address = it[StockModel.address]
+                )
+            }
     }
 
     fun getOne(authorizedUser: AuthorizedUser, stockId: Int): StockFullOutputDto = transaction {

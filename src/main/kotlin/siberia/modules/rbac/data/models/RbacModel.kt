@@ -152,4 +152,45 @@ object RbacModel: BaseIntIdTable() {
             }
         }
     }
+
+    fun getUsersRelatedToStock(stockId: Int): List<Int> = transaction {
+        select {
+            stock eq stockId and user.isNotNull()
+        }.map {
+            it[user]!!.value
+        }
+    }
+
+    fun getRelatedToStock(stockId: Int): Pair<Map<Int, List<Int>>, Map<Int, List<Int>>> = transaction {
+        val relatedRoles = mutableMapOf<Int, MutableList<Int>>()
+        val relatedUsers = mutableMapOf<Int, MutableList<Int>>()
+        select {
+            stock eq stockId and simplifiedBy.isNull()
+        }.forEach {
+            val userId = it[user]?.value
+            val roleId = it[role]?.value
+
+            if (
+                (userId != null && roleId != null) ||
+                (userId == null && roleId == null)
+            )
+                return@forEach
+
+            val ruleId = it[rule]?.value ?: return@forEach
+
+            if (roleId != null)
+                if (relatedRoles.containsKey(roleId))
+                    relatedRoles[roleId]!!.add(ruleId)
+                else
+                    relatedRoles[roleId] = mutableListOf(ruleId)
+
+            if (userId != null)
+                if (relatedUsers.containsKey(userId))
+                    relatedUsers[userId]!!.add(ruleId)
+                else
+                    relatedUsers[userId] = mutableListOf(ruleId)
+        }
+
+        Pair(relatedUsers, relatedRoles)
+    }
 }

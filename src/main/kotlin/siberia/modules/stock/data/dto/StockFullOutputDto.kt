@@ -10,5 +10,9 @@ data class StockFullOutputDto (
     val address: String,
     val products: List<ProductListItemOutputDto>
 ) {
-    val createDto: StockCreateDto get() = StockCreateDto(name, address)
+    fun toRollbackDto(relatedUsers: Map<Int, List<Int>>, relatedRoles: Map<Int, List<Int>>): StockRollbackRemoveDto {
+        return StockRollbackRemoveDto(
+            id, name, address, products, relatedUsers, relatedRoles
+        )
+    }
 }
