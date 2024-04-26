@@ -1,6 +1,11 @@
 package siberia.modules.auth.service
 
 import io.ktor.util.date.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.ObsoleteCoroutinesApi
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.actor
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
@@ -30,6 +35,19 @@ class AuthService(override val di: DI) : KodeinService(di) {
     private val userService: UserService by instance()
     private val userAccessControlService: UserAccessControlService by instance()
     private val authQrService: AuthQrService by instance()
+
+    private data class RefreshEvent(
+        val userId: Int,
+        val newLastLogin: Long
+    )
+
+    @OptIn(ObsoleteCoroutinesApi::class)
+    private val userRefreshChannel = CoroutineScope(Job()).actor<RefreshEvent>(capacity = Channel.BUFFERED) {
+        for (event in this) {
+            updateUserLastLogin(event.userId, event.newLastLogin)
+        }
+    }
+
     private fun generateTokenPair(userId: Int, refreshTime: Long): TokenOutputDto {
         val accessToken = JwtUtil.createToken(userId)
         val refreshToken = JwtUtil.createToken(userId, lastLogin = refreshTime)
@@ -46,18 +64,23 @@ class AuthService(override val di: DI) : KodeinService(di) {
             it[UserLoginModel.userId] = userId
             it[UserLoginModel.lastLogin] = lastLogin
         }
+
+        commit()
     }
 
-    fun refreshUser(refreshTokenDto: RefreshTokenDto): TokenOutputDto = transaction {
-        try {
-            val selected = UserModel.select { UserModel.id eq refreshTokenDto.id }
-            if (selected.count() == 0L)
-                throw ForbiddenException()
-            val user = selected.first()[UserModel.id].value
+    fun refreshUser(refreshTokenDto: RefreshTokenDto): TokenOutputDto {
+        return try {
+            val user = transaction {
+                val selected = UserModel.select { UserModel.id eq refreshTokenDto.id }
+
+                if (selected.count() == 0L)
+                    throw ForbiddenException()
+
+                selected.first()[UserModel.id].value
+            }
             val newLastLogin = getTimeMillis()
-            updateUserLastLogin(user, newLastLogin)
+            userRefreshChannel.trySend(RefreshEvent(user, newLastLogin))
             val tokenPair = generateTokenPair(user, newLastLogin)
-            commit()
             tokenPair
         } catch (e: Exception) {
             Logger.debugException("Exception during refresh", e, "main")

@@ -47,6 +47,7 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import kotlin.math.round
 import kotlin.reflect.full.memberProperties
+import kotlin.reflect.full.primaryConstructor
 
 
 class ProductService(di: DI) : KodeinService(di) {
@@ -602,7 +603,8 @@ class ProductService(di: DI) : KodeinService(di) {
             ProductModel.barcode eq barCode
         }).map { el -> el.listItemDto }
     }
-    fun getAssortmentData() = transaction {
+
+    fun getAssortmentData(assortmentExportTemplateDto: AssortmentExportTemplateDto) = transaction {
         val brands = BrandModel.slice(BrandModel.id, BrandModel.name).selectAll().map {
             Pair(it[BrandModel.id].value, it[BrandModel.name])
         }
@@ -613,9 +615,9 @@ class ProductService(di: DI) : KodeinService(di) {
             Pair(it[CategoryModel.id].value, it[CategoryModel.name])
         }
         val workbook = XSSFWorkbook()
-        val brandsSheet = workbook.createSheet("Brands")
-        val collectionsSheet = workbook.createSheet("Collections")
-        val categoriesSheet = workbook.createSheet("Categories")
+        val brandsSheet = workbook.createSheet(assortmentExportTemplateDto.brandSheetTitle)
+        val collectionsSheet = workbook.createSheet(assortmentExportTemplateDto.collectionSheetTitle)
+        val categoriesSheet = workbook.createSheet(assortmentExportTemplateDto.categorySheetTitle)
 
         val sheets = listOf(brandsSheet, collectionsSheet, categoriesSheet)
 
@@ -637,10 +639,10 @@ class ProductService(di: DI) : KodeinService(di) {
             row.createCell(1, CellType.STRING).setCellValue(category.second)
         }
 
-        val productsSheet = workbook.createSheet("Products")
+        val productsSheet = workbook.createSheet(assortmentExportTemplateDto.productSheetTitle)
         productsSheet.createRow(0)
 
-        val namesOfFields = ProductCreateDto::class.java.declaredFields.map { it.name }.dropLast(1)
+        val namesOfFields = ProductCreateDto::class.primaryConstructor?.parameters?.map { it.name }?.drop(1) ?: listOf()
 
         val productsHeader = productsSheet.createRow(0)
 

@@ -59,6 +59,11 @@ class ProductController(override val di: DI) : KodeinController() {
 
                     call.respond(productEventService.rollback(authorizedUser, eventId))
                 }
+                post("assortment/sheet") {
+                    val assortmentExportTemplateDto = call.receive<AssortmentExportTemplateDto>()
+
+                    call.respond(productService.getAssortmentData(assortmentExportTemplateDto))
+                }
                 post ("parse/csv") {
                     val bytes = call.receive<ByteArray>()
                     call.respond(productService.parseCsv(bytes))
