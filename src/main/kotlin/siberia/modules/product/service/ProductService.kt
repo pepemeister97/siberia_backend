@@ -105,50 +105,15 @@ class ProductService(di: DI) : KodeinService(di) {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    fun parseCsv(bytes : ByteArray): ProductParseResultDto = transaction {
-        val createList = productParseService.parseCSVtoProductDto(bytes)
-        val brands = mutableListOf<Int>()
-        val collections = mutableListOf<Int>()
-        val categories = mutableListOf<Int>()
-        createList.forEach {
-            if (it.brand != null)
-                brands.add(it.brand!!)
-            if (it.collection != null)
-                brands.add(it.collection!!)
-            if (it.category != null)
-                brands.add(it.category!!)
-        }
-        val brandMap = mutableMapOf<Int, String>()
-        val collectionMap = mutableMapOf<Int, String>()
-        val categoryMap = mutableMapOf<Int, String>()
-        BrandModel.slice(BrandModel.id, BrandModel.name).select {
-            BrandModel.id inList brands
-        }.forEach {
-            brandMap[it[BrandModel.id].value] = it[BrandModel.name]
-        }
-        CollectionModel.slice(CollectionModel.id, CollectionModel.name).select {
-            CollectionModel.id inList collections
-        }.forEach {
-            collectionMap[it[CollectionModel.id].value] = it[CollectionModel.name]
-        }
-        CategoryModel.slice(CategoryModel.id, CategoryModel.name).select {
-            CategoryModel.id inList categories
-        }.forEach {
-            categoryMap[it[CategoryModel.id].value] = it[CategoryModel.name]
-        }
-
-        ProductParseResultDto(
-            brandMap = brandMap,
-            collectionMap = collectionMap,
-            categoryMap = categoryMap,
-            createList = createList
-        )
+    fun parseCsv(bytes : ByteArray): ProductParseResultDto {
+        return parseOutput(productParseService.parseCSVtoProductDto(bytes))
     }
 
+    fun parseXlsx(workbook: XSSFWorkbook): ProductParseResultDto {
+        return parseOutput(productParseService.parseXLSXtoProductDto(workbook))
+    }
 
-    fun parseXlsx(workbook: XSSFWorkbook): ProductParseResultDto = transaction {
-        val createList = productParseService.parseXLSXtoProductDto(workbook)
-
+    fun parseOutput(createList: List<ProductCreateDto>): ProductParseResultDto = transaction {
         val brands = mutableListOf<Int>()
         val collections = mutableListOf<Int>()
         val categories = mutableListOf<Int>()

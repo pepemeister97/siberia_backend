@@ -7,7 +7,6 @@ import siberia.modules.product.data.dto.csv.ProductCreateCsvMapper
 import siberia.utils.kodein.KodeinService
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.apache.poi.ss.usermodel.Row
-import org.apache.poi.ss.usermodel.Cell
 
 class ProductParseService (di: DI) : KodeinService(di) {
     fun parseCSVtoProductDto(bytes : ByteArray) : List<ProductCreateDto> {
@@ -22,7 +21,7 @@ class ProductParseService (di: DI) : KodeinService(di) {
             "distributorPercent", "professionalPercent", "category", "color", "amountInBox",
             "expirationDate", "link", "offertaPrice"
         )
-        val headerRow = sheet.getRow(0) ?: throw IllegalStateException("Header row cannot be null!")
+        val headerRow = sheet.getRow(0) ?: throw BadRequestException("Header row cannot be null!")
 
         val columnIndexMap = headerRow.cellIterator().asSequence().mapIndexed { index, cell ->
             cell.stringCellValue.trim() to index
@@ -36,7 +35,7 @@ class ProductParseService (di: DI) : KodeinService(di) {
             }
         }
         if (headersForException.isNotEmpty()) {
-            throw IllegalArgumentException("Missing required header !: $headersForException ")}
+            throw BadRequestException("Missing required header !: $headersForException ")}
         else {                                 // if all ok -> parse  rows
             for (row in sheet.rowIterator()) {
                 if (row.rowNum == 0) continue
@@ -50,7 +49,7 @@ class ProductParseService (di: DI) : KodeinService(di) {
     private fun parseRow(row: Row, columnIndexMap: Map<String, Int>): ProductCreateDto {
         try {
             return ProductCreateDto(
-                photoList = columnIndexMap["photoList"]?.let { parsePhotoList(row.getCell(it)) } ?: emptyList(),
+                photoList = emptyList(),
                 vendorCode = columnIndexMap["vendorCode"]?.let { row.getCell(it)?.stringCellValue },
                 eanCode = columnIndexMap["eanCode"]?.let { row.getCell(it)?.stringCellValue },
                 barcode = columnIndexMap["barcode"]?.let { row.getCell(it)?.stringCellValue },
@@ -72,9 +71,5 @@ class ProductParseService (di: DI) : KodeinService(di) {
             val rowNumber = row.rowNum + 1
             throw BadRequestException("Invalid type in row $rowNumber: ${e.message}", e)
         }
-    }
-
-    private fun parsePhotoList(cell: Cell?): List<Int> {
-        return cell?.stringCellValue?.split(",")?.mapNotNull { it.trim().toIntOrNull() } ?: emptyList()
     }
 }

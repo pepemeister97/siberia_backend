@@ -63,28 +63,33 @@ class ProductController(override val di: DI) : KodeinController() {
 
                     call.respond(productEventService.rollback(authorizedUser, eventId))
                 }
-                post ("parse/csv") {
-                    val bytes = call.receive<ByteArray>()
-                    call.respond(productService.parseCsv(bytes))
-                }
-                post ("parse/xlsx"){
-
-                    val multipart = call.receiveMultipart()
-                    multipart.forEachPart { part ->
-                        when (part) {
-                            is PartData.FileItem -> {
-                                val inputStream = part.streamProvider()
-                                val workbook = XSSFWorkbook(inputStream)
-                                inputStream.close()
-                                call.respond(productService.parseXlsx(workbook))
-                            }
-                            else -> {
-                                throw BadRequestException("No file uploaded or multipart data is empty.")
+                post("/parse/{fileType}") {
+                    val fileType = call.parameters["fileType"]
+                    when (fileType) {
+                        "csv" -> {
+                            val bytes = call.receive<ByteArray>()
+                            call.respond(productService.parseCsv(bytes))
+                        }
+                        "xlsx" -> {
+                            val multipart = call.receiveMultipart()
+                            multipart.forEachPart { part ->
+                                when (part) {
+                                    is PartData.FileItem -> {
+                                        val inputStream = part.streamProvider()
+                                        val workbook = XSSFWorkbook(inputStream)
+                                        inputStream.close()
+                                        call.respond(productService.parseXlsx(workbook))
+                                    }
+                                    else -> {
+                                        throw BadRequestException("No file uploaded or multipart data is empty.")
+                                    }
+                                }
+                                part.dispose()
                             }
                         }
-                        part.dispose()
                     }
                 }
+
                 route("bulk") {
                     post {
                         val products = call.receive<List<ProductCreateDto>>()
