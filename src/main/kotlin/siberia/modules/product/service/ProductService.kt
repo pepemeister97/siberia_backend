@@ -258,7 +258,7 @@ class ProductService(di: DI) : KodeinService(di) {
         if (authorizedUser != null && searchFilterDto.filters?.availability != null && searchFilterDto.filters.availability){
             listOf(StockToProductModel.amount to SortOrder.DESC_NULLS_LAST, ProductModel.id to SortOrder.ASC)
         } else{
-            listOf(ProductModel.id to SortOrder.ASC)
+            listOf(ProductModel.name to SortOrder.ASC)
         }
 
     suspend fun getUnminifiedList(searchFilterDto: ProductSearchDto): Deferred<List<ProductExportPreviewDto>> = suspendedTransactionAsync {

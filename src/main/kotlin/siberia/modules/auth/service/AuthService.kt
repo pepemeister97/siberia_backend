@@ -14,8 +14,9 @@ import siberia.exceptions.UnauthorizedException
 import siberia.modules.auth.data.dto.*
 import siberia.modules.auth.data.models.UserLoginModel
 import siberia.modules.rbac.data.models.RbacModel
-import siberia.modules.stock.service.StockService
+import siberia.modules.stock.data.dao.StockDao
 import siberia.modules.transaction.data.dao.TransactionDao
+import siberia.modules.user.data.dao.UserDao
 import siberia.modules.user.data.dto.UserOutputDto
 import siberia.modules.user.data.models.UserModel
 import siberia.modules.user.service.UserAccessControlService
@@ -28,7 +29,6 @@ import siberia.utils.security.jwt.JwtUtil
 class AuthService(override val di: DI) : KodeinService(di) {
     private val userService: UserService by instance()
     private val userAccessControlService: UserAccessControlService by instance()
-    private val stockService: StockService by instance()
     private val authQrService: AuthQrService by instance()
     private fun generateTokenPair(userId: Int, refreshTime: Long): TokenOutputDto {
         val accessToken = JwtUtil.createToken(userId)
@@ -37,7 +37,7 @@ class AuthService(override val di: DI) : KodeinService(di) {
         return TokenOutputDto(accessToken, refreshToken)
     }
 
-    private fun updateUserLastLogin(userId: Int, lastLogin: Long) {
+    private fun updateUserLastLogin(userId: Int, lastLogin: Long) = transaction {
         UserLoginModel.deleteWhere {
             UserLoginModel.userId eq userId
         }
@@ -96,13 +96,13 @@ class AuthService(override val di: DI) : KodeinService(di) {
 
     fun getAuthenticatedStockData(authorizedUser: AuthorizedUser): AuthenticatedStockOutputDto = transaction {
         val targetStockId = authorizedUser.stockId ?: throw ForbiddenException()
-        val stockData = stockService.getByAuthorizedUser(authorizedUser)
+        val stockData = StockDao[authorizedUser.stockId].toOutputDto()
         val operationAccessData = MobileOperationAccessDto(
             arrivalsManaging = userAccessControlService.checkAccessToStock(authorizedUser.id, AppConf.rules.createIncomeRequest, targetStockId),
             salesManaging = userAccessControlService.checkAccessToStock(authorizedUser.id, AppConf.rules.createOutcomeRequest, targetStockId),
             transfersManaging = userAccessControlService.checkAccessToStock(authorizedUser.id, AppConf.rules.createTransferRequest, targetStockId),
+            transfersProcessing = UserDao[authorizedUser.id].hasAccessToProcessTransfers
         )
-
 
         AuthenticatedStockOutputDto(
             stockData = stockData,
@@ -114,6 +114,8 @@ class AuthService(override val di: DI) : KodeinService(di) {
                 else
                     null
             }
-        )
+        ).apply {
+            Logger.debug(this, "main")
+        }
     }
 }

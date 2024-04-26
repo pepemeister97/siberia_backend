@@ -72,7 +72,7 @@ class OutcomeTransactionController(override val di: DI) : KodeinController() {
                 }
 
             }
-            authenticate("approve-outcome-request") {
+            authenticate("create-outcome-request") {
                 route("{transactionId}") {
                     patch {
                         val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")

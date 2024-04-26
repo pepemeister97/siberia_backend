@@ -28,11 +28,9 @@ class IncomeTransactionService(di: DI) : AbstractTransactionService(di) {
 
         commit()
 
-        try {
-            processed(authorizedUser, transactionDao.idValue)
-        } catch (e: ForbiddenException) {
-            transactionDao.toOutputDto()
-        }
+        processed(authorizedUser, transactionDao.idValue)
+
+        transactionDao.toOutputDto()
     }
 
     fun cancelCreation(authorizedUser: AuthorizedUser, transactionId: Int): TransactionOutputDto = transaction {

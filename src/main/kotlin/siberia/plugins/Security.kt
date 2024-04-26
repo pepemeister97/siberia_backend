@@ -64,15 +64,15 @@ fun Application.configureSecurity() {
         loadRule("concrete-stock-view", rules.concreteStockView)
 
         loadRule("create-income-request", rules.createIncomeRequest)
-        loadRule("approve-income-request", rules.approveIncomeRequest)
+//        loadRule("approve-income-request", rules.approveIncomeRequest)
         loadRule("create-outcome-request", rules.createOutcomeRequest)
-        loadRule("approve-outcome-request", rules.approveOutcomeRequest)
+//        loadRule("approve-outcome-request", rules.approveOutcomeRequest)
         loadRule("create-transfer-request", rules.createTransferRequest)
         loadRule("solve-not-delivered-problem", rules.solveNotDeliveredProblem)
 
         loadRule("mobile-access", rules.mobileAccess)
         loadRule("mobile-auth", rules.mobileAuth)
         loadRule("create-write-off", rules.createWriteOffRequest)
-        loadRule("approve-write-off", rules.approveWriteOffRequest)
+//        loadRule("approve-write-off", rules.approveWriteOffRequest)
     }
 }

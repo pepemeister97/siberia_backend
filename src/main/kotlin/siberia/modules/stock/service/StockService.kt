@@ -24,6 +24,7 @@ import siberia.modules.user.service.UserAccessControlService
 import siberia.utils.database.idValue
 import siberia.utils.kodein.KodeinService
 import siberia.modules.rbac.data.models.RbacModel
+import siberia.plugins.Logger
 
 
 class StockService(di: DI) : KodeinService(di) {
@@ -117,16 +118,10 @@ class StockService(di: DI) : KodeinService(di) {
         StockDao[stockId].fullOutput()
     }
 
-    //For mobile apps where token contains stock id
-    fun getByAuthorizedUser(authorizedUser: AuthorizedUser) = transaction {
-        if (userAccessControlService.getAvailableStocks(authorizedUser.id).filter { it.key == authorizedUser.stockId }.isEmpty())
-            throw ForbiddenException()
-        StockDao[authorizedUser.stockId ?: 0].toOutputDto()
-    }
-
     fun getStockForQr(authorizedUser: AuthorizedUser, stockId: Int): StockDao = transaction {
         val stockDao = StockDao[stockId]
-
+        Logger.debug("REQUEST FROM USER", "main")
+        Logger.debug(authorizedUser, "main")
         if (!userAccessControlService.checkAccessToStock(authorizedUser.id, stockId))
             throw ForbiddenException()
 

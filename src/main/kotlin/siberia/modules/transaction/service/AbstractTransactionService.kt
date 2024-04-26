@@ -46,7 +46,7 @@ abstract class AbstractTransactionService(di: DI) : KodeinService(di) {
             throw ForbiddenException()
 
         val transactionDao = TransactionModel.create(transactionInputDto)
-        val event = TransactionCreateEvent(userDao.login, targetStock.name, transactionDao.idValue)
+        val event = TransactionCreateEvent(userDao.login, targetStock.name, transactionDao.idValue, transactionDao.typeId)
         SystemEventModel.logEvent(event)
         TransactionRelatedUserModel.addRelated(userDao.idValue, transactionDao.idValue)
 
@@ -66,7 +66,7 @@ abstract class AbstractTransactionService(di: DI) : KodeinService(di) {
         )
             throw ForbiddenException()
 
-        val event = TransactionUpdateStatusEvent(userDao.login, targetStock.name, transactionId, statusDao.name)
+        val event = TransactionUpdateStatusEvent(userDao.login, targetStock.name, transactionId, statusDao.name, transactionDao.typeId)
         SystemEventModel.logEvent(event)
 
         transactionDao.status = TransactionStatusDao[statusId]

@@ -14,18 +14,13 @@ data class RulesConf (
     val concreteStockView: Int,
 
     val createWriteOffRequest: Int,
-    val approveWriteOffRequest: Int,
 
     val createIncomeRequest: Int,
-    val approveIncomeRequest: Int,
 
     val createOutcomeRequest: Int,
-    val approveOutcomeRequest: Int,
 
     val createTransferRequest: Int,
-    val approveTransferRequestCreation: Int,
     val manageTransferRequest: Int,
-    val approveTransferDelivery: Int,
     val solveNotDeliveredProblem: Int,
 
     //Specific rules for mobile app authorization

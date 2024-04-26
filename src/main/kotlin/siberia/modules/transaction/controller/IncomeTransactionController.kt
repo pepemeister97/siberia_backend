@@ -26,7 +26,7 @@ class IncomeTransactionController(override val di: DI) : KodeinController() {
                     call.respond(incomeTransactionService.create(authorizedUser, transactionInputDto))
                 }
             }
-            authenticate ("approve-income-request") {
+            authenticate ("create-income-request") {
                 route("{transactionId}") {
                     patch("approve") {
                         val transactionId = call.parameters.getInt("transactionId", "Transaction id must be INT")

@@ -24,7 +24,7 @@ class WriteOffTransactionController(override val di: DI) : KodeinController() {
                 }
             }
 
-            authenticate ("approve-write-off") {
+            authenticate ("create-write-off") {
                 route("{transactionId}") {
                     patch("approve") {
                         val authorizedUser = call.getAuthorized()

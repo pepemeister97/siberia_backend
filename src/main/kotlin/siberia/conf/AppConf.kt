@@ -61,18 +61,13 @@ object AppConf {
         concreteStockView = rulesConf.getInt("concrete-stock-view"),
 
         createWriteOffRequest = rulesConf.getInt("create-write-off"),
-        approveWriteOffRequest = rulesConf.getInt("approve-write-off"),
 
         createIncomeRequest = rulesConf.getInt("create-income-request"),
-        approveIncomeRequest = rulesConf.getInt("approve-income-request"),
 
         createOutcomeRequest = rulesConf.getInt("create-outcome-request"),
-        approveOutcomeRequest = rulesConf.getInt("approve-outcome-request"),
 
         createTransferRequest = rulesConf.getInt("create-transfer-request"),
-        approveTransferRequestCreation = rulesConf.getInt("approve-transfer-request-creation"),
         manageTransferRequest = rulesConf.getInt("manage-transfer-request"),
-        approveTransferDelivery = rulesConf.getInt("approve-transfer-delivery"),
         solveNotDeliveredProblem = rulesConf.getInt("solve-not-delivered-problem"),
 
         mobileAuth = rulesConf.getInt("mobile-auth"),

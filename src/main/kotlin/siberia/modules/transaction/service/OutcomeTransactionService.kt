@@ -86,6 +86,7 @@ class OutcomeTransactionService(di: DI) : AbstractTransactionService(di) {
 
         TransactionModel.addProductList(transactionId, products)
         StockModel.removeProducts(targetStockId, products)
+        transactionSocketService.updateStatus(transactionDao.fullOutput())
 
         transactionDao.toOutputDto()
     }
@@ -143,7 +144,7 @@ class OutcomeTransactionService(di: DI) : AbstractTransactionService(di) {
         for (row in sheet.rowIterator()) {
             if (row.rowNum == 0) continue
             val productId = row.getCell(idIndex).numericCellValue.toInt()
-            val productAmount = row.getCell(amountIndex).numericCellValue.toDouble()
+            val productAmount = row.getCell(amountIndex).numericCellValue
 
             val product = productList.find { it.id == productId }
             if (product!=null){

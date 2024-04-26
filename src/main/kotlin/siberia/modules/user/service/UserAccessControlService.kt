@@ -179,7 +179,7 @@ class UserAccessControlService(di: DI) : KodeinService(di) {
 
     // Return Map <StockID, List<Rules>>
     // Returns stocks which can be used by user in operations
-    fun getAvailableStocksByOperations(userId: Int): Map<Int, List<Int>> = transaction {
+    fun getAvailableStocksWithOperations(userId: Int): Map<Int, List<Int>> = transaction {
         val models = RbacModel.select {
             (RbacModel.user eq userId) and
             (RbacModel.stock.isNotNull()) and

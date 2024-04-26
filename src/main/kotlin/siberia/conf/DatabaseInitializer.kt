@@ -74,12 +74,12 @@ object DatabaseInitializer {
             it[description] = "Ability to create new users and manage their rules, roles and personal info"
             it[needStock] = true
         }
-        RuleModel.insert {
-            it[id] = AppConf.rules.approveIncomeRequest
-            it[name] = "Approve income requests"
-            it[description] = "Ability to create new users and manage their rules, roles and personal info"
-            it[needStock] = true
-        }
+//        RuleModel.insert {
+//            it[id] = AppConf.rules.approveIncomeRequest
+//            it[name] = "Approve income requests"
+//            it[description] = "Ability to create new users and manage their rules, roles and personal info"
+//            it[needStock] = true
+//        }
 
         RuleModel.insert {
             it[id] = AppConf.rules.createOutcomeRequest
@@ -87,12 +87,12 @@ object DatabaseInitializer {
             it[description] = "Ability to create new users and manage their rules, roles and personal info"
             it[needStock] = true
         }
-        RuleModel.insert {
-            it[id] = AppConf.rules.approveOutcomeRequest
-            it[name] = "Approve outcome requests"
-            it[description] = "Ability to create new users and manage their rules, roles and personal info"
-            it[needStock] = true
-        }
+//        RuleModel.insert {
+//            it[id] = AppConf.rules.approveOutcomeRequest
+//            it[name] = "Approve outcome requests"
+//            it[description] = "Ability to create new users and manage their rules, roles and personal info"
+//            it[needStock] = true
+//        }
 
         RuleModel.insert {
             it[id] = AppConf.rules.createTransferRequest
@@ -100,24 +100,24 @@ object DatabaseInitializer {
             it[description] = "Ability to create new users and manage their rules, roles and personal info"
             it[needStock] = true
         }
-        RuleModel.insert {
-            it[id] = AppConf.rules.approveTransferRequestCreation
-            it[name] = "Approve transfer request creation"
-            it[description] = "Ability to create new users and manage their rules, roles and personal info"
-            it[needStock] = true
-        }
+//        RuleModel.insert {
+//            it[id] = AppConf.rules.approveTransferRequestCreation
+//            it[name] = "Approve transfer request creation"
+//            it[description] = "Ability to create new users and manage their rules, roles and personal info"
+//            it[needStock] = true
+//        }
         RuleModel.insert {
             it[id] = AppConf.rules.manageTransferRequest
             it[name] = "Manage transfer request"
             it[description] = "Ability to create new users and manage their rules, roles and personal info"
             it[needStock] = true
         }
-        RuleModel.insert {
-            it[id] = AppConf.rules.approveTransferDelivery
-            it[name] = "Approve transfer delivery"
-            it[description] = "Ability to create new users and manage their rules, roles and personal info"
-            it[needStock] = true
-        }
+//        RuleModel.insert {
+//            it[id] = AppConf.rules.approveTransferDelivery
+//            it[name] = "Approve transfer delivery"
+//            it[description] = "Ability to create new users and manage their rules, roles and personal info"
+//            it[needStock] = true
+//        }
         RuleModel.insert {
             it[id] = AppConf.rules.solveNotDeliveredProblem
             it[name] = "Solve not delivered problem"
@@ -130,12 +130,12 @@ object DatabaseInitializer {
             it[description] = "Ability to create write-off requests for storehouse"
             it[needStock] = true
         }
-        RuleModel.insert {
-            it[id] = AppConf.rules.approveWriteOffRequest
-            it[name] = "Approve write-off request"
-            it[description] = "Ability to approve write-off requests creations"
-            it[needStock] = true
-        }
+//        RuleModel.insert {
+//            it[id] = AppConf.rules.approveWriteOffRequest
+//            it[name] = "Approve write-off request"
+//            it[description] = "Ability to approve write-off requests creations"
+//            it[needStock] = true
+//        }
         RuleModel.insert {
             it[id] = AppConf.rules.concreteStockView
             it[name] = "Concrete stock view"

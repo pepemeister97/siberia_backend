@@ -18,10 +18,10 @@ object TransactionUtils {
                         AppConf.rules.createIncomeRequest
                     }
                     AppConf.requestStatus.creationCancelled -> {
-                        AppConf.rules.approveIncomeRequest
+                        AppConf.rules.createIncomeRequest
                     }
                     AppConf.requestStatus.processed -> {
-                        AppConf.rules.approveIncomeRequest
+                        AppConf.rules.createIncomeRequest
                     }
                     else -> {
                         throw BadRequestException("Bad request status")
@@ -37,10 +37,10 @@ object TransactionUtils {
                         AppConf.rules.createOutcomeRequest
                     }
                     AppConf.requestStatus.creationCancelled -> {
-                        AppConf.rules.approveOutcomeRequest
+                        AppConf.rules.createOutcomeRequest
                     }
                     AppConf.requestStatus.processed -> {
-                        AppConf.rules.approveOutcomeRequest
+                        AppConf.rules.createOutcomeRequest
                     }
                     else -> {
                         throw BadRequestException("Bad request status")
@@ -53,10 +53,10 @@ object TransactionUtils {
                         AppConf.rules.createTransferRequest
                     }
                     AppConf.requestStatus.creationCancelled -> {
-                        AppConf.rules.approveTransferRequestCreation
+                        AppConf.rules.createTransferRequest
                     }
                     AppConf.requestStatus.open -> {
-                        AppConf.rules.approveTransferRequestCreation
+                        AppConf.rules.createTransferRequest
                     }
                     AppConf.requestStatus.processingCancelled -> {
                         AppConf.rules.manageTransferRequest
@@ -65,10 +65,10 @@ object TransactionUtils {
                         AppConf.rules.manageTransferRequest
                     }
                     AppConf.requestStatus.delivered -> {
-                        AppConf.rules.approveTransferDelivery
+                        AppConf.rules.createTransferRequest
                     }
                     AppConf.requestStatus.notDelivered -> {
-                        AppConf.rules.approveTransferDelivery
+                        AppConf.rules.createTransferRequest
                     }
                     AppConf.requestStatus.failed -> {
                         AppConf.rules.solveNotDeliveredProblem
@@ -87,10 +87,10 @@ object TransactionUtils {
                         AppConf.rules.createWriteOffRequest
                     }
                     AppConf.requestStatus.creationCancelled -> {
-                        AppConf.rules.approveWriteOffRequest
+                        AppConf.rules.createWriteOffRequest
                     }
                     AppConf.requestStatus.processed -> {
-                        AppConf.rules.approveWriteOffRequest
+                        AppConf.rules.createWriteOffRequest
                     }
                     else -> {
                         throw BadRequestException("Bad request status")
