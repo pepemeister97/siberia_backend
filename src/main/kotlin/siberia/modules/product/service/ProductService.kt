@@ -105,8 +105,15 @@ class ProductService(di: DI) : KodeinService(di) {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    fun parseCsv(bytes : ByteArray): ProductParseResultDto = transaction {
-        val createList = productParseService.parseCSVtoProductDto(bytes)
+    fun parseCsv(bytes : ByteArray): ProductParseResultDto {
+        return parseOutput(productParseService.parseCSVtoProductDto(bytes))
+    }
+
+    fun parseXlsx(workbook: XSSFWorkbook): ProductParseResultDto {
+        return parseOutput(productParseService.parseXLSXtoProductDto(workbook))
+    }
+
+    fun parseOutput(createList: List<ProductCreateDto>): ProductParseResultDto = transaction {
         val brands = mutableListOf<Int>()
         val collections = mutableListOf<Int>()
         val categories = mutableListOf<Int>()
