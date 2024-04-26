@@ -145,6 +145,48 @@ class ProductService(di: DI) : KodeinService(di) {
         )
     }
 
+
+    fun parseXlsx(workbook: XSSFWorkbook): ProductParseResultDto = transaction {
+        val createList = productParseService.parseXLSXtoProductDto(workbook)
+
+        val brands = mutableListOf<Int>()
+        val collections = mutableListOf<Int>()
+        val categories = mutableListOf<Int>()
+        createList.forEach {
+            if (it.brand != null)
+                brands.add(it.brand!!)
+            if (it.collection != null)
+                brands.add(it.collection!!)
+            if (it.category != null)
+                brands.add(it.category!!)
+        }
+        val brandMap = mutableMapOf<Int, String>()
+        val collectionMap = mutableMapOf<Int, String>()
+        val categoryMap = mutableMapOf<Int, String>()
+        BrandModel.slice(BrandModel.id, BrandModel.name).select {
+            BrandModel.id inList brands
+        }.forEach {
+            brandMap[it[BrandModel.id].value] = it[BrandModel.name]
+        }
+        CollectionModel.slice(CollectionModel.id, CollectionModel.name).select {
+            CollectionModel.id inList collections
+        }.forEach {
+            collectionMap[it[CollectionModel.id].value] = it[CollectionModel.name]
+        }
+        CategoryModel.slice(CategoryModel.id, CategoryModel.name).select {
+            CategoryModel.id inList categories
+        }.forEach {
+            categoryMap[it[CategoryModel.id].value] = it[CategoryModel.name]
+        }
+
+        ProductParseResultDto(
+            brandMap = brandMap,
+            collectionMap = collectionMap,
+            categoryMap = categoryMap,
+            createList = createList
+        )
+    }
+
     fun bulkInsert(authorizedUser: AuthorizedUser, list : List<ProductCreateDto>) : List<ProductListItemOutputDto> = transaction {
         val userDao = UserDao[authorizedUser.id]
         val insertedProducts = ProductModel.batchInsert(list) {

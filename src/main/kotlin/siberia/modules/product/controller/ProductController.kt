@@ -13,6 +13,10 @@ import siberia.modules.product.service.ProductEventService
 import siberia.modules.product.service.ProductMassiveEventService
 import siberia.modules.product.service.ProductService
 import siberia.utils.kodein.KodeinController
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import io.ktor.http.content.*
+import siberia.modules.product.service.ProductParseService
+
 
 class ProductController(override val di: DI) : KodeinController() {
     private val productService: ProductService by instance()
@@ -62,6 +66,24 @@ class ProductController(override val di: DI) : KodeinController() {
                 post ("parse/csv") {
                     val bytes = call.receive<ByteArray>()
                     call.respond(productService.parseCsv(bytes))
+                }
+                post ("parse/xlsx"){
+
+                    val multipart = call.receiveMultipart()
+                    multipart.forEachPart { part ->
+                        when (part) {
+                            is PartData.FileItem -> {
+                                val inputStream = part.streamProvider()
+                                val workbook = XSSFWorkbook(inputStream)
+                                inputStream.close()
+                                call.respond(productService.parseXlsx(workbook))
+                            }
+                            else -> {
+                                throw BadRequestException("No file uploaded or multipart data is empty.")
+                            }
+                        }
+                        part.dispose()
+                    }
                 }
                 route("bulk") {
                     post {
