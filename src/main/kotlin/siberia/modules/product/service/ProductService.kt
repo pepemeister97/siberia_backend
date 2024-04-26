@@ -45,14 +45,19 @@ import siberia.utils.kodein.KodeinService
 import java.io.ByteArrayOutputStream
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import kotlin.math.round
 import kotlin.reflect.full.memberProperties
 
 
 class ProductService(di: DI) : KodeinService(di) {
     private val galleryService: GalleryService by instance()
+    private val productParseService: ProductParseService by instance()
 
-    private fun getPrice(base: Double, percent: Double): Double
-        = base * (percent / 100)
+    private fun getPrice(base: Double, percent: Double): Double {
+        val price = base * (percent / 100)
+
+        return round(price * 100) / 100
+    }
 
     private fun createDao(productCreateDto: ProductCreateDto): ProductDao = transaction {
         val product = ProductDao.new {
@@ -100,10 +105,86 @@ class ProductService(di: DI) : KodeinService(di) {
 
     private val json = Json { ignoreUnknownKeys = true }
 
+    fun parseCsv(bytes : ByteArray): ProductParseResultDto = transaction {
+        val createList = productParseService.parseCSVtoProductDto(bytes)
+        val brands = mutableListOf<Int>()
+        val collections = mutableListOf<Int>()
+        val categories = mutableListOf<Int>()
+        createList.forEach {
+            if (it.brand != null)
+                brands.add(it.brand!!)
+            if (it.collection != null)
+                brands.add(it.collection!!)
+            if (it.category != null)
+                brands.add(it.category!!)
+        }
+        val brandMap = mutableMapOf<Int, String>()
+        val collectionMap = mutableMapOf<Int, String>()
+        val categoryMap = mutableMapOf<Int, String>()
+        BrandModel.slice(BrandModel.id, BrandModel.name).select {
+            BrandModel.id inList brands
+        }.forEach {
+            brandMap[it[BrandModel.id].value] = it[BrandModel.name]
+        }
+        CollectionModel.slice(CollectionModel.id, CollectionModel.name).select {
+            CollectionModel.id inList collections
+        }.forEach {
+            collectionMap[it[CollectionModel.id].value] = it[CollectionModel.name]
+        }
+        CategoryModel.slice(CategoryModel.id, CategoryModel.name).select {
+            CategoryModel.id inList categories
+        }.forEach {
+            categoryMap[it[CategoryModel.id].value] = it[CategoryModel.name]
+        }
+
+        ProductParseResultDto(
+            brandMap = brandMap,
+            collectionMap = collectionMap,
+            categoryMap = categoryMap,
+            createList = createList
+        )
+    }
+
     fun bulkInsert(authorizedUser: AuthorizedUser, list : List<ProductCreateDto>) : List<ProductListItemOutputDto> = transaction {
         val userDao = UserDao[authorizedUser.id]
-        val insertedProducts = list.map {
-            createDao(it).listItemDto
+        val insertedProducts = ProductModel.batchInsert(list) {
+            val professionalPrice = if (it.commonPrice != null && it.professionalPercent != null)
+                getPrice(it.commonPrice!!, it.professionalPercent!!)
+            else
+                0.0
+
+            val distributorPrice = if (it.commonPrice != null && it.distributorPercent != null)
+                getPrice(it.commonPrice!!, it.distributorPercent!!)
+            else
+                0.0
+
+            this[ProductModel.vendorCode] = it.vendorCode ?: ""
+            this[ProductModel.eanCode] = it.eanCode ?: ""
+            this[ProductModel.barcode] = it.barcode ?: ""
+            this[ProductModel.brand] = it.brand
+            this[ProductModel.name] = it.name ?: ""
+            this[ProductModel.description] = it.description ?: ""
+            this[ProductModel.distributorPrice] = distributorPrice
+            this[ProductModel.distributorPercent] = it.distributorPercent ?: 0.0
+            this[ProductModel.professionalPrice] = professionalPrice
+            this[ProductModel.professionalPercent] = it.professionalPercent ?: 0.0
+            this[ProductModel.commonPrice] = it.commonPrice ?: 0.0
+            this[ProductModel.category] = it.category
+            this[ProductModel.collection] = it.collection
+            this[ProductModel.color] = it.color ?: ""
+            this[ProductModel.amountInBox] = it.amountInBox ?: 0
+            this[ProductModel.expirationDate] = it.expirationDate ?: 0
+            this[ProductModel.link] = it.link ?: ""
+            this[ProductModel.offertaPrice] = it.offertaPrice ?: 0.0
+        }.map {
+            ProductListItemOutputDto(
+                id = it[ProductModel.id].value,
+                name = it[ProductModel.name],
+                vendorCode = it[ProductModel.vendorCode],
+                quantity = 0.0,
+                price = it[ProductModel.commonPrice],
+                eanCode = it[ProductModel.eanCode]
+            )
         }
 
         val rollbackInstance = json.encodeToString(
@@ -361,7 +442,7 @@ class ProductService(di: DI) : KodeinService(di) {
 
     fun getAvailableByFilter(
         authorizedUser: AuthorizedUser? = null,
-        searchFilterDto: ProductSearchDto,
+        searchFilterDto: ProductSearchDto
     ): List<ProductListItemOutputDto> = transaction {
 
         val ordering = if (authorizedUser != null && searchFilterDto.filters?.availability != null && searchFilterDto.filters.availability){
@@ -450,7 +531,7 @@ class ProductService(di: DI) : KodeinService(di) {
 
     fun getXls(
         searchFilterDto: ProductSearchFilterDto,
-        productFieldsDemandDto: ProductFieldsDemandDto,
+        productFieldsDemandDto: ProductFieldsDemandDto
     ): String = transaction {
 
         val workbook = XSSFWorkbook()

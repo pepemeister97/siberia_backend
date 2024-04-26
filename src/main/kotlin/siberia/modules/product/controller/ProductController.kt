@@ -11,14 +11,12 @@ import siberia.exceptions.BadRequestException
 import siberia.modules.product.data.dto.*
 import siberia.modules.product.service.ProductEventService
 import siberia.modules.product.service.ProductMassiveEventService
-import siberia.modules.product.service.ProductParseService
 import siberia.modules.product.service.ProductService
 import siberia.utils.kodein.KodeinController
 
 class ProductController(override val di: DI) : KodeinController() {
     private val productService: ProductService by instance()
     private val productEventService: ProductEventService by instance()
-    private val productParseService: ProductParseService by instance()
     private val productMassiveEventService: ProductMassiveEventService by instance()
 
     /**
@@ -63,7 +61,7 @@ class ProductController(override val di: DI) : KodeinController() {
                 }
                 post ("parse/csv") {
                     val bytes = call.receive<ByteArray>()
-                    call.respond(productParseService.parseCSVtoProductDto(bytes))
+                    call.respond(productService.parseCsv(bytes))
                 }
                 route("bulk") {
                     post {

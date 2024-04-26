@@ -26,7 +26,7 @@ class StockEventService(di: DI) : KodeinEventService(di) {
     private val userAccessControlService: UserAccessControlService by instance()
     private val authSocketService: AuthSocketService by instance()
 
-    override fun rollbackUpdate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) : Unit = transaction {
+    override fun rollbackUpdate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto): Unit = transaction {
         val updateEventDto = event.getRollbackData<StockUpdateDto>()
         with (
             StockModel.slice(StockModel.id).select {
