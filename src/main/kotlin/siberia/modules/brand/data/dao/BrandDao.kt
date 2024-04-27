@@ -16,10 +16,11 @@ import siberia.utils.database.idValue
 class BrandDao(id: EntityID<Int>) : BaseIntEntity<BrandOutputDto>(id, BrandModel) {
 
     companion object : BaseIntEntityClass<BrandOutputDto, BrandDao>(BrandModel) {
-        fun new(authorName: String, init: BrandDao.() -> Unit): BrandDao {
+        fun new(authorName: String, shadowed: Boolean = false, init: BrandDao.() -> Unit): BrandDao {
             val brandDao = super.new(init)
             val event = BrandCreateEvent(authorName, brandDao.name, brandDao.idValue)
-            SystemEventModel.logEvent(event)
+            if (!shadowed)
+                SystemEventModel.logEvent(event)
             return brandDao
         }
 

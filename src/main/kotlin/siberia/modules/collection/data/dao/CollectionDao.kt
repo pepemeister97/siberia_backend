@@ -16,10 +16,11 @@ import siberia.utils.database.idValue
 class CollectionDao(id: EntityID<Int>) : BaseIntEntity<CollectionOutputDto>(id, CollectionModel) {
 
     companion object : BaseIntEntityClass<CollectionOutputDto, CollectionDao>(CollectionModel) {
-        fun new(authorName: String, init: CollectionDao.() -> Unit): CollectionDao {
+        fun new(authorName: String, shadowed: Boolean = false, init: CollectionDao.() -> Unit): CollectionDao {
             val collectionDao = super.new(init)
             val event = CollectionCreateEvent(authorName, collectionDao.name, collectionDao.idValue)
-            SystemEventModel.logEvent(event)
+            if (!shadowed)
+                SystemEventModel.logEvent(event)
             return collectionDao
         }
 

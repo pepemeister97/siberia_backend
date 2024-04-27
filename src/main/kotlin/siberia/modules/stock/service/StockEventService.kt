@@ -8,6 +8,7 @@ import siberia.exceptions.BadRequestException
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.auth.service.AuthSocketService
 import siberia.modules.logger.data.dto.SystemEventOutputDto
+import siberia.modules.logger.data.models.SystemEventModel
 import siberia.modules.product.data.models.ProductModel
 import siberia.modules.rbac.data.models.RbacModel
 import siberia.modules.rbac.data.models.role.RoleModel
@@ -18,6 +19,7 @@ import siberia.modules.stock.data.models.StockModel
 import siberia.modules.transaction.data.dto.TransactionInputDto
 import siberia.modules.user.data.models.UserModel
 import siberia.modules.user.service.UserAccessControlService
+
 import siberia.utils.kodein.KodeinEventService
 
 class StockEventService(di: DI) : KodeinEventService(di) {
@@ -77,6 +79,13 @@ class StockEventService(di: DI) : KodeinEventService(di) {
                 )
             }
         )
+
+        SystemEventModel.replaceRemovedWithNewId(
+            event.eventObjectTypeId,
+            createEventDto.objectId,
+            stockDto.id
+        )
+
         authSocketService.updateRules(RbacModel.getUsersRelatedToStock(stockDto.id))
     }
 

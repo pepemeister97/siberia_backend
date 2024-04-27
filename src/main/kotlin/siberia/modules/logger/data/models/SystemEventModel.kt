@@ -150,4 +150,16 @@ object SystemEventModel: BaseIntIdTable() {
             it[canBeReset] = true
         }[SystemEventModel.id].value
     }
+
+    // When we rollback removed entity we need to
+    // set new id of entity to events of this model
+    fun replaceRemovedWithNewId(eventObjectType: Int, oldId: Int, newId: Int): Unit = transaction {
+        SystemEventModel.update({
+            (SystemEventModel.eventObjectType eq eventObjectType) and
+            (eventObjectId.isNotNull()) and
+            (eventObjectId eq oldId)
+        }) {
+            it[eventObjectId] = newId
+        }
+    }
 }

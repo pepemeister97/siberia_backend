@@ -10,6 +10,7 @@ import siberia.modules.brand.data.dto.BrandInputDto
 import siberia.modules.brand.data.dto.BrandUpdateDto
 import siberia.modules.brand.data.models.BrandModel
 import siberia.modules.logger.data.dto.SystemEventOutputDto
+import siberia.modules.logger.data.models.SystemEventModel
 import siberia.utils.kodein.KodeinEventService
 
 class BrandEventService(di: DI) : KodeinEventService(di) {
@@ -23,16 +24,22 @@ class BrandEventService(di: DI) : KodeinEventService(di) {
             .map {
                 it[BrandModel.id]
             }
-        ){
+        ) {
             if (this.isNotEmpty())
                 brandService.update(authorizedUser, updateEventData.objectId, updateEventData.objectDto)
             else throw BadRequestException("rollback failed model removed")
         }
     }
 
-    override fun rollbackRemove(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {
+    override fun rollbackRemove(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) = transaction {
         val createEventData = event.getRollbackData<BrandInputDto>()
-        brandService.create(authorizedUser, createEventData.objectDto)
+        val createdBrand = brandService.create(authorizedUser, createEventData.objectDto, shadowed = true)
+
+        SystemEventModel.replaceRemovedWithNewId(
+            event.eventObjectTypeId,
+            createEventData.objectId,
+            createdBrand.id
+        )
     }
 
     override fun rollbackCreate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {

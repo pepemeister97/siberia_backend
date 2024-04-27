@@ -7,6 +7,7 @@ import org.kodein.di.instance
 import siberia.exceptions.BadRequestException
 import siberia.modules.auth.data.dto.AuthorizedUser
 import siberia.modules.logger.data.dto.SystemEventOutputDto
+import siberia.modules.logger.data.models.SystemEventModel
 import siberia.modules.rbac.data.dto.RoleRollbackDto
 import siberia.modules.rbac.data.dto.RoleUpdateDto
 import siberia.modules.rbac.data.models.role.RoleModel
@@ -34,12 +35,13 @@ class RoleEventService(di: DI) : KodeinEventService(di) {
 
     override fun rollbackRemove(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) : Unit = transaction {
         val createEventData = event.getRollbackData<RoleRollbackDto>()
-        rbacService.createRole(authorizedUser, createEventData.objectDto)
+        val createdRole = rbacService.createRole(authorizedUser, createEventData.objectDto)
 
         val userIdList = mutableListOf<Int>()
         createEventData.objectDto.relatedUsers.forEach {
             userIdList.add(it.first)
         }
+
         UserModel.slice(UserModel.id).select {
             UserModel.id inList userIdList
         }.map {
@@ -47,6 +49,12 @@ class RoleEventService(di: DI) : KodeinEventService(di) {
         }.forEach {
             userAccessControlService.addRoles(authorizedUser, it, listOf(createEventData.objectId))
         }
+
+        SystemEventModel.replaceRemovedWithNewId(
+            event.eventObjectTypeId,
+            createEventData.objectId,
+            createdRole.id
+        )
     }
 
     override fun rollbackCreate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {

@@ -29,7 +29,7 @@ class RoleRulesEventService(di: DI) : KodeinEventService(di) {
                 else
                     rbacService.removeRulesFromRole(authorizedUser, event.eventObjectId!!, updateEventData.objectDto.rules, needLog = false)
             } else {
-                throw BadRequestException("role was removed and must be rollbacked first")
+                throw BadRequestException("rollback failed model removed")
             }
         }
     }

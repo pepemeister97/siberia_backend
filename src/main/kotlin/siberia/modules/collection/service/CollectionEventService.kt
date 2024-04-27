@@ -10,6 +10,7 @@ import siberia.modules.collection.data.dto.CollectionInputDto
 import siberia.modules.collection.data.dto.CollectionUpdateDto
 import siberia.modules.collection.data.models.CollectionModel
 import siberia.modules.logger.data.dto.SystemEventOutputDto
+import siberia.modules.logger.data.models.SystemEventModel
 import siberia.utils.kodein.KodeinEventService
 
 class CollectionEventService(di: DI) : KodeinEventService(di) {
@@ -29,9 +30,17 @@ class CollectionEventService(di: DI) : KodeinEventService(di) {
         }
     }
 
-    override fun rollbackRemove(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {
+    override fun rollbackRemove(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) = transaction {
         val createEventData = event.getRollbackData<CollectionInputDto>()
-        collectionService.create(authorizedUser, createEventData.objectDto)
+        val createdCollection = collectionService.create(authorizedUser, createEventData.objectDto, shadowed = true)
+
+        SystemEventModel.replaceRemovedWithNewId(
+            event.eventObjectTypeId,
+            createEventData.objectId,
+            createdCollection.id
+        )
+
+        commit()
     }
 
     override fun rollbackCreate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {

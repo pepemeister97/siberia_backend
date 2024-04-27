@@ -15,9 +15,9 @@ import siberia.modules.user.data.dao.UserDao
 import siberia.utils.kodein.KodeinService
 
 class CollectionService(di: DI) : KodeinService(di) {
-    fun create(authorizedUser: AuthorizedUser, collectionInputDto: CollectionInputDto): CollectionOutputDto = transaction {
+    fun create(authorizedUser: AuthorizedUser, collectionInputDto: CollectionInputDto, shadowed: Boolean = false): CollectionOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
-        val collectionDao = CollectionDao.new(userDao.login) {
+        val collectionDao = CollectionDao.new(userDao.login, shadowed) {
             name = collectionInputDto.name
         }.toOutputDto()
         commit()

@@ -10,6 +10,7 @@ import siberia.modules.category.data.dto.CategoryOutputDto
 import siberia.modules.category.data.dto.CategoryUpdateDto
 import siberia.modules.category.data.models.CategoryModel
 import siberia.modules.logger.data.dto.SystemEventOutputDto
+import siberia.modules.logger.data.models.SystemEventModel
 import siberia.plugins.Logger
 import siberia.utils.kodein.KodeinEventService
 
@@ -78,7 +79,14 @@ class CategoryEventService(di: DI) : KodeinEventService(di) {
                 Logger.debug("start creating children ${createEventDto.objectDto.children}", "main")
                 createRecursive(authorizedUser, createEventDto.objectDto.children, categoryDto.id)
             }
+
+            SystemEventModel.replaceRemovedWithNewId(
+                event.eventObjectTypeId,
+                createEventDto.objectId,
+                categoryDto.id
+            )
         }
+
     }
 
     override fun rollbackCreate(authorizedUser: AuthorizedUser, event: SystemEventOutputDto) {

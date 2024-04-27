@@ -15,9 +15,9 @@ import siberia.modules.user.data.dao.UserDao
 import siberia.utils.kodein.KodeinService
 
 class BrandService(di: DI) : KodeinService(di) {
-    fun create(authorizedUser: AuthorizedUser, brandInputDto: BrandInputDto): BrandOutputDto = transaction {
+    fun create(authorizedUser: AuthorizedUser, brandInputDto: BrandInputDto, shadowed: Boolean = false): BrandOutputDto = transaction {
         val userDao = UserDao[authorizedUser.id]
-        val brandDao = BrandDao.new(userDao.login) {
+        val brandDao = BrandDao.new(userDao.login, shadowed) {
             name = brandInputDto.name
         }.toOutputDto()
         commit()
