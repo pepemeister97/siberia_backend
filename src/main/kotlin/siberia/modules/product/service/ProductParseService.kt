@@ -88,10 +88,17 @@ class ProductParseService (di: DI) : KodeinService(di) {
             if (cell != null) {
                 when (cell.cellType) {
                     CellType.STRING -> cell.stringCellValue
-                    CellType.NUMERIC -> cell.numericCellValue.toString()
+                    CellType.NUMERIC -> {
+                        val numericValue = cell.numericCellValue
+                        if (numericValue % 1.0 != 0.0) {
+                            numericValue.toString()
+                        } else {
+                            numericValue.toInt().toString()
+                        }
+                    }
                     CellType.BOOLEAN -> cell.booleanCellValue.toString()
                     CellType.BLANK -> ""
-                    else -> cell.toString()  // На случай других типов данных, таких как формулы
+                    else -> cell.toString()
                 }
             } else ""
         } ?: ""
