@@ -109,7 +109,11 @@ class ProductParseService (di: DI) : KodeinService(di) {
         return if (cell != null) {
             when (cell.cellType) {
                 CellType.NUMERIC -> cell.numericCellValue
-                CellType.STRING -> cell.stringCellValue.toDoubleOrNull()
+                CellType.STRING -> {
+                    // Заменяем запятую на точку для корректного преобразования в число с плавающей запятой
+                    val normalizedNumber = cell.stringCellValue.replace(',', '.')
+                    normalizedNumber.toDoubleOrNull()
+                }
                 else -> null
             }
         } else null
